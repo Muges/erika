@@ -26,6 +26,8 @@
 Module defining the base classes used by podcast sources
 """
 
+# TODO : Error handling
+
 from collections import namedtuple
 
 """
@@ -51,9 +53,9 @@ summary : Optional[str]
     A description of the episode
 mimetype : Optional[str]
     Mimetype of the episode file
-filesize : Optional[int]
+file_size : Optional[int]
     Size of the episode file in bytes
-fileurl : Optional[str]
+file_url : Optional[str]
     Url of the episode file
 """
 Episode = namedtuple('Episode', [
@@ -68,8 +70,8 @@ Episode = namedtuple('Episode', [
     "summary",
 
     "mimetype",
-    "filesize",
-    "fileurl"
+    "file_size",
+    "file_url"
 ])
 
 
@@ -110,6 +112,13 @@ class Source(object):
     Base class for podcast sources.
 
     A podcast source could be an RSS feed, a youtube channel...
+
+    Class Attributes
+    ----------------
+    name : str
+        A unique identifier for the source type (e.g. "feed")
+    description : str
+        A short description of the source type (e.g "RSS/Atom feed")
     """
     def parse(self):
         """

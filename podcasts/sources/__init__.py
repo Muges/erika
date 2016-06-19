@@ -29,9 +29,12 @@ Module used to parse podcast sources.
 from .source import Source, Podcast, Episode
 from .feed import Feed
 
+# TODO : generate this dynamically
+SOURCES = {Feed.name: Feed}
 
-def get(url):
+
+def get(source_name, url):
     """
     Return the source object corresponding to a url.
     """
-    return Feed(url)
+    return SOURCES[source_name](url)

@@ -36,8 +36,12 @@ from .source import Source, Podcast, Episode
 
 class Feed(Source):
     """
-    A source creating a podcast from an Atom/RSS feed.
+    A source creating a podcast from an RSS/Atom feed.
     """
+
+    name = "feed"
+    description = "RSS/Atom feed"
+
     def __init__(self, url):
         self.logger = logging.getLogger(
             "{}.{}".format(__name__, self.__class__.__name__))
@@ -83,15 +87,17 @@ class Feed(Source):
         else:
             pubdate = None
 
+        default_guid = "{} - {}".format(pubdate, entry.get("title", ""))
+
         try:
             image = entry.image.href
         except AttributeError:
-            image = None
+            image = self.podcast.image
 
-        mimetype, filesize, fileurl = self._parse_links(entry.links)
+        mimetype, file_size, file_url = self._parse_links(entry.links)
 
         self.episodes.append(Episode(
-            guid=entry.get("id", None),
+            guid=entry.get("id", default_guid),
             pubdate=pubdate,
             title=entry.get("title", None),
 
@@ -102,8 +108,8 @@ class Feed(Source):
             summary=entry.get("summary", None),
 
             mimetype=mimetype,
-            filesize=filesize,
-            fileurl=fileurl
+            file_size=file_size,
+            file_url=file_url
         ))
 
     def _parse_feed(self, feed):
@@ -125,6 +131,8 @@ class Feed(Source):
         )
 
     def parse(self):
+        self.logger.info("Parsing %s.", self.url)
+
         document = feedparser.parse(self.url)
 
         self._parse_feed(document.feed)

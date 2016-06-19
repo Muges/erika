@@ -22,39 +22,13 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import logging
-import os
+"""
+Module defining some constants
+"""
 
-from .library import Library
-from .config import CONFIG_DIR
+from os.path import expanduser, join
 
-FILENAMES = [
-    "tests/data/itunes.xml",
-    "http://www.bbc.co.uk/programmes/p02nrvd3/episodes/downloads.rss",
-    "http://aliceisntdead.libsyn.com/rss",
-    "http://feeds.feedburner.com/WelcomeToNightVale"
-]
+from .__version__ import __appname__
 
-
-def main():
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-
-    # Display logs on stdout
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.DEBUG)
-
-    formatter = logging.Formatter('%(levelname)-8s (%(name)s) : %(message)s')
-    handler.setFormatter(formatter)
-
-    logger.addHandler(handler)
-
-    # Create the configuration directory if it does not exists
-    if not os.path.isdir(CONFIG_DIR):
-        os.makedirs(CONFIG_DIR)
-
-    Library.init()
-    library = Library()
-
-    for filename in FILENAMES:
-        library.add_source("feed", filename)
+HOME = expanduser("~")
+CONFIG_DIR = join(HOME, ".{}".format(__appname__.lower()))
