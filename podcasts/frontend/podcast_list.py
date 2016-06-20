@@ -27,13 +27,64 @@ Row in the list of podcasts
 """
 
 # TODO : Test with invalid images.
+# TODO : Test with non sqaure images.
 # TODO : Check summary format (plaintext or html?) for tooltip.
+# TODO : Add placeholder image
 
 from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 from gi.repository import Pango
 
+from podcasts.library import Library
+
 IMAGE_SIZE = 48
+
+
+class PodcastList(Gtk.ListBox):
+    """
+    List of podcasts
+    """
+    def __init__(self):
+        Gtk.ListBox.__init__(self)
+        self.set_sort_func(self.sort_func)
+
+        self.update()
+
+    def update(self):
+        """
+        Update the list of podcasts
+        """
+        self.resize_children()
+
+        library = Library()
+        for podcast in library.get_podcasts():
+            self.add(PodcastRow(podcast))
+
+    def sort_func(self, row1, row2):
+        """
+        Compare two rows to determine which should be first. Sort them
+        alphabetically by podcast title.
+
+        Parameters
+        ----------
+        row1 : Gtk.ListBoxRow
+            The first row
+        row2 : Gtk.ListBoxRow
+            The second row
+
+        Returns
+        -------
+        int
+            -1 if row1 should be before row2,
+            0 if they are equal,
+            1 otherwise
+        """
+        if row1.podcast["title"] < row2.podcast["title"]:
+            return -1
+        elif row1.podcast["title"] == row2.podcast["title"]:
+            return 0
+        else:
+            return 1
 
 
 class PodcastRow(Gtk.ListBoxRow):

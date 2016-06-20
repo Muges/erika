@@ -25,8 +25,7 @@
 from gi.repository import Gtk
 
 from podcasts.__version__ import __appname__
-from podcasts.library import Library
-from podcasts.frontend.podcast_row import PodcastRow
+from podcasts.frontend.podcast_list import PodcastList
 
 
 class MainWindow(Gtk.Window):
@@ -36,8 +35,6 @@ class MainWindow(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self, title=__appname__)
 
-        library = Library()
-
         # Create header bar
         builder = Gtk.Builder()
         builder.add_from_file("data/headerbar.ui")
@@ -45,10 +42,7 @@ class MainWindow(Gtk.Window):
         self.headerbar = builder.get_object("headerbar")
 
         # Create podcast list
-        self.podcast_list = Gtk.ListBox()
-
-        for podcast in library.get_podcasts():
-            self.podcast_list.add(PodcastRow(podcast))
+        self.podcast_list = PodcastList()
 
         # Layout
         vbox = Gtk.VBox()
