@@ -22,42 +22,24 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import logging
-import os
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gst', '1.0')
+from gi.repository import Gtk
+from gi.repository import Gst
+from gi.repository import GObject
 
-from .library import Library
-from .config import CONFIG_DIR
-from . import frontend
-
-FILENAMES = [
-    "tests/data/itunes.xml",
-    "http://www.bbc.co.uk/programmes/p02nrvd3/episodes/downloads.rss",
-    "http://aliceisntdead.libsyn.com/rss",
-    "http://feeds.feedburner.com/WelcomeToNightVale"
-]
+from .main_window import MainWindow
 
 
-def main():
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
+def run():
+    """
+    Starts the application
+    """
+    Gst.init_check(None)
 
-    # Display logs on stdout
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.DEBUG)
+    main_window = MainWindow()
+    main_window.connect("delete-event", Gtk.main_quit)
+    main_window.show_all()
 
-    formatter = logging.Formatter('%(levelname)-8s (%(name)s) : %(message)s')
-    handler.setFormatter(formatter)
-
-    logger.addHandler(handler)
-
-    # Create the configuration directory if it does not exists
-    if not os.path.isdir(CONFIG_DIR):
-        os.makedirs(CONFIG_DIR)
-
-    Library.init()
-    """library = Library()
-
-    for filename in FILENAMES:
-        library.add_source("feed", filename)"""
-
-    frontend.run()
+    Gtk.main()

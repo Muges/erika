@@ -22,42 +22,39 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import logging
-import os
+from gi.repository import Gtk
 
-from .library import Library
-from .config import CONFIG_DIR
-from . import frontend
-
-FILENAMES = [
-    "tests/data/itunes.xml",
-    "http://www.bbc.co.uk/programmes/p02nrvd3/episodes/downloads.rss",
-    "http://aliceisntdead.libsyn.com/rss",
-    "http://feeds.feedburner.com/WelcomeToNightVale"
-]
+from podcasts.__version__ import __appname__
+from podcasts.library import Library
+from podcasts.frontend.podcast_row import PodcastRow
 
 
-def main():
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
+class MainWindow(Gtk.Window):
+    """
+    Main window of the application.
+    """
+    def __init__(self):
+        Gtk.Window.__init__(self, title=__appname__)
 
-    # Display logs on stdout
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.DEBUG)
+        library = Library()
 
-    formatter = logging.Formatter('%(levelname)-8s (%(name)s) : %(message)s')
-    handler.setFormatter(formatter)
+        # Create header bar
+        builder = Gtk.Builder()
+        builder.add_from_file("data/headerbar.ui")
 
-    logger.addHandler(handler)
+        self.headerbar = builder.get_object("headerbar")
 
-    # Create the configuration directory if it does not exists
-    if not os.path.isdir(CONFIG_DIR):
-        os.makedirs(CONFIG_DIR)
+        # Create podcast list
+        self.podcast_list = Gtk.ListBox()
 
-    Library.init()
-    """library = Library()
+        for podcast in library.get_podcasts():
+            self.podcast_list.add(PodcastRow(podcast))
 
-    for filename in FILENAMES:
-        library.add_source("feed", filename)"""
+        # Layout
+        vbox = Gtk.VBox()
+        self.add(vbox)
 
-    frontend.run()
+        vbox.pack_start(self.headerbar, False, False, 0)
+        scrolled_window = Gtk.ScrolledWindow()
+        scrolled_window.add_with_viewport(self.podcast_list)
+        vbox.pack_start(scrolled_window, True, True, 0)

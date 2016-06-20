@@ -70,6 +70,7 @@ class Library(object):
 
         self.connection = sqlite3.connect(DATABASE_PATH,
                                           detect_types=sqlite3.PARSE_DECLTYPES)
+        self.connection.row_factory = sqlite3.Row
 
     def create(self):
         """
@@ -117,6 +118,7 @@ class Library(object):
                 file_url text,
 
                 new integer DEFAULT 1,
+                played integer DEFAULT 0,
                 progress integer DEFAULT 0,
 
                 UNIQUE (podcast_id, guid),
@@ -227,3 +229,29 @@ class Library(object):
             self._add_episode(podcast_id, episode)
 
         self.connection.commit()
+
+    def get_podcasts(self):
+        """
+        Return a list of podcasts.
+
+        Returns
+        -------
+        List[sqlite3.Row]
+            A list of dict-like objects with the same fields as the podcasts
+            table in the database, as well as :
+             - total : The total number of episodes of the podcast
+             - new : The number of new episodes
+             - played : The number of episodes that have already been played
+        """
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT
+                podcasts.*,
+                IFNULL(SUM(episodes.new), 0) AS new,
+                IFNULL(SUM(episodes.played), 0) AS played,
+                COUNT(*) AS total
+            FROM podcasts
+            LEFT OUTER JOIN episodes ON (episodes.podcast_id = podcasts.id)
+            GROUP BY episodes.podcast_id
+        """)
+        return cursor.fetchall()
