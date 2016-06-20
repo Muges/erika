@@ -26,6 +26,7 @@
 Podcast library
 """
 
+from collections import namedtuple
 import logging
 import os.path
 import sqlite3
@@ -35,6 +36,125 @@ from .config import CONFIG_DIR
 from . import sources
 
 DATABASE_PATH = os.path.join(CONFIG_DIR, "library")
+
+
+"""
+Namedtuple describing an episode
+
+Attributes
+----------
+podcastid : int
+    The id of the podcast in the database
+id : int
+    The id of the episode in the database
+guid : Optional[str]
+    A unique identifier for the episode
+pubdate : Optional[datetime]
+    The date of publication of the episode
+title : Optional[str]
+    The title of the episode
+duration : Optional[int]
+    The duration of the episode in seconds
+image_url : Optional[str]
+    A link to the image of the episode
+link : Optional[str]
+    Website link
+subtitle : Optional[str]
+    The subtitle of the episode
+summary : Optional[str]
+    A description of the episode
+mimetype : Optional[str]
+    Mimetype of the episode file
+file_size : Optional[int]
+    Size of the episode file in bytes
+file_url : Optional[str]
+    Url of the episode file
+new : bool
+    True if the episode is new
+played : bool
+    True if the episode has been played
+progress : int
+    Number of seconds of the episode that have been played (used to be able to
+    resume the playback after quitting the application)
+"""
+Episode = namedtuple('Episode', [
+    "podcast_id",
+    "id",
+
+    "guid",
+    "pubdate",
+    "title",
+
+    "duration",
+    "image_url",
+    "link",
+    "subtitle",
+    "summary",
+
+    "mimetype",
+    "file_size",
+    "file_url",
+
+    "new",
+    "played",
+    "progress"
+])
+
+
+"""
+Namedtuple describing a podcast
+
+Attributes
+----------
+id : int
+    The id of the podcast in the database
+source : str
+    The name of the source type
+url : str
+    The url of the source
+title : Optional[str]
+    The title of the podcast
+author : Optional[str]
+    The author of the podcast
+image_url : Optional[str]
+    A link to the image of the podcast
+image_data : Optional[bytes]
+    The content of the image file
+language : Optional[str]
+    The language of the podcast
+subtitle : Optional[str]
+    The subtitle of the podcast
+summary : Optional[str]
+    A description of the podcast
+link : Optional[str]
+    Website link
+new_count : int
+    Number of new episodes
+played_count : int
+    Number of played episodes
+episodes_count : int
+    Number of episodes
+"""
+Podcast = namedtuple('Podcast', [
+    "id",
+
+    "source",
+    "url",
+
+    "title",
+    "author",
+
+    "image_url",
+    "image_data",
+    "language",
+    "subtitle",
+    "summary",
+    "link",
+
+    "new_count",
+    "played_count",
+    "episodes_count"
+])
 
 
 class Library(object):
@@ -63,6 +183,10 @@ class Library(object):
         if not os.path.isfile(DATABASE_PATH):
             library = Library()
             library.create()
+
+        # Create the boolean type
+        sqlite3.register_adapter(bool, int)
+        sqlite3.register_converter("boolean", lambda v: bool(int(v)))
 
     def __init__(self):
         self.logger = logging.getLogger(
@@ -117,8 +241,8 @@ class Library(object):
                 file_size text,
                 file_url text,
 
-                new integer DEFAULT 1,
-                played integer DEFAULT 0,
+                new boolean DEFAULT 1,
+                played boolean DEFAULT 0,
                 progress integer DEFAULT 0,
 
                 UNIQUE (podcast_id, guid),
@@ -247,11 +371,12 @@ class Library(object):
         cursor.execute("""
             SELECT
                 podcasts.*,
-                IFNULL(SUM(episodes.new), 0) AS new,
-                IFNULL(SUM(episodes.played), 0) AS played,
-                COUNT(*) AS total
+                IFNULL(SUM(episodes.new), 0) AS new_count,
+                IFNULL(SUM(episodes.played), 0) AS played_count,
+                COUNT(*) AS episodes_count
             FROM podcasts
             LEFT OUTER JOIN episodes ON (episodes.podcast_id = podcasts.id)
             GROUP BY episodes.podcast_id
         """)
-        return cursor.fetchall()
+
+        return (Podcast(**row) for row in cursor.fetchall())

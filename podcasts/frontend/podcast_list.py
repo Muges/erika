@@ -79,9 +79,9 @@ class PodcastList(Gtk.ListBox):
             0 if they are equal,
             1 otherwise
         """
-        if row1.podcast["title"] < row2.podcast["title"]:
+        if row1.podcast.title < row2.podcast.title:
             return -1
-        elif row1.podcast["title"] == row2.podcast["title"]:
+        elif row1.podcast.title == row2.podcast.title:
             return 0
         else:
             return 1
@@ -104,14 +104,14 @@ class PodcastRow(Gtk.ListBoxRow):
 
             "{summary}"
         ).format(
-            title=self.podcast["title"],
-            total=self.podcast["total"],
-            summary=self.podcast["summary"]
+            title=self.podcast.title,
+            total=self.podcast.episodes_count,
+            summary=self.podcast.summary
         ))
         self.add(grid)
 
         # Podcast Image
-        if self.podcast["image_data"]:
+        if self.podcast.image_data:
             image = Gtk.Image.new_from_pixbuf(self.get_pixbuf())
             grid.attach(image, 0, 0, 1, 2)
 
@@ -120,23 +120,22 @@ class PodcastRow(Gtk.ListBoxRow):
         label.set_hexpand(True)
         label.set_alignment(xalign=0, yalign=0.5)
         label.set_ellipsize(Pango.EllipsizeMode.END)
-        label.set_markup("<b>{}</b>".format(self.podcast["title"]))
+        label.set_markup("<b>{}</b>".format(self.podcast.title))
         grid.attach(label, 1, 0, 1, 1)
 
         # Unplayed and new counts label
-        unplayed = self.podcast["total"] - self.podcast["played"]
+        unplayed = self.podcast.episodes_count - self.podcast.played_count
         label = Gtk.Label()
         label.set_alignment(xalign=1, yalign=0.5)
         label.set_ellipsize(Pango.EllipsizeMode.END)
-        label.set_markup(str(self.podcast["new"]))
-        label.set_markup("{} ({})".format(unplayed, self.podcast["new"]))
+        label.set_markup("{} ({})".format(unplayed, self.podcast.new_count))
         grid.attach(label, 2, 0, 1, 1)
 
         # Subtitle label
         label = Gtk.Label()
         label.set_alignment(xalign=0, yalign=0.5)
         label.set_ellipsize(Pango.EllipsizeMode.END)
-        label.set_markup(self.podcast["subtitle"])
+        label.set_markup(self.podcast.subtitle)
         grid.attach(label, 1, 1, 2, 1)
 
     def get_pixbuf(self):
@@ -144,7 +143,7 @@ class PodcastRow(Gtk.ListBoxRow):
         Return the image of the podcast as a scaled pixbuf
         """
         loader = GdkPixbuf.PixbufLoader.new()
-        loader.write(self.podcast["image_data"])
+        loader.write(self.podcast.image_data)
         pixbuf = loader.get_pixbuf()
         loader.close()
 
