@@ -358,14 +358,9 @@ class Library(object):
         """
         Return a list of podcasts.
 
-        Returns
-        -------
-        List[sqlite3.Row]
-            A list of dict-like objects with the same fields as the podcasts
-            table in the database, as well as :
-             - total : The total number of episodes of the podcast
-             - new : The number of new episodes
-             - played : The number of episodes that have already been played
+        Yields
+        ------
+        Podcast
         """
         cursor = self.connection.cursor()
         cursor.execute("""
@@ -380,3 +375,27 @@ class Library(object):
         """)
 
         return (Podcast(**row) for row in cursor.fetchall())
+
+    def get_episodes(self, podcast):
+        """
+        Return a list of podcasts.
+
+        Parameters
+        ----------
+        podcast : podcasts.library.Podcast]
+            The podcasts whose episodes will be returned
+
+        Yields
+        ------
+        Episode
+        """
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT
+                *
+            FROM episodes
+            WHERE
+                podcast_id=?
+        """, (podcast.id,))
+
+        return (Episode(**row) for row in cursor.fetchall())

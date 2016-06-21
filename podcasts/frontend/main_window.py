@@ -26,6 +26,7 @@ from gi.repository import Gtk
 
 from podcasts.__version__ import __appname__
 from podcasts.frontend.podcast_list import PodcastList
+from podcasts.frontend.episode_list import EpisodeList
 
 
 class MainWindow(Gtk.Window):
@@ -34,21 +35,41 @@ class MainWindow(Gtk.Window):
     """
     def __init__(self):
         Gtk.Window.__init__(self, title=__appname__)
+        self.set_default_size(800, 600)
 
-        # Create header bar
+        # Create widgets
         builder = Gtk.Builder()
         builder.add_from_file("data/headerbar.ui")
 
         self.headerbar = builder.get_object("headerbar")
 
-        # Create podcast list
         self.podcast_list = PodcastList()
+        self.podcast_list.connect('podcast-selected',
+                                  self._on_podcast_selected)
+        self.episode_list = EpisodeList()
 
         # Layout
         vbox = Gtk.VBox()
         self.add(vbox)
 
         vbox.pack_start(self.headerbar, False, False, 0)
+
+        paned = Gtk.Paned()
+        paned.set_position(300)
+        vbox.pack_start(paned, True, True, 0)
+
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.add_with_viewport(self.podcast_list)
-        vbox.pack_start(scrolled_window, True, True, 0)
+        paned.add1(scrolled_window)
+
+        scrolled_window = Gtk.ScrolledWindow()
+        scrolled_window.add_with_viewport(self.episode_list)
+        paned.add2(scrolled_window)
+
+    def _on_podcast_selected(self, podcast_list, podcast):
+        """
+        Called when a podcast is selected in the podcast list.
+
+        Show the podcast's episodes in the episode list.
+        """
+        self.episode_list.select(podcast)

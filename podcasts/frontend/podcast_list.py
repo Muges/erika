@@ -23,30 +23,46 @@
 # SOFTWARE.
 
 """
-Row in the list of podcasts
+List of podcasts
 """
 
 # TODO : Test with invalid images.
 # TODO : Test with non sqaure images.
 # TODO : Check summary format (plaintext or html?) for tooltip.
 # TODO : Add placeholder image
+# TODO : Add "All podcasts" row
+# TODO : Escape markup
 
 from gi.repository import Gtk
 from gi.repository import GdkPixbuf
-from gi.repository import Pango
+from gi.repository import GObject
 
 from podcasts.library import Library
+from .widgets import Label
 
-IMAGE_SIZE = 48
+IMAGE_SIZE = 64
+SUBTITLE_LINES = 2
 
 
 class PodcastList(Gtk.ListBox):
     """
     List of podcasts
+
+    Signals
+    -------
+    podcast-selected(podcasts.library.Podcast)
+        Emitted when a podcast is selected
     """
+
+    __gsignals__ = {
+        'podcast-selected':
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+    }
+
     def __init__(self):
         Gtk.ListBox.__init__(self)
         self.set_sort_func(self.sort_func)
+        self.connect("row-selected", PodcastList._on_row_selected)
 
         self.update()
 
@@ -54,11 +70,23 @@ class PodcastList(Gtk.ListBox):
         """
         Update the list of podcasts
         """
-        self.resize_children()
+        # Remove children
+        for child in self.get_children():
+            child.destroy()
 
         library = Library()
         for podcast in library.get_podcasts():
-            self.add(PodcastRow(podcast))
+            row = PodcastRow(podcast)
+            self.add(row)
+
+    def _on_row_selected(self, row):
+        """
+        Called when a row is selected.
+
+        Emit the podcast-selected signal.
+        """
+        if row:
+            self.emit('podcast-selected', row.podcast)
 
     def sort_func(self, row1, row2):
         """
@@ -116,26 +144,21 @@ class PodcastRow(Gtk.ListBoxRow):
             grid.attach(image, 0, 0, 1, 2)
 
         # Title label
-        label = Gtk.Label()
+        label = Label()
         label.set_hexpand(True)
-        label.set_alignment(xalign=0, yalign=0.5)
-        label.set_ellipsize(Pango.EllipsizeMode.END)
         label.set_markup("<b>{}</b>".format(self.podcast.title))
         grid.attach(label, 1, 0, 1, 1)
 
         # Unplayed and new counts label
         unplayed = self.podcast.episodes_count - self.podcast.played_count
-        label = Gtk.Label()
+        label = Label()
         label.set_alignment(xalign=1, yalign=0.5)
-        label.set_ellipsize(Pango.EllipsizeMode.END)
-        label.set_markup("{} ({})".format(unplayed, self.podcast.new_count))
+        label.set_text("{} ({})".format(unplayed, self.podcast.new_count))
         grid.attach(label, 2, 0, 1, 1)
 
         # Subtitle label
-        label = Gtk.Label()
-        label.set_alignment(xalign=0, yalign=0.5)
-        label.set_ellipsize(Pango.EllipsizeMode.END)
-        label.set_markup(self.podcast.subtitle)
+        label = Label(lines=SUBTITLE_LINES)
+        label.set_text(self.podcast.subtitle)
         grid.attach(label, 1, 1, 2, 1)
 
     def get_pixbuf(self):

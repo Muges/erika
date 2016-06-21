@@ -23,27 +23,27 @@
 # SOFTWARE.
 
 """
-GTK frontend
+Utility functions
 """
 
-import gi
-gi.require_version('Gtk', '3.0')
-gi.require_version('Gst', '1.0')
-from gi.repository import Gtk
-from gi.repository import Gst
-from gi.repository import GObject
 
-from .main_window import MainWindow
-
-
-def run():
+def format_duration(seconds):
     """
-    Starts the application
+    Format a duration as "[hours:]minutes:seconds".
+
+    Parameters
+    ----------
+    seconds : int
+        Duration in seconds
+
+    Returns
+    -------
+    str
     """
-    Gst.init_check(None)
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
 
-    main_window = MainWindow()
-    main_window.connect("delete-event", Gtk.main_quit)
-    main_window.show_all()
-
-    Gtk.main()
+    if hours > 0:
+        return "{}:{:02d}:{:02d}".format(hours, minutes, seconds)
+    else:
+        return "{}:{:02d}".format(minutes, seconds)

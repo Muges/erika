@@ -23,27 +23,37 @@
 # SOFTWARE.
 
 """
-GTK frontend
+Simple widgets
 """
 
-import gi
-gi.require_version('Gtk', '3.0')
-gi.require_version('Gst', '1.0')
 from gi.repository import Gtk
-from gi.repository import Gst
-from gi.repository import GObject
-
-from .main_window import MainWindow
+from gi.repository import Pango
 
 
-def run():
+def Label(sensitive=True, lines=1):
     """
-    Starts the application
+    Return a Gtk.Label widget.
+
+    Parameters
+    ----------
+    sensitive : Optional[bool]
+        False to make the label insensitive
+    lines : Optional[int]
+        If lines is set to an integer greater than 1, enable wrapping and limit
+        the number of lines that should be displayed.
+
+    Returns
+    -------
+    Gtk.Label
     """
-    Gst.init_check(None)
+    label = Gtk.Label()
+    label.set_alignment(xalign=0, yalign=0.5)
+    label.set_ellipsize(Pango.EllipsizeMode.END)
+    label.set_sensitive(sensitive)
 
-    main_window = MainWindow()
-    main_window.connect("delete-event", Gtk.main_quit)
-    main_window.show_all()
+    if lines > 1:
+        label.set_line_wrap(True)
+        label.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        label.set_lines(lines)
 
-    Gtk.main()
+    return label
