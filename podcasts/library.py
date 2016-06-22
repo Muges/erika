@@ -396,6 +396,7 @@ class Library(object):
             FROM episodes
             WHERE
                 podcast_id=?
+            ORDER BY pubdate DESC
         """, (podcast.id,))
 
         return (Episode(**row) for row in cursor.fetchall())

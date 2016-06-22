@@ -38,6 +38,7 @@ from podcasts.util import format_duration
 from .widgets import Label
 
 SUBTITLE_LINES = 4
+CHUNK_SIZE = 10
 
 
 class EpisodeList(Gtk.ListBox):
@@ -62,10 +63,34 @@ class EpisodeList(Gtk.ListBox):
             child.destroy()
 
         library = Library()
-        for episode in library.get_episodes(podcast):
-            self.add(EpisodeRow(episode))
+        self._load_by_chunks(library.get_episodes(podcast))
+
+    def _load_by_chunks(self, episodes):
+        """
+        Load episodes by chunks of size CHUNK_SIZE to prevent rendering delay
+
+        Parameters
+        ----------
+        episodes : Iterable[podcasts.library.Episode]
+            The episodes which will be displayed
+        """
+        finished = False
+
+        for i in range(0, CHUNK_SIZE):
+            try:
+                episode = next(episodes)
+            except StopIteration:
+                finished = True
+                break
+            else:
+                self.add(EpisodeRow(episode))
 
         self.show_all()
+
+        if not finished:
+            # Load the rest of the episodes in a future iteration of the main
+            # loop (after this chunk has been rendered).
+            GLib.idle_add(self._load_by_chunks, episodes)
 
     def sort_func(self, row1, row2, asc):
         """
