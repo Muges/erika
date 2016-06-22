@@ -61,6 +61,7 @@ class PodcastList(Gtk.ListBox):
 
     def __init__(self):
         Gtk.ListBox.__init__(self)
+        self.set_selection_mode(Gtk.SelectionMode.BROWSE)
         self.set_sort_func(self.sort_func)
         self.connect("row-selected", PodcastList._on_row_selected)
 

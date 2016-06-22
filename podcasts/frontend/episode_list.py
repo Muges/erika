@@ -35,18 +35,19 @@ from gi.repository import Gtk
 
 from podcasts.library import Library
 from podcasts.util import format_duration
-from .widgets import Label
+from .widgets import Label, ListBox
 
 SUBTITLE_LINES = 4
 CHUNK_SIZE = 10
 
 
-class EpisodeList(Gtk.ListBox):
+class EpisodeList(ListBox):
     """
     List of episodes
     """
     def __init__(self):
-        Gtk.ListBox.__init__(self)
+        ListBox.__init__(self)
+        self.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
         self.set_sort_func(self.sort_func, -1)
 
     def select(self, podcast):
@@ -60,7 +61,7 @@ class EpisodeList(Gtk.ListBox):
         """
         # Remove children
         for child in self.get_children():
-            child.destroy()
+            self.remove(child)
 
         library = Library()
         self._load_by_chunks(library.get_episodes(podcast))

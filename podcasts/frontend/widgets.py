@@ -27,6 +27,7 @@ Simple widgets
 """
 
 from gi.repository import Gtk
+from gi.repository import Gdk
 from gi.repository import Pango
 
 
@@ -57,3 +58,132 @@ def Label(sensitive=True, lines=1):
         label.set_lines(lines)
 
     return label
+
+
+class ListBox(Gtk.ListBox):
+    """
+    A Gtk.ListBox patched to handle multiple selection
+    """
+    # TODO : test with filtering.
+    # TODO : Add Select All shortcut
+    def __init__(self):
+        Gtk.ListBox.__init__(self)
+
+        self.last_clicked = None
+        self.last_focused = None
+
+    def remove(self, child):
+        if self.last_clicked == child:
+            self.last_clicked = None
+        if self.last_focused == child:
+            self.last_focused = None
+        Gtk.ListBox.remove(self, child)
+
+    def do_button_press_event(self, event):
+        # Propagate the event if it is not a single left button click or in
+        # single selection mode
+        if any((self.get_selection_mode() != Gtk.SelectionMode.MULTIPLE,
+                event.type != Gdk.EventType.BUTTON_PRESS,
+                event.button != 1)):
+            return False
+
+        # Get the row that was clicked
+        row = self.get_row_at_y(event.y)
+        if row is None:
+            return True
+
+        if self.last_clicked is None:
+            self.last_clicked = self.get_row_at_index(0)
+
+        if event.state & Gdk.ModifierType.SHIFT_MASK:
+            self._select_interval(row)
+        elif event.state & Gdk.ModifierType.CONTROL_MASK:
+            self._add_to_selection(row)
+        else:
+            self._select_single(row)
+
+        return True
+
+    def do_key_press_event(self, event):
+        # Propagate the event if the key pressed is not up or down or in single
+        # selection mode
+        if any((self.get_selection_mode() != Gtk.SelectionMode.MULTIPLE,
+                event.keyval != Gdk.KEY_Up and event.keyval != Gdk.KEY_Down)):
+            return False
+
+        if self.last_clicked is None:
+            self.last_clicked = self.get_row_at_index(0)
+        if self.last_focused is None:
+            self.last_focused = self.get_row_at_index(0)
+
+        # Get the index of the next or previous row depending on the key
+        # pressed
+        index = self.last_focused.get_index()
+        if event.keyval == Gdk.KEY_Up:
+            index -= 1
+        elif event.keyval == Gdk.KEY_Down:
+            index += 1
+
+        # Get the row
+        row = self.get_row_at_index(index)
+        if row is None:
+            return True
+
+        if event.state & Gdk.ModifierType.SHIFT_MASK:
+            self._select_interval(row)
+        else:
+            self._select_single(row)
+
+        return True
+
+    def _add_to_selection(self, row):
+        """
+        Add the row to the current selection
+
+        Parameters
+        ----------
+        row : Gtk.ListBoxRow
+            A child of the ListBox
+        """
+        self.select_row(row)
+        self.last_clicked = row
+        self.last_focused = row
+        row.grab_focus()
+
+    def _select_single(self, row):
+        """
+        Add the row to the current selection
+
+        Parameters
+        ----------
+        row : Gtk.ListBoxRow
+            A child of the ListBox
+        """
+        # Select only this row
+        self.unselect_all()
+        self.select_row(row)
+        self.last_clicked = row
+        self.last_focused = row
+        row.grab_focus()
+
+    def _select_interval(self, row):
+        """
+        Select the all the rows between the one that was clicked last and the
+        one in the parameters.
+
+        Parameters
+        ----------
+        row : Gtk.ListBoxRow
+            A child of the ListBox
+        """
+        self.unselect_all()
+        self.last_focused = row
+        row.grab_focus()
+
+        first = self.last_clicked.get_index()
+        last = row.get_index()
+        if first > last:
+            first, last = last, first
+
+        for index in range(first, last+1):
+            self.select_row(self.get_row_at_index(index))

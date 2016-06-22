@@ -382,7 +382,7 @@ class Library(object):
 
         Parameters
         ----------
-        podcast : podcasts.library.Podcast]
+        podcast : podcasts.library.Podcast
             The podcasts whose episodes will be returned
 
         Yields
@@ -400,3 +400,25 @@ class Library(object):
         """, (podcast.id,))
 
         return (Episode(**row) for row in cursor.fetchall())
+
+    def set_played(self, episodes, played):
+        """
+        Mark episodes as (un)played
+
+        Parameters
+        ----------
+        episodes : List[Episode]
+            List of episodes
+        played : bool
+            True to mark as played, False to mark as unplayed
+        """
+        cursor = self.connection.cursor()
+
+        for episode in episodes:
+            cursor.execute("""
+                UPDATE episodes
+                SET played=?
+                WHERE podcast_id=? AND id=?
+            """, (played, episode.podcast_id, episode.id))
+
+        self.connection.commit()
