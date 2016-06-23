@@ -36,6 +36,7 @@ from podcasts.config import CONFIG_DIR
 from podcasts import sources
 from podcasts.library.episode import Episode
 from podcasts.library.podcast import Podcast
+from podcasts.library.row import Row
 
 DATABASE_PATH = os.path.join(CONFIG_DIR, "library")
 
@@ -284,24 +285,18 @@ class Library(object):
 
         return (Episode(**row) for row in cursor.fetchall())
 
-    def set_played(self, episodes, played):
+    def commit(self, rows):
         """
-        Mark episodes as (un)played
+        Commit the changes made to Row objects to the database.
 
         Parameters
         ----------
-        episodes : List[Episode]
-            List of episodes
-        played : bool
-            True to mark as played, False to mark as unplayed
+        rows : List[Row]
+            List of rows
         """
         cursor = self.connection.cursor()
 
-        for episode in episodes:
-            cursor.execute("""
-                UPDATE episodes
-                SET played=?
-                WHERE podcast_id=? AND id=?
-            """, (played, episode.podcast_id, episode.id))
+        for row in rows:
+            cursor.execute(row.__class__.UPDATE_QUERY, row.get_update_attrs())
 
         self.connection.commit()

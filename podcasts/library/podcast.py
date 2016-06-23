@@ -66,9 +66,11 @@ class Podcast(Row):
     """
 
     TABLE = "podcasts"
-
+    PRIMARY_KEY = 'id'
     COLUMNS = [
-        "id", "source", "url", "title", "author", "image_url", "image_data",
-        "language", "subtitle", "summary", "link", "new_count", "played_count",
-        "episodes_count"
+        "source", "url", "title", "author", "image_url", "image_data",
+        "language", "subtitle", "summary", "link"
+    ]
+    ATTRS = [
+        "new_count", "played_count", "episodes_count"
     ]

@@ -71,9 +71,23 @@ class Episode(Row):
     """
 
     TABLE = "episodes"
-
+    PRIMARY_KEY = 'id'
     COLUMNS = [
-        "podcast_id", "id", "guid", "pubdate", "title", "duration",
-        "image_url", "link", "subtitle", "summary", "mimetype", "file_size",
-        "file_url", "new", "played", "progress"
+        "podcast_id", "guid", "pubdate", "title", "duration", "image_url",
+        "link", "subtitle", "summary", "mimetype", "file_size", "file_url",
+        "new", "played", "progress"
     ]
+    ATTRS = []
+
+    def mark_as_played(self):
+        """
+        Mark the episode as played
+        """
+        self.played = True
+        self.new = False
+
+    def mark_as_unplayed(self):
+        """
+        Mark the episode as unplayed
+        """
+        self.played = False
