@@ -50,11 +50,15 @@ class EpisodeList(ListBox):
     -------
     episodes-changed
         Emitted when episodes are modified (e.g. marked as played)
+    play(Episode)
+        Emitted when the play button of an episode is clicked
     """
 
     __gsignals__ = {
         'episodes-changed':
             (GObject.SIGNAL_RUN_FIRST, None, ()),
+        'play':
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
     }
 
     def __init__(self):
@@ -97,7 +101,9 @@ class EpisodeList(ListBox):
                 finished = True
                 break
             else:
-                self.add(EpisodeRow(episode))
+                row = EpisodeRow(episode)
+                row.connect("play", self._play)
+                self.add(row)
 
         if not finished:
             # Load the rest of the episodes in a future iteration of the main
@@ -197,11 +203,27 @@ class EpisodeList(ListBox):
 
         self.emit("episodes-changed")
 
+    def _play(self, row):
+        """
+        Called when the play button of an episode is clicked
+        """
+        self.emit("play", row.episode)
+
 
 class EpisodeRow(Gtk.ListBoxRow):
     """
     Row in the list of episodes
+
+    Signals
+    -------
+    play
+        Emitted when the play button is clicked
     """
+
+    __gsignals__ = {
+        'play': (GObject.SIGNAL_RUN_FIRST, None, ()),
+    }
+
     def __init__(self, episode):
         Gtk.ListBoxRow.__init__(self)
 
@@ -244,6 +266,7 @@ class EpisodeRow(Gtk.ListBoxRow):
         button = Gtk.Button.new_from_icon_name("media-playback-start-symbolic",
                                                Gtk.IconSize.BUTTON)
         button.set_relief(Gtk.ReliefStyle.NONE)
+        button.connect('clicked', self._on_play_clicked)
         topgrid.attach(button, 2, 0, 1, 2)
 
         # Episode subtitle
@@ -315,3 +338,9 @@ class EpisodeRow(Gtk.ListBoxRow):
                 self.episode.progress/self.episode.duration)
         else:
             self.progress.hide()
+
+    def _on_play_clicked(self, button):
+        """
+        Called when the play button is clicked
+        """
+        self.emit("play")

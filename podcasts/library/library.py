@@ -285,6 +285,31 @@ class Library(object):
 
         return (Episode(**row) for row in cursor.fetchall())
 
+    def get_podcast(self, episode):
+        """
+        Get the podcast containing an episode
+
+        Parameters
+        ----------
+        episode : Episode
+        """
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT
+                podcasts.*,
+                IFNULL(SUM(episodes.new), 0) AS new_count,
+                IFNULL(SUM(episodes.played), 0) AS played_count,
+                COUNT(*) AS episodes_count
+            FROM podcasts
+            LEFT OUTER JOIN episodes ON (episodes.podcast_id = podcasts.id)
+            WHERE
+                podcasts.id=?
+        """, (episode.podcast_id,))
+
+        row = cursor.fetchone()
+        if row:
+            return Podcast(**row)
+
     def commit(self, rows):
         """
         Commit the changes made to Row objects to the database.

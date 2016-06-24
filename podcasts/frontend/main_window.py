@@ -27,6 +27,7 @@ from gi.repository import Gtk
 from podcasts.__version__ import __appname__
 from podcasts.frontend.podcast_list import PodcastList
 from podcasts.frontend.episode_list import EpisodeList
+from podcasts.frontend.player import Player
 
 
 class MainWindow(Gtk.Window):
@@ -38,23 +39,26 @@ class MainWindow(Gtk.Window):
         self.set_default_size(800, 600)
 
         # Create widgets
-        builder = Gtk.Builder()
-        builder.add_from_file("data/headerbar.ui")
-
-        self.headerbar = builder.get_object("headerbar")
+        self.player = Player()
 
         self.podcast_list = PodcastList()
         self.podcast_list.connect('podcast-selected',
                                   self._on_podcast_selected)
+
         self.episode_list = EpisodeList()
         self.episode_list.connect('episodes-changed',
                                   self._on_episodes_changed)
+        self.episode_list.connect('play',
+                                  self._on_episode_play)
 
         # Layout
         vbox = Gtk.VBox()
         self.add(vbox)
 
-        vbox.pack_start(self.headerbar, False, False, 0)
+        headerbar = Gtk.HeaderBar()
+        headerbar.set_custom_title(self.player.widgets.state)
+        headerbar.pack_start(self.player.widgets.controls)
+        vbox.pack_start(headerbar, False, False, 0)
 
         paned = Gtk.Paned()
         paned.set_position(300)
@@ -84,3 +88,9 @@ class MainWindow(Gtk.Window):
         Update the current podcast.
         """
         self.podcast_list.update_current()
+
+    def _on_episode_play(self, episode_list, episode):
+        """
+        Called when the play button of an episode is clicked
+        """
+        self.player.play(episode)
