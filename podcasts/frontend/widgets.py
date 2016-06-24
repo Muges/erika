@@ -31,14 +31,12 @@ from gi.repository import Gdk
 from gi.repository import Pango
 
 
-def Label(sensitive=True, lines=1):
+def Label(lines=1):
     """
     Return a Gtk.Label widget.
 
     Parameters
     ----------
-    sensitive : Optional[bool]
-        False to make the label insensitive
     lines : Optional[int]
         If lines is set to an integer greater than 1, enable wrapping and limit
         the number of lines that should be displayed.
@@ -50,7 +48,6 @@ def Label(sensitive=True, lines=1):
     label = Gtk.Label()
     label.set_alignment(xalign=0, yalign=0.5)
     label.set_ellipsize(Pango.EllipsizeMode.END)
-    label.set_sensitive(sensitive)
 
     if lines > 1:
         label.set_line_wrap(True)
