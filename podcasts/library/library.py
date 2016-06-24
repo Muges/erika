@@ -300,3 +300,26 @@ class Library(object):
             cursor.execute(row.__class__.UPDATE_QUERY, row.get_update_attrs())
 
         self.connection.commit()
+
+    def update_counts(self, podcast):
+        """
+        Update the episodes counts of a podcast
+
+        Parameters
+        ----------
+        podcast : Podcast
+        """
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT
+                IFNULL(SUM(new), 0) AS new_count,
+                IFNULL(SUM(played), 0) AS played_count,
+                COUNT(*) AS episodes_count
+            FROM episodes
+            WHERE podcast_id = ?
+        """, (podcast.id,))
+
+        result = cursor.fetchone()
+        podcast.new_count = result["new_count"]
+        podcast.played_count = result["played_count"]
+        podcast.episodes_count = result["episodes_count"]

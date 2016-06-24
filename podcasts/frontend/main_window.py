@@ -47,6 +47,8 @@ class MainWindow(Gtk.Window):
         self.podcast_list.connect('podcast-selected',
                                   self._on_podcast_selected)
         self.episode_list = EpisodeList()
+        self.episode_list.connect('episodes-changed',
+                                  self._on_episodes_changed)
 
         # Layout
         vbox = Gtk.VBox()
@@ -73,3 +75,12 @@ class MainWindow(Gtk.Window):
         Show the podcast's episodes in the episode list.
         """
         self.episode_list.select(podcast)
+
+    def _on_episodes_changed(self, episodes_list):
+        """
+        Called when episodes are modified (e.g. marked as playd) in the
+        episodes list.
+
+        Update the current podcast.
+        """
+        self.podcast_list.update_current()

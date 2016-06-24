@@ -30,6 +30,7 @@
 List of episodes
 """
 
+from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk
 
@@ -44,11 +45,23 @@ CHUNK_SIZE = 10
 class EpisodeList(ListBox):
     """
     List of episodes
+
+    Signals
+    -------
+    episodes-changed
+        Emitted when episodes are modified (e.g. marked as played)
     """
+
+    __gsignals__ = {
+        'episodes-changed':
+            (GObject.SIGNAL_RUN_FIRST, None, ()),
+    }
+
     def __init__(self):
         ListBox.__init__(self)
         self.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
         self.set_sort_func(self.sort_func, -1)
+        self.connect("popup-menu", EpisodeList._on_popup_menu)
 
     def select(self, podcast):
         """
@@ -86,8 +99,6 @@ class EpisodeList(ListBox):
             else:
                 self.add(EpisodeRow(episode))
 
-        self.show_all()
-
         if not finished:
             # Load the rest of the episodes in a future iteration of the main
             # loop (after this chunk has been rendered).
@@ -122,6 +133,70 @@ class EpisodeList(ListBox):
         else:
             return 1*asc
 
+    def _on_popup_menu(self):
+        """
+        Display the context menu
+        """
+        selection = self.get_selected_rows()
+
+        if selection == []:
+            return
+
+        menu = Gtk.Menu()
+
+        if any(not row.episode.played for row in selection):
+            menu_item = Gtk.MenuItem("Mark as played")
+            menu_item.connect("activate", self._mark_as_played, selection)
+            menu.append(menu_item)
+
+        if any(row.episode.played for row in selection):
+            menu_item = Gtk.MenuItem("Mark as unplayed")
+            menu_item.connect("activate", self._mark_as_unplayed, selection)
+            menu.append(menu_item)
+
+        menu.show_all()
+        menu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
+
+    def _mark_as_played(self, menu_item, rows):
+        """
+        Mark selected rows as unplayed
+
+        Parameters
+        ----------
+        menu_item : Gtk.MenuItem
+            The menu item that was emitted the signal
+        rows : List[EpisodeRow]
+            The selected rows
+        """
+        for row in rows:
+            row.episode.mark_as_played()
+            row.update()
+
+        library = Library()
+        library.commit(row.episode for row in rows)
+
+        self.emit("episodes-changed")
+
+    def _mark_as_unplayed(self, menu_item, rows):
+        """
+        Mark selected rows as unplayed
+
+        Parameters
+        ----------
+        menu_item : Gtk.MenuItem
+            The menu item that was emitted the signal
+        rows : List[EpisodeRow]
+            The selected rows
+        """
+        for row in rows:
+            row.episode.mark_as_unplayed()
+            row.update()
+
+        library = Library()
+        library.commit(row.episode for row in rows)
+
+        self.emit("episodes-changed")
+
 
 class EpisodeRow(Gtk.ListBoxRow):
     """
@@ -132,41 +207,32 @@ class EpisodeRow(Gtk.ListBoxRow):
 
         self.episode = episode
 
-        grid = Gtk.Grid()
-        grid.set_column_spacing(5)
-        grid.set_tooltip_text(self.episode.subtitle)
-        self.add(grid)
+        self.grid = Gtk.Grid()
+        self.grid.set_column_spacing(5)
+        self.add(self.grid)
 
         # Episode status
-        if self.episode.new:
-            image = Gtk.Image.new_from_icon_name("starred-symbolic",
-                                                 Gtk.IconSize.BUTTON)
-        else:
-            image = Gtk.Image.new_from_icon_name("unstarred-symbolic",
-                                                 Gtk.IconSize.BUTTON)
-        image.set_margin_start(7)
-        image.set_margin_end(7)
-        grid.attach(image, 0, 0, 1, 1)
+        self.icon = Gtk.Image()
+        self.icon.set_margin_start(7)
+        self.icon.set_margin_end(7)
+        self.grid.attach(self.icon, 0, 0, 1, 1)
 
         topgrid = Gtk.Grid()
-        grid.attach(topgrid, 1, 0, 1, 1)
+        self.grid.attach(topgrid, 1, 0, 1, 1)
 
         bottomgrid = Gtk.Grid()
-        grid.attach(bottomgrid, 1, 1, 1, 1)
+        self.grid.attach(bottomgrid, 1, 1, 1, 1)
 
-        # Title label
-        label = Label(sensitive=not self.episode.played)
-        label.set_hexpand(True)
-        label.set_margin_top(3)
-        label.set_markup("<b>{}</b>".format(
-            GLib.markup_escape_text(self.episode.title)))
-        topgrid.attach(label, 0, 0, 1, 1)
+        # Episode title
+        self.title = Label()
+        self.title.set_hexpand(True)
+        self.title.set_margin_top(3)
+        topgrid.attach(self.title, 0, 0, 1, 1)
 
-        # Date label
-        label = Label(sensitive=not self.episode.played)
-        label.set_hexpand(True)
-        label.set_text("{:%d/%m/%Y}".format(self.episode.pubdate))
-        topgrid.attach(label, 0, 1, 1, 1)
+        # Publication date
+        self.date = Label()
+        self.date.set_hexpand(True)
+        topgrid.attach(self.date, 0, 1, 1, 1)
 
         # Download button
         button = Gtk.Button.new_from_icon_name("document-save-symbolic",
@@ -180,30 +246,72 @@ class EpisodeRow(Gtk.ListBoxRow):
         button.set_relief(Gtk.ReliefStyle.NONE)
         topgrid.attach(button, 2, 0, 1, 2)
 
-        # Subtitle label
-        label = Label(sensitive=not self.episode.played, lines=SUBTITLE_LINES)
-        label.set_margin_top(7)
-        label.set_margin_bottom(7)
-        label.set_text(self.episode.subtitle.split("\n")[0])
-        bottomgrid.attach(label, 0, 0, 2, 1)
+        # Episode subtitle
+        self.subtitle = Label(lines=SUBTITLE_LINES)
+        self.subtitle.set_margin_top(7)
+        self.subtitle.set_margin_bottom(7)
+        bottomgrid.attach(self.subtitle, 0, 0, 2, 1)
 
-        # Duration label
-        if self.episode.duration:
-            label = Label(sensitive=not self.episode.played)
-            label.set_text(format_duration(self.episode.duration))
-            bottomgrid.attach(label, 0, 1, 1, 1)
+        # Episode duration
+        self.duration = Label()
+        bottomgrid.attach(self.duration, 0, 1, 1, 1)
 
         # Playback progress
-        if self.episode.duration and self.episode.progress > 0:
-            progress = Gtk.ProgressBar()
-            progress.set_hexpand(True)
-            progress.set_valign(Gtk.Align.CENTER)
-            progress.set_margin_start(20)
-            progress.set_margin_end(20)
-            progress.set_fraction(self.episode.progress/self.episode.duration)
-            bottomgrid.attach(progress, 1, 1, 1, 1)
+        self.progress = Gtk.ProgressBar()
+        self.progress.set_hexpand(True)
+        self.progress.set_valign(Gtk.Align.CENTER)
+        self.progress.set_margin_start(20)
+        self.progress.set_margin_end(20)
+        bottomgrid.attach(self.progress, 1, 1, 1, 1)
 
         # Separator
         separator = Gtk.Separator.new(Gtk.Orientation.HORIZONTAL)
         separator.set_margin_top(5)
-        grid.attach(separator, 0, 2, 2, 1)
+        self.grid.attach(separator, 0, 2, 2, 1)
+
+        self.show_all()
+
+        self.update()
+
+    def update(self):
+        """
+        Update the widget
+        """
+        self.grid.set_tooltip_text(self.episode.subtitle)
+
+        # Episode status
+        if self.episode.new:
+            self.icon.set_from_icon_name("starred-symbolic",
+                                         Gtk.IconSize.BUTTON)
+        else:
+            self.icon.set_from_icon_name("unstarred-symbolic",
+                                         Gtk.IconSize.BUTTON)
+
+        # Episode title
+        self.title.set_sensitive(not self.episode.played)
+        self.title.set_markup("<b>{}</b>".format(
+            GLib.markup_escape_text(self.episode.title)))
+
+        # Publication date
+        self.date.set_sensitive(not self.episode.played)
+        self.date.set_text("{:%d/%m/%Y}".format(self.episode.pubdate))
+
+        # Episode subtitle
+        self.subtitle.set_sensitive(not self.episode.played)
+        self.subtitle.set_text(self.episode.subtitle.split("\n")[0])
+
+        # Episode duration
+        self.duration.set_sensitive(not self.episode.played)
+        if self.episode.duration:
+            self.duration.set_text(format_duration(self.episode.duration))
+            self.duration.show()
+        else:
+            self.duration.hide()
+
+        # Playback progress
+        if self.episode.duration and self.episode.progress > 0:
+            self.progress.show()
+            self.progress.set_fraction(
+                self.episode.progress/self.episode.duration)
+        else:
+            self.progress.hide()

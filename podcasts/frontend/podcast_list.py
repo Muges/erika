@@ -80,6 +80,17 @@ class PodcastList(Gtk.ListBox):
             row = PodcastRow(podcast)
             self.add(row)
 
+    def update_current(self):
+        """
+        Update the selected row
+        """
+        row = self.get_selected_row()
+
+        if row:
+            library = Library()
+            library.update_counts(row.podcast)
+            row.update()
+
     def _on_row_selected(self, row):
         """
         Called when a row is selected.
@@ -125,9 +136,37 @@ class PodcastRow(Gtk.ListBoxRow):
 
         self.podcast = podcast
 
-        grid = Gtk.Grid()
-        grid.set_column_spacing(5)
-        grid.set_tooltip_markup((
+        self.grid = Gtk.Grid()
+        self.grid.set_column_spacing(5)
+        self.add(self.grid)
+
+        # Podcast Image
+        self.icon = Gtk.Image()
+        self.grid.attach(self.icon, 0, 0, 1, 2)
+
+        # Podcast title
+        self.title = Label()
+        self.title.set_hexpand(True)
+        self.grid.attach(self.title, 1, 0, 1, 1)
+
+        # Unplayed and new counts
+        self.counts = Label()
+        self.counts.set_alignment(xalign=1, yalign=0.5)
+        self.grid.attach(self.counts, 2, 0, 1, 1)
+
+        # Podcast subtitle
+        self.subtitle = Label(lines=SUBTITLE_LINES)
+        self.grid.attach(self.subtitle, 1, 1, 2, 1)
+
+        self.show_all()
+
+        self.update()
+
+    def update(self):
+        """
+        Update the widget
+        """
+        self.grid.set_tooltip_markup((
             "<b>{title}</b>\n"
             "{total} episodes\n\n"
 
@@ -137,30 +176,24 @@ class PodcastRow(Gtk.ListBoxRow):
             total=self.podcast.episodes_count,
             summary=self.podcast.summary
         ))
-        self.add(grid)
 
         # Podcast Image
         if self.podcast.image_data:
-            image = Gtk.Image.new_from_pixbuf(self.get_pixbuf())
-            grid.attach(image, 0, 0, 1, 2)
+            self.icon.show()
+            self.icon.set_from_pixbuf(self.get_pixbuf())
+        else:
+            self.icon.hide()
 
-        # Title label
-        label = Label()
-        label.set_hexpand(True)
-        label.set_markup("<b>{}</b>".format(self.podcast.title))
-        grid.attach(label, 1, 0, 1, 1)
+        # Podcast title
+        self.title.set_markup("<b>{}</b>".format(self.podcast.title))
 
-        # Unplayed and new counts label
+        # Unplayed and new counts
         unplayed = self.podcast.episodes_count - self.podcast.played_count
-        label = Label()
-        label.set_alignment(xalign=1, yalign=0.5)
-        label.set_text("{} ({})".format(unplayed, self.podcast.new_count))
-        grid.attach(label, 2, 0, 1, 1)
+        self.counts.set_text(
+            "{} ({})".format(unplayed, self.podcast.new_count))
 
-        # Subtitle label
-        label = Label(lines=SUBTITLE_LINES)
-        label.set_text(self.podcast.subtitle)
-        grid.attach(label, 1, 1, 2, 1)
+        # Podcast subtitle
+        self.subtitle.set_text(self.podcast.subtitle)
 
     def get_pixbuf(self):
         """

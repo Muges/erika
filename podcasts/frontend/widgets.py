@@ -84,25 +84,36 @@ class ListBox(Gtk.ListBox):
         # single selection mode
         if any((self.get_selection_mode() != Gtk.SelectionMode.MULTIPLE,
                 event.type != Gdk.EventType.BUTTON_PRESS,
-                event.button != 1)):
+                event.button != 1 and event.button != 3)):
             return False
 
         # Get the row that was clicked
         row = self.get_row_at_y(event.y)
-        if row is None:
+
+        if event.button == 1:
+            # Left click
+            if row is None:
+                return True
+
+            if self.last_clicked is None:
+                self.last_clicked = self.get_row_at_index(0)
+
+            if event.state & Gdk.ModifierType.SHIFT_MASK:
+                self._select_interval(row)
+            elif event.state & Gdk.ModifierType.CONTROL_MASK:
+                self._add_to_selection(row)
+            else:
+                self._select_single(row)
+
             return True
+        elif event.button == 3:
+            # Right click
+            if row and not row.is_selected():
+                self._select_single(row)
 
-        if self.last_clicked is None:
-            self.last_clicked = self.get_row_at_index(0)
+            self.emit("popup-menu")
 
-        if event.state & Gdk.ModifierType.SHIFT_MASK:
-            self._select_interval(row)
-        elif event.state & Gdk.ModifierType.CONTROL_MASK:
-            self._add_to_selection(row)
-        else:
-            self._select_single(row)
-
-        return True
+            return False
 
     def do_key_press_event(self, event):
         # Propagate the event if the key pressed is not up or down or in single
