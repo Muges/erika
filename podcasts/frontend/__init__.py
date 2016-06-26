@@ -38,7 +38,7 @@ from .main_window import MainWindow
 
 def run():
     """
-    Starts the application
+    Start the application
     """
     Gst.init_check(None)
 

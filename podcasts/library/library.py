@@ -67,6 +67,9 @@ class Library(object):
         if not os.path.isfile(DATABASE_PATH):
             library = Library()
             library.create()
+        else:
+            library = Library()
+            library.reset_new()
 
         # Create the boolean type
         sqlite3.register_adapter(bool, int)
@@ -348,3 +351,15 @@ class Library(object):
         podcast.new_count = result["new_count"]
         podcast.played_count = result["played_count"]
         podcast.episodes_count = result["episodes_count"]
+
+    def reset_new(self):
+        """
+        Mark all podcasts as non-new.
+        """
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            UPDATE episodes
+            SET new=0
+        """)
+
+        self.connection.commit()

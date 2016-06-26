@@ -27,7 +27,7 @@ List of podcasts
 """
 
 # TODO : Test with invalid images.
-# TODO : Test with non sqaure images.
+# TODO : Test with non square images.
 # TODO : Check summary format (plaintext or html?) for tooltip.
 # TODO : Add placeholder image
 # TODO : Add "All podcasts" row
