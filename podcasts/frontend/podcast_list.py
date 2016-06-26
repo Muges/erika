@@ -80,6 +80,21 @@ class PodcastList(Gtk.ListBox):
             row = PodcastRow(podcast)
             self.add(row)
 
+    def update_podcast(self, podcast_id):
+        """
+        Update a podcast
+
+        Parameters
+        ----------
+        podcast_id : int
+            The id of the podcast
+        """
+        for row in self.get_children():
+            if row.podcast.id == podcast_id:
+                library = Library()
+                library.update_counts(row.podcast)
+                row.update()
+
     def update_current(self):
         """
         Update the selected row

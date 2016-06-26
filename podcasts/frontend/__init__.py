@@ -43,7 +43,6 @@ def run():
     Gst.init_check(None)
 
     main_window = MainWindow()
-    main_window.connect("delete-event", Gtk.main_quit)
     main_window.show_all()
 
     Gtk.main()

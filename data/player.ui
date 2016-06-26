@@ -133,7 +133,6 @@
             <property name="draw_value">False</property>
             <signal name="button-press-event" handler="_on_seeking_start" swapped="no"/>
             <signal name="button-release-event" handler="_on_seeking_end" swapped="no"/>
-            <signal name="value-changed" handler="_on_value_changed" swapped="no"/>
           </object>
           <packing>
             <property name="left_attach">1</property>

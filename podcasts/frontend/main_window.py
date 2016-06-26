@@ -37,9 +37,11 @@ class MainWindow(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self, title=__appname__)
         self.set_default_size(800, 600)
+        self.connect("delete-event", MainWindow._on_close)
 
         # Create widgets
         self.player = Player()
+        self.player.connect("episode-updated", self._on_episode_updated)
 
         self.podcast_list = PodcastList()
         self.podcast_list.connect('podcast-selected',
@@ -72,6 +74,13 @@ class MainWindow(Gtk.Window):
         scrolled_window.add_with_viewport(self.episode_list)
         paned.add2(scrolled_window)
 
+    def _on_close(self, event):
+        """
+        Called when the window is closed
+        """
+        self.player.stop()
+        Gtk.main_quit()
+
     def _on_podcast_selected(self, podcast_list, podcast):
         """
         Called when a podcast is selected in the podcast list.
@@ -94,3 +103,10 @@ class MainWindow(Gtk.Window):
         Called when the play button of an episode is clicked
         """
         self.player.play(episode)
+
+    def _on_episode_updated(self, player, episode):
+        """
+        Called when an episode is updated by the player
+        """
+        self.podcast_list.update_podcast(episode.podcast_id)
+        self.episode_list.update_episode(episode)

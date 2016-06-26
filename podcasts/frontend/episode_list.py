@@ -23,7 +23,6 @@
 # SOFTWARE.
 
 # TODO : pagination (50, 100?)
-# TODO : correct rendering lag
 # TODO : icons fallback
 
 """
@@ -82,6 +81,19 @@ class EpisodeList(ListBox):
 
         library = Library()
         self._load_by_chunks(library.get_episodes(podcast))
+
+    def update_episode(self, episode):
+        """
+        Update an episode
+
+        Parameters
+        ----------
+        episode : Episode
+        """
+        for row in self.get_children():
+            if row.episode.id == episode.id:
+                row.episode = episode
+                row.update()
 
     def _load_by_chunks(self, episodes):
         """

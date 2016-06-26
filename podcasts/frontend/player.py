@@ -26,13 +26,9 @@
 Module handling the audio playback
 """
 
-# TODO : mark episode as read
-# TODO : save progress
-# TODO : display progress in episode list
 # TODO : prevent 6-10 seconds delay at the beginning? (same problem with totem)
 
 import logging
-from types import SimpleNamespace
 
 from gi.repository import GObject
 from gi.repository import Gst
@@ -42,6 +38,8 @@ from podcasts.__version__ import __appname__
 from podcasts.library import Library
 from podcasts.util import format_duration
 
+# Mark episodes as read if there are less than MARK_MARGIN seconds remaining
+MARK_MARGIN = 30
 
 # For some reason this is not defined in the python gstreamer bindings.
 GST_PLAY_FLAG_DOWNLOAD = 1 << 7
@@ -50,7 +48,18 @@ GST_PLAY_FLAG_DOWNLOAD = 1 << 7
 class Player(GObject.Object):
     """
     Object handling the audio playback
+
+    Signals
+    -------
+    episode-updated(Episode)
+        Emitted at the end of the playback of an episode.
     """
+
+    __gsignals__ = {
+        'episode-updated':
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+    }
+
     def __init__(self):
         GObject.Object.__init__(self)
 
@@ -82,12 +91,41 @@ class Player(GObject.Object):
         ----------
         episode : Episode
         """
+        self.stop()
         self.episode = episode
 
         self.widgets.set_current_episode(episode)
 
         self.player.set_property("uri", episode.file_url)
         self.player.set_state(Gst.State.PLAYING)
+
+    def stop(self):
+        """
+        Stop the playback of an episode.
+        """
+        if not self.episode:
+            return
+
+        position = self.get_position() // Gst.SECOND
+        duration = self.get_duration() // Gst.SECOND
+        if position >= duration - MARK_MARGIN:
+            # Mark as read and unset progress
+            self.episode.progress = 0
+            self.episode.mark_as_played()
+        else:
+            # Save progress
+            self.episode.progress = position
+
+        library = Library()
+        library.commit([self.episode])
+
+        self.emit("episode-updated", self.episode)
+
+        self.player.set_state(Gst.State.NULL)
+        self.widgets.set_state(PlayerWidgets.TITLE)
+        self.episode = None
+        self._position = 0
+        self._duration = 0
 
     def get_duration(self):
         """
@@ -190,20 +228,16 @@ class Player(GObject.Object):
         """
         Handle gstreamer bus messages
         """
-        if message.type in [Gst.MessageType.EOS, Gst.MessageType.ERROR]:
+        if message.type == Gst.MessageType.EOS:
             # End of stream
-            self.player.set_state(Gst.State.NULL)
-            self.widgets.set_state(PlayerWidgets.TITLE)
-            self.episode = None
-            self._position = 0
-            self._duration = 0
+            self.stop()
+        elif message.type == Gst.MessageType.ERROR:
+            # The stream ended because of an error
+            self.stop()
 
-            if message.type == Gst.MessageType.ERROR:
-                # The stream ended because of an error
-
-                err, debug = message.parse_error()
-                self.logger.error(err.message)
-                self.logger.error("Debugging info: %s", err.message)
+            err, debug = message.parse_error()
+            self.logger.error(err.message)
+            self.logger.error("Debugging info: %s", err.message)
         elif message.type == Gst.MessageType.DURATION_CHANGED:
             # The duration of the stream changed
             success, duration = self.player.query_duration(Gst.Format.TIME)
@@ -216,6 +250,12 @@ class Player(GObject.Object):
 
             if message.src != self.player:
                 return
+
+            if all((oldstate == Gst.State.READY,
+                    newstate == Gst.State.PAUSED,
+                    self.episode.progress > 0)):
+                # TODO : try to seek earlier (before having buffered 30s...)
+                self.seek(self.episode.progress * Gst.SECOND)
 
             if newstate == Gst.State.READY:
                 self.widgets.set_state(PlayerWidgets.BUFFERING)
