@@ -26,6 +26,8 @@
 Podcast library
 """
 
+# TODO : update podcast
+
 from collections import namedtuple
 import logging
 import os.path
@@ -188,7 +190,7 @@ class Library(object):
 
     def _add_episode(self, podcast_id, episode):
         """
-        Add a new episode to the library
+        Add an episode to the library (or update it if it already exists).
 
         This methods does not commit the changes to the database.
 
@@ -200,22 +202,49 @@ class Library(object):
             The namedtuple describing the episode
         """
         cursor = self.connection.cursor()
+
+        # Try to update the episode
         cursor.execute(
             """
-                INSERT INTO episodes
-                (podcast_id, guid, pubdate, title,
-                duration, image_url, link,
-                subtitle, summary, mimetype,
-                file_size, file_url)
-                VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                UPDATE episodes
+                SET
+                    guid=?, pubdate=?, title=?, duration=?,
+                    image_url=?, link=?, subtitle=?, summary=?,
+                    mimetype=?, file_size=?, file_url=?
+                WHERE
+                    podcast_id=? AND
+                    ((pubdate=? AND title=?) OR
+                    (guid IS NOT NULL AND guid=?))
             """, (
-                podcast_id, episode.guid, episode.pubdate, episode.title,
-                episode.duration, episode.image, episode.link,
-                episode.subtitle, episode.summary, episode.mimetype,
-                episode.file_size, episode.file_url
+                # SET
+                episode.guid, episode.pubdate, episode.title, episode.duration,
+                episode.image, episode.link, episode.subtitle, episode.summary,
+                episode.mimetype, episode.file_size, episode.file_url,
+                # WHERE
+                podcast_id,
+                episode.pubdate, episode.title,
+                episode.guid
             )
         )
+
+        if cursor.rowcount == 0:
+            # No row has been change : the episode is new
+            cursor.execute(
+                """
+                    INSERT INTO episodes
+                    (podcast_id, guid, pubdate, title,
+                    duration, image_url, link,
+                    subtitle, summary, mimetype,
+                    file_size, file_url)
+                    VALUES
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    podcast_id, episode.guid, episode.pubdate, episode.title,
+                    episode.duration, episode.image, episode.link,
+                    episode.subtitle, episode.summary, episode.mimetype,
+                    episode.file_size, episode.file_url
+                )
+            )
 
         return cursor.lastrowid
 
@@ -241,25 +270,98 @@ class Library(object):
 
         self.connection.commit()
 
-    def get_podcasts(self):
+    def _update_podcast(self, oldpodcast, newpodcast):
+        """
+        Update a podcast.
+
+        Parameters
+        ----------
+        oldpodcast : podcasts.library.Podcasts
+            The old version of the podcast.
+        newpodcast : podcasts.sources.Podcast
+            The new version of the podcast.
+        """
+        image_data = oldpodcast.image_data
+        if oldpodcast.image_url != newpodcast.image:
+            # Get the image file
+            self.logger.debug("Downloading image for %s.", oldpodcast.url)
+            try:
+                response = urllib.request.urlopen(newpodcast.image)
+                image_data = response.read()
+            except urllib.request.URLError:
+                self.logger.exception("Unable to download image.")
+
+        cursor = self.connection.cursor()
+        cursor.execute(
+            """
+                UPDATE podcasts
+                SET
+                    title=?, author=?, image_url=?,
+                    image_data=?, language=?, subtitle=?,
+                    summary=?, link=?
+                WHERE
+                    id=?
+            """, (
+                # SET
+                newpodcast.title, newpodcast.author, newpodcast.image,
+                image_data, newpodcast.language, newpodcast.subtitle,
+                newpodcast.summary, newpodcast.link,
+                # WHERE
+                oldpodcast.id
+            )
+        )
+
+    def update_podcasts(self):
+        """
+        Update the podcasts
+        """
+        self.logger.debug("Updating podcasts.")
+
+        for podcast in self.get_podcasts(fast=True):
+            source = sources.get(podcast.source, podcast.url)
+            source.parse()
+
+            self._update_podcast(podcast, source.get_podcast())
+
+            for episode in source.get_episodes():
+                self._add_episode(podcast.id, episode)
+
+        self.connection.commit()
+
+    def get_podcasts(self, fast=False):
         """
         Return a list of podcasts.
+
+        Parameters
+        ----------
+        fast : bool
+            True not to compute the episodes counts of the podcasts.
 
         Yields
         ------
         Podcast
         """
         cursor = self.connection.cursor()
-        cursor.execute("""
-            SELECT
-                podcasts.*,
-                IFNULL(SUM(episodes.new), 0) AS new_count,
-                IFNULL(SUM(episodes.played), 0) AS played_count,
-                COUNT(*) AS episodes_count
-            FROM podcasts
-            LEFT OUTER JOIN episodes ON (episodes.podcast_id = podcasts.id)
-            GROUP BY episodes.podcast_id
-        """)
+        if fast:
+            cursor.execute("""
+                SELECT
+                    podcasts.*,
+                    NULL AS new_count,
+                    NULL AS played_count,
+                    NULL AS episodes_count
+                FROM podcasts
+            """)
+        else:
+            cursor.execute("""
+                SELECT
+                    podcasts.*,
+                    IFNULL(SUM(episodes.new), 0) AS new_count,
+                    IFNULL(SUM(episodes.played), 0) AS played_count,
+                    COUNT(*) AS episodes_count
+                FROM podcasts
+                LEFT OUTER JOIN episodes ON (episodes.podcast_id = podcasts.id)
+                GROUP BY episodes.podcast_id
+            """)
 
         return (Podcast(**row) for row in cursor.fetchall())
 
