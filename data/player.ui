@@ -27,13 +27,13 @@
       </packing>
     </child>
     <child>
-      <object class="GtkButton" id="toggle">
+      <object class="GtkButton" id="play">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
-        <signal name="clicked" handler="_on_play_toggled" swapped="no"/>
+        <signal name="clicked" handler="_on_play_clicked" swapped="no"/>
         <child>
-          <object class="GtkImage" id="toggle_image">
+          <object class="GtkImage">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="icon_name">media-playback-start-symbolic</property>
@@ -44,6 +44,26 @@
         <property name="expand">False</property>
         <property name="fill">True</property>
         <property name="position">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton" id="pause">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <signal name="clicked" handler="_on_pause_clicked" swapped="no"/>
+        <child>
+          <object class="GtkImage">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="icon_name">media-playback-pause-symbolic</property>
+          </object>
+        </child>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">2</property>
       </packing>
     </child>
     <child>
@@ -63,11 +83,11 @@
       <packing>
         <property name="expand">False</property>
         <property name="fill">True</property>
-        <property name="position">2</property>
+        <property name="position">3</property>
       </packing>
     </child>
   </object>
-  <object class="GtkStack" id="state">
+  <object class="GtkStack" id="title">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <child>
@@ -90,29 +110,7 @@
         <property name="can_focus">False</property>
         <property name="column_spacing">4</property>
         <child>
-          <object class="GtkLabel" id="position">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="label" translatable="yes">0:00</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">1</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkLabel" id="duration">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="label" translatable="yes">1:00</property>
-          </object>
-          <packing>
-            <property name="left_attach">2</property>
-            <property name="top_attach">1</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkLabel" id="playing">
+          <object class="GtkLabel" id="playing_1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="ellipsize">end</property>
@@ -128,11 +126,39 @@
             <property name="width_request">400</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
+            <property name="show_fill_level">True</property>
+            <property name="restrict_to_fill_level">False</property>
+            <property name="fill_level">0</property>
             <property name="round_digits">1</property>
             <property name="draw_value">False</property>
+            <signal name="button-press-event" handler="_on_seeking_start" swapped="no"/>
+            <signal name="button-release-event" handler="_on_seeking_end" swapped="no"/>
+            <signal name="value-changed" handler="_on_value_changed" swapped="no"/>
           </object>
           <packing>
             <property name="left_attach">1</property>
+            <property name="top_attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="duration">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">1:00</property>
+          </object>
+          <packing>
+            <property name="left_attach">2</property>
+            <property name="top_attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="position">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">0:00</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
             <property name="top_attach">1</property>
           </packing>
         </child>
@@ -141,6 +167,67 @@
         <property name="name">player</property>
         <property name="title" translatable="yes">player</property>
         <property name="position">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkBox">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkLabel" id="playing_2">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="ellipsize">end</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">center</property>
+            <property name="spacing">5</property>
+            <child>
+              <object class="GtkSpinner">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="active">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Loading...</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+      <packing>
+        <property name="name">loading</property>
+        <property name="title" translatable="yes">loading</property>
+        <property name="position">2</property>
       </packing>
     </child>
   </object>

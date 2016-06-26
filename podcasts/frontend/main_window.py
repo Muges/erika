@@ -56,7 +56,7 @@ class MainWindow(Gtk.Window):
         self.add(vbox)
 
         headerbar = Gtk.HeaderBar()
-        headerbar.set_custom_title(self.player.widgets.state)
+        headerbar.set_custom_title(self.player.widgets.title)
         headerbar.pack_start(self.player.widgets.controls)
         vbox.pack_start(headerbar, False, False, 0)
 
