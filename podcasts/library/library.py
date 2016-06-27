@@ -26,8 +26,6 @@
 Podcast library
 """
 
-# TODO : update podcast
-
 from collections import namedtuple
 import logging
 import os.path
@@ -326,7 +324,7 @@ class Library(object):
             for episode in source.get_episodes():
                 self._add_episode(podcast.id, episode)
 
-        self.connection.commit()
+            self.connection.commit()
 
     def get_podcasts(self, fast=False):
         """
@@ -414,6 +412,28 @@ class Library(object):
         row = cursor.fetchone()
         if row:
             return Podcast(**row)
+
+    def get_counts(self):
+        """
+        Get the episodes counts
+
+        Returns
+        -------
+        int, int, int
+            The number of new episodes, the number of played episodes, and the
+            total number of episodes
+        """
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT
+                IFNULL(SUM(new), 0) AS new_count,
+                IFNULL(SUM(played), 0) AS played_count,
+                COUNT(*) AS episodes_count
+            FROM episodes
+        """)
+
+        row = cursor.fetchone()
+        return row["new_count"], row["played_count"], row["episodes_count"]
 
     def commit(self, rows):
         """

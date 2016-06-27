@@ -40,6 +40,8 @@ def run():
     """
     Start the application
     """
+    # Needed for PyGobject < 3.10.2
+    GObject.threads_init()
     Gst.init_check(None)
 
     main_window = MainWindow()

@@ -108,3 +108,13 @@ class Row(object, metaclass=RowType):
             [getattr(self, column) for column in self.__class__.COLUMNS] +
             [getattr(self, self.__class__.PRIMARY_KEY)]
         )
+
+    def __eq__(self, other):
+        """
+        Check if two rows are the same.
+        """
+        return (
+            self.__class__ == other.__class__ and
+            getattr(self, self.__class__.PRIMARY_KEY) ==
+            getattr(other, self.__class__.PRIMARY_KEY)
+        )

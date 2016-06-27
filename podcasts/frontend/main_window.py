@@ -22,12 +22,18 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import threading
 from gi.repository import Gtk
+from gi.repository import GObject
 
 from podcasts.__version__ import __appname__
 from podcasts.frontend.podcast_list import PodcastList
 from podcasts.frontend.episode_list import EpisodeList
 from podcasts.frontend.player import Player
+from podcasts.library import Library
+
+# Library update interval in seconds
+UPDATE_INTERVAL = 15*60
 
 
 class MainWindow(Gtk.Window):
@@ -53,6 +59,15 @@ class MainWindow(Gtk.Window):
         self.episode_list.connect('play',
                                   self._on_episode_play)
 
+        self.counts = Gtk.Label()
+        self.update_counts()
+
+        self.update_spinner = Gtk.Spinner()
+        self.update_spinner.start()
+        self.update_spinner.set_property("no-show-all", True)
+        self.update = Gtk.Label("Updating library...")
+        self.update.set_property("no-show-all", True)
+
         # Layout
         vbox = Gtk.VBox()
         self.add(vbox)
@@ -74,6 +89,58 @@ class MainWindow(Gtk.Window):
         scrolled_window.add_with_viewport(self.episode_list)
         paned.add2(scrolled_window)
 
+        status_bar = Gtk.HBox()
+        status_bar.set_spacing(5)
+        status_bar.set_margin_top(5)
+        status_bar.set_margin_bottom(5)
+        status_bar.set_margin_start(5)
+        status_bar.set_margin_end(5)
+        vbox.pack_start(status_bar, False, False, 0)
+
+        status_bar.pack_start(self.counts, False, False, 0)
+        status_bar.pack_end(self.update, False, False, 0)
+        status_bar.pack_end(self.update_spinner, False, False, 0)
+
+        # Library update
+        self.update_library()
+        GObject.timeout_add_seconds(UPDATE_INTERVAL, self.update_library)
+
+    def update_counts(self):
+        """
+        Update counts label
+        """
+        library = Library()
+        new, played, total = library.get_counts()
+        unplayed = total - played
+        self.counts.set_text("{} new episodes, {} unplayed".format(
+            new,
+            unplayed
+        ))
+
+    def update_library(self):
+        """
+        Update the podcasts library
+        """
+        self.update_spinner.show()
+        self.update.show()
+
+        def _end():
+            # TODO : try not to change the interface too much after an update
+            self.update_spinner.hide()
+            self.update.hide()
+            self.podcast_list.update()
+            self.update_counts()
+
+        def _update():
+            # TODO : handle errors
+            library = Library()
+            library.update_podcasts()
+
+            GObject.idle_add(_end)
+
+        thread = threading.Thread(target=_update)
+        thread.start()
+
     def _on_close(self, event):
         """
         Called when the window is closed
@@ -91,12 +158,13 @@ class MainWindow(Gtk.Window):
 
     def _on_episodes_changed(self, episodes_list):
         """
-        Called when episodes are modified (e.g. marked as playd) in the
+        Called when episodes are modified (e.g. marked as played) in the
         episodes list.
 
         Update the current podcast.
         """
         self.podcast_list.update_current()
+        self.update_counts()
 
     def _on_episode_play(self, episode_list, episode):
         """

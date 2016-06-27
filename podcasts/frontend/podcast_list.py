@@ -80,6 +80,9 @@ class PodcastList(Gtk.ListBox):
             row = PodcastRow(podcast)
             self.add(row)
 
+        if self.get_selected_row() is None:
+            self.select_row(self.get_row_at_index(0))
+
     def update_podcast(self, podcast_id):
         """
         Update a podcast
