@@ -172,6 +172,11 @@ class EpisodeList(ListBox):
             menu_item.connect("activate", self._mark_as_unplayed, selection)
             menu.append(menu_item)
 
+        if any(row.episode.progress > 0 for row in selection):
+            menu_item = Gtk.MenuItem("Reset progress")
+            menu_item.connect("activate", self._reset_progress, selection)
+            menu.append(menu_item)
+
         menu.show_all()
         menu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
 
@@ -213,7 +218,23 @@ class EpisodeList(ListBox):
         library = Library()
         library.commit(row.episode for row in rows)
 
-        self.emit("episodes-changed")
+    def _reset_progress(self, menu_item, rows):
+        """
+        Reset the progresses of the selected rows
+
+        Parameters
+        ----------
+        menu_item : Gtk.MenuItem
+            The menu item that was emitted the signal
+        rows : List[EpisodeRow]
+            The selected rows
+        """
+        for row in rows:
+            row.episode.progress = 0
+            row.update()
+
+        library = Library()
+        library.commit(row.episode for row in rows)
 
     def _play(self, row):
         """
