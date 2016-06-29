@@ -140,10 +140,10 @@ class MainWindow(Gtk.ApplicationWindow):
         self.update.show()
 
         def _end():
-            # TODO : try not to change the interface too much after an update
             self.update_spinner.hide()
             self.update.hide()
             self.podcast_list.update()
+            self.episode_list.update()
             self.update_counts()
 
         def _update():

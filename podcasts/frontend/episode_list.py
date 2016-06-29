@@ -35,13 +35,13 @@ from gi.repository import Gtk
 
 from podcasts.library import Library
 from podcasts.util import format_duration
-from .widgets import Label, ListBox
+from .widgets import Label, IndexedListBox
 
 SUBTITLE_LINES = 4
 CHUNK_SIZE = 10
 
 
-class EpisodeList(ListBox):
+class EpisodeList(IndexedListBox):
     """
     List of episodes
 
@@ -61,41 +61,55 @@ class EpisodeList(ListBox):
     }
 
     def __init__(self):
-        ListBox.__init__(self)
+        IndexedListBox.__init__(self)
+        self.current_podcast = None
+
         self.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
         self.set_sort_func(self.sort_func, -1)
         self.connect("popup-menu", EpisodeList._on_popup_menu)
 
     def select(self, podcast):
         """
-        Update the list of episodes
+        Display the episodes of a podcast.
 
         Parameters
         ----------
         podcast : podcasts.library.Podcast
             The podcast whose episodes will be displayed
         """
+        self.current_podcast = podcast
+
         # Remove children
-        for child in self.get_children():
-            self.remove(child)
+        self.clear()
 
         library = Library()
-        self._load_by_chunks(library.get_episodes(podcast))
+        self._load_by_chunks(library.get_episodes(podcast), set())
+
+    def update(self):
+        """
+        Update the list of episodes of the current podcast.
+        """
+        library = Library()
+        self._load_by_chunks(library.get_episodes(self.current_podcast),
+                             self.get_ids())
 
     def update_episode(self, episode):
         """
-        Update an episode
+        Update an episode.
 
         Parameters
         ----------
         episode : Episode
         """
-        for row in self.get_children():
-            if row.episode.id == episode.id:
-                row.episode = episode
-                row.update()
+        try:
+            row = self.get_row(episode.id)
+        except ValueError:
+            pass
+        else:
+            row.episode = episode
+            row.update()
 
-    def _load_by_chunks(self, episodes):
+    def _load_by_chunks(self, episodes, remove_ids):
         """
         Load episodes by chunks of size CHUNK_SIZE to prevent rendering delay
 
@@ -103,24 +117,36 @@ class EpisodeList(ListBox):
         ----------
         episodes : Iterable[podcasts.library.Episode]
             The episodes which will be displayed
+        remove_ids : Set
+            Set of ids that were in the list but have not been updated yet
+            (these should be removed of the list at the end)
         """
-        finished = False
-
         for i in range(0, CHUNK_SIZE):
             try:
                 episode = next(episodes)
             except StopIteration:
-                finished = True
-                break
-            else:
-                row = EpisodeRow(episode)
-                row.connect("play", self._play)
-                self.add(row)
+                # Remove the episodes that are not in the database anymore
+                for episode_id in remove_ids:
+                    self.remove_id(episode_id)
 
-        if not finished:
-            # Load the rest of the episodes in a future iteration of the main
-            # loop (after this chunk has been rendered).
-            GLib.idle_add(self._load_by_chunks, episodes)
+                return
+            else:
+                try:
+                    row = self.get_row(episode.id)
+                except ValueError:
+                    # The row does not exist, create it
+                    row = EpisodeRow(episode)
+                    row.connect("play", self._play)
+                    self.add_with_id(row, episode.id)
+                else:
+                    # The row already exists, update it
+                    remove_ids.remove(episode.id)
+                    row.episode = episode
+                    row.update()
+
+        # Load the rest of the episodes in a future iteration of the main
+        # loop (after this chunk has been rendered).
+        GLib.idle_add(self._load_by_chunks, episodes, remove_ids)
 
     def sort_func(self, row1, row2, asc):
         """

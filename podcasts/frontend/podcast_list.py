@@ -38,13 +38,13 @@ from gi.repository import GdkPixbuf
 from gi.repository import GObject
 
 from podcasts.library import Library
-from .widgets import Label
+from .widgets import Label, IndexedListBox
 
 IMAGE_SIZE = 64
 SUBTITLE_LINES = 2
 
 
-class PodcastList(Gtk.ListBox):
+class PodcastList(IndexedListBox):
     """
     List of podcasts
 
@@ -60,7 +60,7 @@ class PodcastList(Gtk.ListBox):
     }
 
     def __init__(self):
-        Gtk.ListBox.__init__(self)
+        super().__init__()
         self.set_selection_mode(Gtk.SelectionMode.BROWSE)
         self.set_sort_func(self.sort_func)
         self.connect("row-selected", PodcastList._on_row_selected)
@@ -69,14 +69,26 @@ class PodcastList(Gtk.ListBox):
         """
         Update the list of podcasts
         """
-        # Remove children
-        for child in self.get_children():
-            child.destroy()
+        # Set of ids that should be removed
+        remove_ids = self.get_ids()
 
         library = Library()
         for podcast in library.get_podcasts():
-            row = PodcastRow(podcast)
-            self.add(row)
+            try:
+                row = self.get_row(podcast.id)
+            except ValueError:
+                # The row does not exist, create it
+                row = PodcastRow(podcast)
+                self.add_with_id(row, podcast.id)
+            else:
+                # The row already exists, update it
+                remove_ids.remove(podcast.id)
+                row.podcast = podcast
+                row.update()
+
+        # Remove the podcasts that are not in the database anymore
+        for podcast_id in remove_ids:
+            self.remove_id(podcast_id)
 
         if self.get_selected_row() is None:
             self.select_row(self.get_row_at_index(0))
@@ -90,11 +102,14 @@ class PodcastList(Gtk.ListBox):
         podcast_id : int
             The id of the podcast
         """
-        for row in self.get_children():
-            if row.podcast.id == podcast_id:
-                library = Library()
-                library.update_counts(row.podcast)
-                row.update()
+        try:
+            row = self.get_row(podcast_id)
+        except ValueError:
+            pass
+        else:
+            library = Library()
+            library.update_counts(row.podcast)
+            row.update()
 
     def update_current(self):
         """
