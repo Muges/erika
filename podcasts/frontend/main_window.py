@@ -23,8 +23,9 @@
 # SOFTWARE.
 
 import threading
-from gi.repository import Gtk
+from gi.repository import Gio
 from gi.repository import GObject
+from gi.repository import Gtk
 
 from podcasts.__version__ import __appname__
 from podcasts.frontend.podcast_list import PodcastList
@@ -36,19 +37,28 @@ from podcasts.library import Library
 UPDATE_INTERVAL = 15*60
 
 
-class MainWindow(Gtk.Window):
+class MainWindow(Gtk.ApplicationWindow):
     """
     Main window of the application.
     """
-    def __init__(self):
-        Gtk.Window.__init__(self, title=__appname__)
+    def __init__(self, application):
+        Gtk.ApplicationWindow.__init__(self, application=application,
+                                       title=__appname__)
         self.set_default_size(800, 600)
-        self.connect("delete-event", MainWindow._on_close)
+        self.connect("delete-event", self._on_close)
 
-        # Create widgets
+        # Header bar
+        self.menu_button = Gtk.MenuButton()
+        self.menu_button.set_image(Gtk.Image.new_from_icon_name(
+            "open-menu-symbolic", Gtk.IconSize.BUTTON))
+
+        builder = Gtk.Builder.new_from_file("data/menu.ui")
+        self.menu_button.set_menu_model(builder.get_object("app-menu"))
+
         self.player = Player()
         self.player.connect("episode-updated", self._on_episode_updated)
 
+        # Views
         self.podcast_list = PodcastList()
         self.podcast_list.connect('podcast-selected',
                                   self._on_podcast_selected)
@@ -59,6 +69,7 @@ class MainWindow(Gtk.Window):
         self.episode_list.connect('play',
                                   self._on_episode_play)
 
+        # Statusbar
         self.counts = Gtk.Label()
         self.update_counts()
 
@@ -74,6 +85,7 @@ class MainWindow(Gtk.Window):
 
         headerbar = Gtk.HeaderBar()
         headerbar.set_custom_title(self.player.widgets.title)
+        headerbar.pack_start(self.menu_button)
         headerbar.pack_start(self.player.widgets.controls)
         vbox.pack_start(headerbar, False, False, 0)
 
@@ -100,6 +112,9 @@ class MainWindow(Gtk.Window):
         status_bar.pack_start(self.counts, False, False, 0)
         status_bar.pack_end(self.update, False, False, 0)
         status_bar.pack_end(self.update_spinner, False, False, 0)
+
+        self.show_all()
+        self.podcast_list.update()
 
         # Library update
         self.update_library()
@@ -141,12 +156,11 @@ class MainWindow(Gtk.Window):
         thread = threading.Thread(target=_update)
         thread.start()
 
-    def _on_close(self, event):
+    def _on_close(self, window, event):
         """
-        Called when the window is closed
+        Called when the window is closed.
         """
         self.player.stop()
-        Gtk.main_quit()
 
     def _on_podcast_selected(self, podcast_list, podcast):
         """

@@ -65,8 +65,6 @@ class PodcastList(Gtk.ListBox):
         self.set_sort_func(self.sort_func)
         self.connect("row-selected", PodcastList._on_row_selected)
 
-        self.update()
-
     def update(self):
         """
         Update the list of podcasts

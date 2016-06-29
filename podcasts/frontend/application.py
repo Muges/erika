@@ -22,29 +22,42 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-"""
-GTK frontend
-"""
-
-import sys
-
-import gi
-gi.require_version('Gtk', '3.0')
-gi.require_version('Gst', '1.0')
+from gi.repository import Gio
 from gi.repository import Gtk
-from gi.repository import Gst
-from gi.repository import GObject
 
-from podcasts.frontend.application import Application
+from podcasts.frontend.main_window import MainWindow
 
 
-def run():
-    """
-    Start the application
-    """
-    # Needed for PyGobject < 3.10.2
-    GObject.threads_init()
-    Gst.init_check(None)
+class Application(Gtk.Application):
+    def __init__(self, *args, **kwargs):
+        Gtk.Application.__init__(self, application_id="fr.muges.podcasts")
+        self.window = None
 
-    app = Application()
-    app.run(sys.argv)
+    def do_startup(self):
+        Gtk.Application.do_startup(self)
+
+        action = Gio.SimpleAction.new("update", None)
+        action.connect("activate", self._on_update_library)
+        self.add_action(action)
+
+        action = Gio.SimpleAction.new("quit", None)
+        action.connect("activate", self._on_quit)
+        self.add_action(action)
+        self.add_accelerator("<Primary>q", "app.quit", None)
+
+        if self.prefers_app_menu():
+            builder = Gtk.Builder.new_from_file("data/menu.ui")
+            self.set_app_menu(builder.get_object("app-menu"))
+
+    def do_activate(self):
+        if not self.window:
+            self.window = MainWindow(self)
+
+        self.window.present()
+
+    def _on_quit(self, action, param):
+        self.quit()
+
+    def _on_update_library(self, action, param):
+        if self.window:
+            self.window.update_library()
