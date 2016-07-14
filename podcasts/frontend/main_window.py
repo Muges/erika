@@ -57,6 +57,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.menu_button.set_menu_model(builder.get_object("app-menu"))
 
         self.downloads_button = DownloadsButton()
+        self.downloads_button.connect("episode-updated",
+                                      self._on_episode_updated)
 
         # Player
         self.player = Player()
@@ -198,9 +200,9 @@ class MainWindow(Gtk.ApplicationWindow):
         """
         self.player.play(episode)
 
-    def _on_episode_updated(self, player, episode):
+    def _on_episode_updated(self, widget, episode):
         """
-        Called when an episode is updated by the player
+        Called when an episode is updated by a widget
         """
         self.podcast_list.update_podcast(episode.podcast_id)
         self.episode_list.update_episode(episode)

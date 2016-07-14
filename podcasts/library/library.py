@@ -127,6 +127,7 @@ class Library(object):
                 mimetype text,
                 file_size text,
                 file_url text,
+                local_path text,
 
                 new boolean DEFAULT 1,
                 played boolean DEFAULT 0,

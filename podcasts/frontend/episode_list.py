@@ -93,9 +93,10 @@ class EpisodeList(IndexedListBox):
         """
         Update the list of episodes of the current podcast.
         """
-        library = Library()
-        self._load_by_chunks(library.get_episodes(self.current_podcast),
-                             self.get_ids())
+        if self.current_podcast:
+            library = Library()
+            self._load_by_chunks(library.get_episodes(self.current_podcast),
+                                 self.get_ids())
 
     def update_episode(self, episode):
         """
@@ -330,11 +331,11 @@ class EpisodeRow(Gtk.ListBoxRow):
         topgrid.attach(self.date, 0, 1, 1, 1)
 
         # Download button
-        button = Gtk.Button.new_from_icon_name("document-save-symbolic",
-                                               Gtk.IconSize.BUTTON)
-        button.set_relief(Gtk.ReliefStyle.NONE)
-        button.connect('clicked', self._on_download_clicked)
-        topgrid.attach(button, 1, 0, 1, 2)
+        self.download_button = Gtk.Button.new_from_icon_name(
+            "document-save-symbolic", Gtk.IconSize.BUTTON)
+        self.download_button.set_relief(Gtk.ReliefStyle.NONE)
+        self.download_button.connect('clicked', self._on_download_clicked)
+        topgrid.attach(self.download_button, 1, 0, 1, 2)
 
         # Play button
         button = Gtk.Button.new_from_icon_name("media-playback-start-symbolic",
@@ -412,6 +413,9 @@ class EpisodeRow(Gtk.ListBoxRow):
                 self.episode.progress/self.episode.duration)
         else:
             self.progress.hide()
+
+        # Download button
+        self.download_button.set_visible(not self.episode.local_path)
 
     def _on_play_clicked(self, button):
         """

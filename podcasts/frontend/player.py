@@ -29,6 +29,7 @@ Module handling the audio playback
 # TODO : prevent 6-10 seconds delay at the beginning? (same problem with totem)
 
 import logging
+import os
 
 from gi.repository import GObject
 from gi.repository import Gst
@@ -96,7 +97,12 @@ class Player(GObject.Object):
 
         self.widgets.set_current_episode(episode)
 
-        self.player.set_property("uri", episode.file_url)
+        if episode.local_path and os.path.isfile(episode.local_path):
+            uri = Gst.filename_to_uri(episode.local_path)
+        else:
+            uri = episode.file_url
+
+        self.player.set_property("uri", uri)
         self.player.set_state(Gst.State.PLAYING)
 
     def stop(self):

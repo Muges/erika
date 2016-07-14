@@ -48,7 +48,18 @@ POPOVER_HEIGHT = 400
 class DownloadsButton(Gtk.MenuButton):
     """
     Button displaying the list of downloads.
+
+    Signals
+    -------
+    episode-updated(Episode)
+        Emitted at the end the download of an episode.
     """
+
+    __gsignals__ = {
+        'episode-updated':
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+    }
+
     def __init__(self):
         super().__init__()
 
@@ -92,6 +103,7 @@ class DownloadsButton(Gtk.MenuButton):
         job = DownloadJob(episode)
 
         row = DownloadRow(job)
+        row.connect("episode-updated", self._on_episode_updated)
         self.list.add(row)
 
         self.pool.add(job)
@@ -108,11 +120,30 @@ class DownloadsButton(Gtk.MenuButton):
         """
         self.set_sensitive(bool(self.list.get_children()))
 
+    def _on_episode_updated(self, row, episode):
+        """
+        Called at the end of the download of an episode.
+
+        Propagate the signal.
+        """
+        self.emit("episode-updated", episode)
+
 
 class DownloadRow(Gtk.ListBoxRow):
     """
     Row in the download list
+
+    Signals
+    -------
+    episode-updated
+        Emitted at the end of the download of an episode.
     """
+
+    __gsignals__ = {
+        'episode-updated':
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+    }
+
     def __init__(self, job):
         super().__init__()
 
@@ -183,6 +214,7 @@ class DownloadRow(Gtk.ListBoxRow):
         """
         Remove the download from the list.
         """
+        self.emit("episode-updated", self.job.episode)
         self.destroy()
 
     def set_pending(self):
@@ -270,7 +302,7 @@ class DownloadJob(GObject.Object):
         for current_size, file_size, average_speed in generator:
             if self.canceled:
                 generator.close()
-                break
+                return
 
             GObject.idle_add(self.emit, "progress", current_size, file_size,
                              average_speed)

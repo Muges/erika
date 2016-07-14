@@ -61,6 +61,8 @@ class Episode(Row):
         Size of the episode file in bytes
     file_url : Optional[str]
         Url of the episode file
+    local_path : Optional[str]
+        Path of the downloaded file
     new : bool
         True if the episode is new
     played : bool
@@ -75,7 +77,7 @@ class Episode(Row):
     COLUMNS = [
         "podcast_id", "guid", "pubdate", "title", "duration", "image_url",
         "link", "subtitle", "summary", "mimetype", "file_size", "file_url",
-        "new", "played", "progress"
+        "local_path", "new", "played", "progress"
     ]
     ATTRS = []
 
