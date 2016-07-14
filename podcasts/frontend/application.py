@@ -22,6 +22,8 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import logging
+
 from gi.repository import Gio
 from gi.repository import Gtk
 
@@ -31,6 +33,10 @@ from podcasts.frontend.main_window import MainWindow
 class Application(Gtk.Application):
     def __init__(self, *args, **kwargs):
         Gtk.Application.__init__(self, application_id="fr.muges.podcasts")
+
+        self.logger = logging.getLogger(
+            "{}.{}".format(__name__, self.__class__.__name__))
+
         self.window = None
 
     def do_startup(self):
@@ -51,7 +57,12 @@ class Application(Gtk.Application):
 
     def do_activate(self):
         if not self.window:
-            self.window = MainWindow(self)
+            try:
+                self.window = MainWindow(self)
+            except BaseException:
+                self.logger.exception("Unable to create main window.")
+                self.quit()
+                return
 
         self.window.present()
 

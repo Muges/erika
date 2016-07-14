@@ -51,12 +51,16 @@ class EpisodeList(IndexedListBox):
         Emitted when episodes are modified (e.g. marked as played)
     play(Episode)
         Emitted when the play button of an episode is clicked
+    download(Episode)
+        Emitted when the download button of an episode is clicked
     """
 
     __gsignals__ = {
         'episodes-changed':
             (GObject.SIGNAL_RUN_FIRST, None, ()),
         'play':
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+        'download':
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
     }
 
@@ -137,6 +141,7 @@ class EpisodeList(IndexedListBox):
                     # The row does not exist, create it
                     row = EpisodeRow(episode)
                     row.connect("play", self._play)
+                    row.connect("download", self._download)
                     self.add_with_id(row, episode.id)
                 else:
                     # The row already exists, update it
@@ -268,6 +273,12 @@ class EpisodeList(IndexedListBox):
         """
         self.emit("play", row.episode)
 
+    def _download(self, row):
+        """
+        Called when the download button of an episode is clicked
+        """
+        self.emit("download", row.episode)
+
 
 class EpisodeRow(Gtk.ListBoxRow):
     """
@@ -277,10 +288,13 @@ class EpisodeRow(Gtk.ListBoxRow):
     -------
     play
         Emitted when the play button is clicked
+    download
+        Emitted when the download button is clicked
     """
 
     __gsignals__ = {
         'play': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        'download': (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
     def __init__(self, episode):
@@ -319,6 +333,7 @@ class EpisodeRow(Gtk.ListBoxRow):
         button = Gtk.Button.new_from_icon_name("document-save-symbolic",
                                                Gtk.IconSize.BUTTON)
         button.set_relief(Gtk.ReliefStyle.NONE)
+        button.connect('clicked', self._on_download_clicked)
         topgrid.attach(button, 1, 0, 1, 2)
 
         # Play button
@@ -403,3 +418,9 @@ class EpisodeRow(Gtk.ListBoxRow):
         Called when the play button is clicked
         """
         self.emit("play")
+
+    def _on_download_clicked(self, button):
+        """
+        Called when the download button is clicked
+        """
+        self.emit("download")

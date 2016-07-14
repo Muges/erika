@@ -32,3 +32,4 @@ from .__version__ import __appname__
 
 HOME = expanduser("~")
 CONFIG_DIR = join(HOME, ".{}".format(__appname__.lower()))
+LIBRARY_DIR = join(HOME, "Podcasts")
