@@ -63,8 +63,10 @@ class DownloadsButton(Gtk.MenuButton):
         self.popover = Gtk.Popover()
 
         self.list = Gtk.ListBox()
-        self.list.show()
         self.list.set_selection_mode(Gtk.SelectionMode.NONE)
+        self.list.connect("add", self._on_list_changed)
+        self.list.connect("remove", self._on_list_changed)
+        self.list.show()
 
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.add_with_viewport(self.list)
@@ -81,6 +83,7 @@ class DownloadsButton(Gtk.MenuButton):
         self.popover.add(scrolled_window)
 
         self.set_popover(self.popover)
+        self.set_sensitive(False)
 
     def download(self, episode):
         """
@@ -98,6 +101,12 @@ class DownloadsButton(Gtk.MenuButton):
         Cancel all the downloads.
         """
         self.pool.stop()
+
+    def _on_list_changed(self, list, child):
+        """
+        Called when a child is added to or removed from the list.
+        """
+        self.set_sensitive(bool(self.list.get_children()))
 
 
 class DownloadRow(Gtk.ListBoxRow):
