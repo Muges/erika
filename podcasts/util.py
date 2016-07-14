@@ -26,6 +26,9 @@
 Utility functions
 """
 
+from itertools import chain
+import re
+
 EXTENSIONS = {
     "audio/mpeg": ".mp3",
     "audio/x-m4a": ".m4a",
@@ -35,6 +38,25 @@ EXTENSIONS = {
     "application/pdf": ".pdf",
     "document/x-epub": ".epub",
 }
+
+DELETE_CHARS = (
+    ''.join(map(chr, chain(range(0, 32), range(127, 160)))) +
+    '?<>|"'
+)
+
+TRANSLATION_TABLE = str.maketrans('/\\:*\n\t', '----  ', DELETE_CHARS)
+
+MAX_FILENAME_LENGTH = 255
+
+# List of filenames that are reserved on linux or windows
+FORBIDDEN_FILENAMES = [
+    ".", "..", "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4",
+    "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4",
+    "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+]
+
+HYPHEN_PATTERN = r"(\S)(\s+-|-\s+|\s+-\s+)(\S)"
+HYPHEN_REPLACE = r"\1 - \3"
 
 
 def format_duration(seconds):
@@ -138,3 +160,25 @@ def guess_extension(mimetype):
         return EXTENSIONS[mimetype]
     except KeyError:
         return mimetypes.guess_extension(mimetype) or ''
+
+
+def sanitize_filename(filename):
+    """
+    Sanitize a string to make it a valid filename.
+
+    This should hopefully work for windows and linux.
+    """
+    # Remove or replace forbidden characters
+    filename = filename.translate(TRANSLATION_TABLE)
+
+    # Make sure hyphens are surrounded by exactly one space on each side or no
+    # spaces at all
+    filename = re.sub(HYPHEN_PATTERN, HYPHEN_REPLACE, filename)
+
+    # Truncate filenames
+    filename = filename[:MAX_FILENAME_LENGTH]
+
+    if filename in FORBIDDEN_FILENAMES:
+        filename += "-podcast"
+
+    return filename

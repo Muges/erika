@@ -27,7 +27,6 @@ Module handling the downloading of podcast episodes
 """
 
 # TODO : user-defined filename template (see quodlibet patterns?)
-# TODO : clean filename!
 
 import logging
 import os
@@ -37,7 +36,7 @@ import time
 import requests
 
 from podcasts.config import LIBRARY_DIR
-from podcasts.util import guess_extension
+from podcasts.util import guess_extension, sanitize_filename
 
 # Maximum number of concurrent downloads
 CONCURRENT_DOWNLOADS = 2
@@ -65,12 +64,12 @@ def download_chunks(podcast, episode):
     # Set the path of the destination file (without its extension)
     dirname = os.path.join(
         LIBRARY_DIR,
-        DIRNAME_TEMPLATE.format(podcast=podcast)
+        sanitize_filename(DIRNAME_TEMPLATE.format(podcast=podcast))
     )
     filename = os.path.join(
         dirname,
-        FILENAME_TEMPLATE.format(episode=episode,
-                                 podcast=podcast)
+        sanitize_filename(FILENAME_TEMPLATE.format(episode=episode,
+                                                   podcast=podcast))
     )
 
     # Start the download and get the mimetype of the file
