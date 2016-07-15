@@ -27,7 +27,7 @@
 import imghdr
 from mutagen.id3 import (
     TPE1, TALB, TIT2, TSOT, TDRC, ID3TimeStamp, COMM, WOAF, WFED, WORS, TXXX,
-    UrlFrame, APIC
+    UrlFrame, APIC, TRCK
 )
 
 
@@ -58,7 +58,7 @@ def set_tags(audio, episode):
 
     # Description
     if "COMM" not in audio.tags and episode.summary:
-        audio.tags["COMM"] = COMM(3, text=episode.summary)
+        audio.tags["COMM"] = COMM(3, desc="", text=episode.summary)
 
     # Links
     if episode.link:
@@ -70,8 +70,11 @@ def set_tags(audio, episode):
     if episode.guid:
         audio.tags["TXXX"] = TXXX(3, episode.guid)
 
+    # Track number
+    audio.tags["TRCK"] = TRCK(3, str(episode.track_number))
+
     # Image
-    if "APIC" not in audio.tags:
+    if "APIC:" not in audio.tags:
         data = episode.get_image()
 
         if data:
@@ -80,6 +83,7 @@ def set_tags(audio, episode):
             else:
                 mimetype = 'image/jpeg'
 
-            audio.tags["APIC"] = APIC(3, mime=mimetype, type=3, data=data)
+            audio.tags["APIC"] = APIC(3, desc="", mime=mimetype, type=3,
+                                      data=data)
 
     audio.tags.save()

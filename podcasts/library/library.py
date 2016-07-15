@@ -129,6 +129,8 @@ class Library(object):
                 file_url text,
                 local_path text,
 
+                track_number integer,
+
                 new boolean DEFAULT 1,
                 played boolean DEFAULT 0,
                 progress integer DEFAULT 0,
@@ -187,7 +189,7 @@ class Library(object):
 
         return cursor.lastrowid
 
-    def _add_episode(self, podcast_id, episode):
+    def _add_episode(self, podcast_id, episode, next_track_number):
         """
         Add an episode to the library (or update it if it already exists).
 
@@ -199,6 +201,8 @@ class Library(object):
             The id of the podcast
         episode : Episode
             The namedtuple describing the episode
+        next_track_number : int
+            The track number of the next episode
         """
         cursor = self.connection.cursor()
 
@@ -234,18 +238,19 @@ class Library(object):
                     (podcast_id, guid, pubdate, title,
                     duration, image_url, link,
                     subtitle, summary, mimetype,
-                    file_size, file_url)
+                    file_size, file_url, track_number)
                     VALUES
-                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     podcast_id, episode.guid, episode.pubdate, episode.title,
                     episode.duration, episode.image, episode.link,
                     episode.subtitle, episode.summary, episode.mimetype,
-                    episode.file_size, episode.file_url
+                    episode.file_size, episode.file_url, next_track_number
                 )
             )
+            next_track_number += 1
 
-        return cursor.lastrowid
+        return next_track_number
 
     def add_source(self, source_name, url):
         """
@@ -263,9 +268,11 @@ class Library(object):
 
         podcast = source.get_podcast()
         podcast_id = self._add_podcast(source_name, url, podcast)
+        next_track_number = 1
 
         for episode in source.get_episodes():
-            self._add_episode(podcast_id, episode)
+            next_track_number = self._add_episode(podcast_id, episode,
+                                                  next_track_number)
 
         self.connection.commit()
 
@@ -321,9 +328,11 @@ class Library(object):
             source.parse()
 
             self._update_podcast(podcast, source.get_podcast())
+            next_track_number = self.get_next_episode_track_number(podcast)
 
             for episode in source.get_episodes():
-                self._add_episode(podcast.id, episode)
+                next_track_number = self._add_episode(podcast.id, episode,
+                                                      next_track_number)
 
             self.connection.commit()
 
@@ -461,3 +470,22 @@ class Library(object):
         """)
 
         self.connection.commit()
+
+    def get_next_episode_track_number(self, podcast):
+        """
+        Return the track_number of a podcast's next episode.
+
+        Parameters
+        ----------
+        podcast : Podcast
+        """
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT
+                IFNULL(MAX(track_number), 0) AS previous_track_number
+            FROM episodes
+            WHERE podcast_id = ?
+        """, (podcast.id,))
+
+        result = cursor.fetchone()
+        return result["previous_track_number"] + 1

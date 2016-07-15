@@ -144,4 +144,4 @@ class Feed(Source):
         return self.podcast
 
     def get_episodes(self):
-        return self.episodes
+        return sorted(self.episodes, key=lambda e: e.pubdate)

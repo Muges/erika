@@ -67,6 +67,7 @@ class EpisodeList(IndexedListBox):
     def __init__(self):
         IndexedListBox.__init__(self)
         self.current_podcast = None
+        self.update_id = None
 
         self.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
         self.set_sort_func(self.sort_func, -1)
@@ -83,6 +84,10 @@ class EpisodeList(IndexedListBox):
         """
         self.current_podcast = podcast
 
+        # Interrupt the previous update
+        if self.update_id:
+            GLib.source_remove(self.update_id)
+
         # Remove children
         self.clear()
 
@@ -94,6 +99,10 @@ class EpisodeList(IndexedListBox):
         Update the list of episodes of the current podcast.
         """
         if self.current_podcast:
+            # Interrupt the previous update
+            if self.update_id:
+                GLib.source_remove(self.update_id)
+
             library = Library()
             self._load_by_chunks(library.get_episodes(self.current_podcast),
                                  self.get_ids())
@@ -134,6 +143,7 @@ class EpisodeList(IndexedListBox):
                 for episode_id in remove_ids:
                     self.remove_id(episode_id)
 
+                self.update_id = None
                 return
             else:
                 try:
@@ -152,7 +162,8 @@ class EpisodeList(IndexedListBox):
 
         # Load the rest of the episodes in a future iteration of the main
         # loop (after this chunk has been rendered).
-        GLib.idle_add(self._load_by_chunks, episodes, remove_ids)
+        self.update_id = GLib.idle_add(self._load_by_chunks, episodes,
+                                       remove_ids)
 
     def sort_func(self, row1, row2, asc):
         """

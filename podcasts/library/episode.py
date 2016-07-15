@@ -72,6 +72,9 @@ class Episode(Row):
     progress : int
         Number of seconds of the episode that have been played (used to be able
         to resume the playback after quitting the application)
+    track_number : int
+        The track_number of the episode. As long as the publication dates are
+        consistent with the publication order this should be accurate.
     podcast : Podcast
         The podcast
     """
@@ -81,7 +84,7 @@ class Episode(Row):
     COLUMNS = [
         "podcast_id", "guid", "pubdate", "title", "duration", "image_url",
         "link", "subtitle", "summary", "mimetype", "file_size", "file_url",
-        "local_path", "new", "played", "progress"
+        "local_path", "new", "played", "progress", "track_number"
     ]
     ATTRS = [
         "podcast"

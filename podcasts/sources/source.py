@@ -140,5 +140,6 @@ class Source(object):
         Returns
         -------
         List[Episode]
+            A list of episodes sorted by ascending publication date.
         """
         raise NotImplementedError()
