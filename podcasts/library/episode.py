@@ -70,6 +70,8 @@ class Episode(Row):
     progress : int
         Number of seconds of the episode that have been played (used to be able
         to resume the playback after quitting the application)
+    podcast : Podcast
+        The podcast
     """
 
     TABLE = "episodes"
@@ -79,7 +81,9 @@ class Episode(Row):
         "link", "subtitle", "summary", "mimetype", "file_size", "file_url",
         "local_path", "new", "played", "progress"
     ]
-    ATTRS = []
+    ATTRS = [
+        "podcast"
+    ]
 
     def mark_as_played(self):
         """

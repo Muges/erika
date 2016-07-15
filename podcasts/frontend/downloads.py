@@ -221,7 +221,7 @@ class DownloadRow(Gtk.ListBoxRow):
         """
         Update the widget to show the download is pending.
         """
-        if self.job.podcast.image_data:
+        if self.job.episode.podcast.image_data:
             self.icon.show()
             self.icon.set_from_pixbuf(self.get_pixbuf())
         else:
@@ -229,7 +229,7 @@ class DownloadRow(Gtk.ListBoxRow):
 
         self.title.set_markup(
             "{} - <i>{}</i>".format(self.job.episode.title,
-                                    self.job.podcast.title))
+                                    self.job.episode.podcast.title))
 
         self.progress_label.set_text("Pending...")
 
@@ -238,7 +238,7 @@ class DownloadRow(Gtk.ListBoxRow):
         Return the image of the podcast as a scaled pixbuf
         """
         loader = GdkPixbuf.PixbufLoader.new()
-        loader.write(self.job.podcast.image_data)
+        loader.write(self.job.episode.podcast.image_data)
         pixbuf = loader.get_pixbuf()
         loader.close()
 
@@ -280,7 +280,6 @@ class DownloadJob(GObject.Object):
         GObject.Object.__init__(self)
 
         library = Library()
-        self.podcast = library.get_podcast(episode)
         self.episode = episode
         self.canceled = False
 
@@ -297,7 +296,7 @@ class DownloadJob(GObject.Object):
         """
         GObject.idle_add(self.emit, "start")
 
-        generator = download_with_average_speed(self.podcast, self.episode)
+        generator = download_with_average_speed(self.episode)
 
         for current_size, file_size, average_speed in generator:
             if self.canceled:

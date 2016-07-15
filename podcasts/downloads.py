@@ -53,7 +53,7 @@ SMOOTHING_FACTOR = 0.01
 TIME_DELTA = 0.05
 
 
-def download_chunks(podcast, episode):
+def download_chunks(episode):
     """
     Download an episode by chunks.
 
@@ -65,12 +65,11 @@ def download_chunks(podcast, episode):
     # Set the path of the destination file (without its extension)
     dirname = os.path.join(
         LIBRARY_DIR,
-        sanitize_filename(DIRNAME_TEMPLATE.format(podcast=podcast))
+        sanitize_filename(DIRNAME_TEMPLATE.format(podcast=episode.podcast))
     )
     filename = os.path.join(
         dirname,
-        sanitize_filename(FILENAME_TEMPLATE.format(episode=episode,
-                                                   podcast=podcast))
+        sanitize_filename(FILENAME_TEMPLATE.format(episode=episode))
     )
 
     # Start the download and get the mimetype of the file
@@ -116,7 +115,7 @@ def download_chunks(podcast, episode):
             os.remove(tempfilename)
 
 
-def download_with_average_speed(podcast, episode):
+def download_with_average_speed(episode):
     """
     Download an episode by chunks, and compute the average speed (see
     https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average)
@@ -133,7 +132,7 @@ def download_with_average_speed(podcast, episode):
     step_size = 0  # Size downloaded during the current time step
     average_speed = 0  # Average download speed
 
-    for chunk_size, file_size in download_chunks(podcast, episode):
+    for chunk_size, file_size in download_chunks(episode):
         now = time.time()
 
         current_size += chunk_size

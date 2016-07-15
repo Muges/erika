@@ -342,12 +342,11 @@ class PlayerWidgets(GObject.Object):
             The episode currently being played.
         """
         library = Library()
-        podcast = library.get_podcast(episode)
 
         for playing in self.playing:
             playing.set_markup(
                 "<b>{}</b> from <b><i>{}</i></b>".format(
-                    episode.title, podcast.title))
+                    episode.title, episode.podcast.title))
 
     def _on_play_clicked(self, button):
         """
