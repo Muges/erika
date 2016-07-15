@@ -26,6 +26,8 @@
 Object representing an episode in the library
 """
 
+import requests
+
 from podcasts.library.row import Row
 
 
@@ -97,3 +99,28 @@ class Episode(Row):
         Mark the episode as unplayed
         """
         self.played = False
+
+    def get_image(self):
+        """
+        Get the episode's image.
+
+        This method downloads the episode's image if image_url is not None, and
+        falls back to the podcast's image if it is None or in case of error.
+
+        Returns
+        -------
+        bytes
+            The image's data.
+        """
+        if self.image_url:
+            # Download image
+            try:
+                response = requests.get(self.image_url)
+                response.raise_for_status()
+            except requests.exceptions.RequestException:
+                self.logger.exception("Unable to download image.")
+            else:
+                return response.content
+
+        # Fallback to podcast image
+        return self.podcast.image_data

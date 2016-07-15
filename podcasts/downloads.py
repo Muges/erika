@@ -35,6 +35,7 @@ from threading import Thread
 import time
 import requests
 
+from podcasts import tags
 from podcasts.config import LIBRARY_DIR
 from podcasts.library import Library
 from podcasts.util import guess_extension, sanitize_filename
@@ -104,10 +105,16 @@ def download_chunks(episode):
 
                     yield (chunk_size, file_size)
 
+        # Set the tags of the downloaded file
+        tags.set_tags(tempfilename, episode)
+
+        # Move the temporary file to the destination file
         os.rename(tempfilename, filename)
+
         library = Library()
         episode.local_path = filename
         library.commit([episode])
+
     finally:
         # Remove the temporary file if it exists (if the download failed or was
         # canceled)

@@ -227,7 +227,7 @@ class Library(object):
         )
 
         if cursor.rowcount == 0:
-            # No row has been change : the episode is new
+            # No row has been changed : the episode is new
             cursor.execute(
                 """
                     INSERT INTO episodes

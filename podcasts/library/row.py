@@ -26,7 +26,7 @@
 Row object
 """
 
-import pprint
+import logging
 
 
 class RowType(type):
@@ -76,6 +76,9 @@ class Row(object, metaclass=RowType):
     """
 
     def __init__(self, **kwargs):
+        self.logger = logging.getLogger(
+            "{}.{}".format(__name__, self.__class__.__name__))
+
         # Get the values of each column in the kaywords arguments
         for column in self.__class__.ALL_ATTRS:
             try:
