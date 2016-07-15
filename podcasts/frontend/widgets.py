@@ -26,6 +26,7 @@
 Simple widgets
 """
 
+from collections import OrderedDict
 import logging
 
 from gi.repository import Gtk
@@ -296,3 +297,97 @@ class IndexedListBox(ListBox):
             child.destroy()
 
         self.rows = {}
+
+
+class StatusBox(Gtk.HBox):
+    """
+    Widget allowing to easily display loading messages in a status bar.
+
+    The add method adds a new message to the StatusBox. The messages are
+    displayed in the order they where added. As long as at least one message
+    is being displayed, a spinner is displayed at the start (usually left) of
+    the StatusBox.
+
+    Each message can be removed by calling the remove method with the
+    corresponding message id, which is returned by the add method.
+    """
+    def __init__(self):
+        Gtk.HBox.__init__(self)
+        self.set_spacing(5)
+
+        self.next_id = 0
+        self.messages = OrderedDict()
+        self.separators = []
+
+        self.spinner = Gtk.Spinner()
+        self.pack_start(self.spinner, False, False, 0)
+
+    def _get_message_index(self, message_id):
+        """
+        Get the position of the message.
+        """
+        for index, key in enumerate(self.messages.keys()):
+            if key == message_id:
+                return index
+
+    def add(self, message):
+        """
+        Add a new message.
+
+        Parameters
+        ----------
+        message : str
+            The message that will be displayed.
+
+        Returns
+        -------
+        int
+            A unique message id.
+        """
+        message_id = self.next_id
+        self.next_id += 1
+
+        # Add a separator between this message and the previous one if needed
+        if self.messages:
+            separator = Gtk.Separator.new(Gtk.Orientation.VERTICAL)
+            separator.show()
+            self.pack_start(separator, False, False, 0)
+            self.separators.append(separator)
+
+        # Add a label displaying the message
+        label = Gtk.Label(message)
+        label.show()
+        self.pack_start(label, False, False, 0)
+        self.messages[message_id] = label
+
+        # Start the spinner
+        self.spinner.start()
+
+        return message_id
+
+    def remove(self, message_id):
+        """
+        Remove a message.
+
+        Parameters
+        ----------
+        message_id : int
+            The id of the message.
+        """
+        index = self._get_message_index(message_id)
+
+        # Remove the label
+        label = self.messages.pop(message_id)
+        label.destroy()
+
+        # Remove the separator
+        try:
+            separator = self.separators.pop(max(0, index-1))
+        except IndexError:
+            pass
+        else:
+            separator.destroy()
+
+        # Stop the spinner if no message is being displayed
+        if not self.messages:
+            self.spinner.stop()

@@ -42,6 +42,10 @@ class Application(Gtk.Application):
     def do_startup(self):
         Gtk.Application.do_startup(self)
 
+        action = Gio.SimpleAction.new("add-podcast", None)
+        action.connect("activate", self._on_add_podcast)
+        self.add_action(action)
+
         action = Gio.SimpleAction.new("update", None)
         action.connect("activate", self._on_update_library)
         self.add_action(action)
@@ -72,3 +76,7 @@ class Application(Gtk.Application):
     def _on_update_library(self, action, param):
         if self.window:
             self.window.update_library()
+
+    def _on_add_podcast(self, action, param):
+        if self.window:
+            self.window.add_podcast()

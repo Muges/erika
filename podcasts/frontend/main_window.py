@@ -32,6 +32,7 @@ from podcasts.frontend.downloads import DownloadsButton
 from podcasts.frontend.podcast_list import PodcastList
 from podcasts.frontend.episode_list import EpisodeList
 from podcasts.frontend.player import Player
+from podcasts.frontend.widgets import StatusBox
 from podcasts.library import Library
 
 # Library update interval in seconds
@@ -79,11 +80,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.counts = Gtk.Label()
         self.update_counts()
 
-        self.update_spinner = Gtk.Spinner()
-        self.update_spinner.start()
-        self.update_spinner.set_property("no-show-all", True)
-        self.update = Gtk.Label("Updating library...")
-        self.update.set_property("no-show-all", True)
+        self.statusbox = StatusBox()
 
         # Layout
         vbox = Gtk.VBox()
@@ -109,7 +106,6 @@ class MainWindow(Gtk.ApplicationWindow):
         paned.add2(scrolled_window)
 
         status_bar = Gtk.HBox()
-        status_bar.set_spacing(5)
         status_bar.set_margin_top(5)
         status_bar.set_margin_bottom(5)
         status_bar.set_margin_start(5)
@@ -117,8 +113,7 @@ class MainWindow(Gtk.ApplicationWindow):
         vbox.pack_start(status_bar, False, False, 0)
 
         status_bar.pack_start(self.counts, False, False, 0)
-        status_bar.pack_end(self.update, False, False, 0)
-        status_bar.pack_end(self.update_spinner, False, False, 0)
+        status_bar.pack_end(self.statusbox, False, False, 0)
 
         self.show_all()
         self.podcast_list.update()
@@ -143,12 +138,11 @@ class MainWindow(Gtk.ApplicationWindow):
         """
         Update the podcasts library
         """
-        self.update_spinner.show()
-        self.update.show()
+        message_id = self.statusbox.add("Updating library...")
 
         def _end():
-            self.update_spinner.hide()
-            self.update.hide()
+            self.statusbox.remove(message_id)
+
             self.podcast_list.update()
             self.episode_list.update()
             self.update_counts()
@@ -162,6 +156,40 @@ class MainWindow(Gtk.ApplicationWindow):
 
         thread = threading.Thread(target=_update)
         thread.start()
+
+    def add_podcast(self):
+        """
+        Add a new podcast.
+        """
+        # Open the "Add a podcast" dialog
+        builder = Gtk.Builder.new_from_file("data/add_podcast.ui")
+        dialog = builder.get_object("add_dialog")
+        url_entry = builder.get_object("url_entry")
+        dialog.set_transient_for(self)
+
+        response = dialog.run()
+        url = url_entry.get_text()
+        dialog.destroy()
+
+        if response == Gtk.ResponseType.OK and url:
+            message_id = self.statusbox.add("Adding podcast...")
+
+            def _end():
+                self.statusbox.remove(message_id)
+
+                self.podcast_list.update()
+                self.episode_list.update()
+                self.update_counts()
+
+            def _add(url):
+                # TODO : handle errors
+                library = Library()
+                library.add_source("feed", url)
+
+                GObject.idle_add(_end)
+
+            thread = threading.Thread(target=_add, args=(url,))
+            thread.start()
 
     def _on_close(self, window, event):
         """

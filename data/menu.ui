@@ -3,6 +3,10 @@
   <menu id="app-menu">
     <section>
       <item>
+        <attribute name="action">app.add-podcast</attribute>
+        <attribute name="label" translatable="yes">_Add podcast</attribute>
+      </item>
+      <item>
         <attribute name="action">app.update</attribute>
         <attribute name="label" translatable="yes">_Update library</attribute>
       </item>
