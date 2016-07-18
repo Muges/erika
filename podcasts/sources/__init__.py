@@ -27,10 +27,10 @@ Module used to parse podcast sources.
 """
 
 from .source import Source, Podcast, Episode
-from .feed import Feed
+from .rss import Rss
 
 # TODO : generate this dynamically
-SOURCES = {Feed.name: Feed}
+SOURCES = {Rss.name: Rss}
 
 
 def get(source_name, url):

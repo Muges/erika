@@ -105,7 +105,9 @@ class Library(object):
                 language text,
                 subtitle text,
                 summary text,
-                link text
+                link text,
+
+                UNIQUE (source, url)
             )
         """)
 
@@ -174,7 +176,7 @@ class Library(object):
         cursor = self.connection.cursor()
         cursor.execute(
             """
-                INSERT INTO podcasts
+                INSERT OR IGNORE INTO podcasts
                 (source, url, title, author, image_url,
                 image_data, language, subtitle,
                 summary, link)

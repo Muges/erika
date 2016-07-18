@@ -34,6 +34,7 @@ from podcasts.frontend.episode_list import EpisodeList
 from podcasts.frontend.player import Player
 from podcasts.frontend.widgets import StatusBox
 from podcasts.library import Library
+from podcasts.opml import import_opml, export_opml
 
 # Library update interval in seconds
 UPDATE_INTERVAL = 15*60
@@ -189,6 +190,88 @@ class MainWindow(Gtk.ApplicationWindow):
                 GObject.idle_add(_end)
 
             thread = threading.Thread(target=_add, args=(url,))
+            thread.start()
+
+    def import_opml(self):
+        """
+        Import the podcasts subscriptions from an OPML file.
+        """
+        dialog = Gtk.FileChooserDialog(
+            "Import OPML file", self,
+            Gtk.FileChooserAction.OPEN,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+
+        # Add filters
+        filter_xml = Gtk.FileFilter()
+        filter_xml.set_name("XML files")
+        filter_xml.add_mime_type("text/xml")
+        dialog.add_filter(filter_xml)
+
+        filter_text = Gtk.FileFilter()
+        filter_text.set_name("Text files")
+        filter_text.add_mime_type("text/plain")
+        dialog.add_filter(filter_text)
+
+        filter_any = Gtk.FileFilter()
+        filter_any.set_name("Any files")
+        filter_any.add_pattern("*")
+        dialog.add_filter(filter_any)
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            filename = dialog.get_filename()
+        elif response == Gtk.ResponseType.CANCEL:
+            filename = None
+        dialog.destroy()
+
+        if filename:
+            message_id = self.statusbox.add("Importing OPML...")
+
+            def _end():
+                self.statusbox.remove(message_id)
+
+                self.podcast_list.update()
+                self.episode_list.update()
+                self.update_counts()
+
+            def _import(filename):
+                # TODO : handle errors
+                import_opml(filename)
+
+                GObject.idle_add(_end)
+
+            thread = threading.Thread(target=_import, args=(filename,))
+            thread.start()
+
+    def export_opml(self):
+        """
+        Export the podcasts subscriptions in an OPML file.
+        """
+        dialog = Gtk.FileChooserDialog(
+            "Export OPML file", self,
+            Gtk.FileChooserAction.SAVE,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            filename = dialog.get_filename()
+        elif response == Gtk.ResponseType.CANCEL:
+            filename = None
+        dialog.destroy()
+
+        if filename:
+            message_id = self.statusbox.add("Exporting OPML...")
+
+            def _end():
+                self.statusbox.remove(message_id)
+
+            def _export(filename):
+                export_opml(filename)
+                GObject.idle_add(_end)
+
+            thread = threading.Thread(target=_export, args=(filename,))
             thread.start()
 
     def _on_close(self, window, event):

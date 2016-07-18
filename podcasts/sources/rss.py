@@ -34,12 +34,12 @@ import feedparser
 from .source import Source, Podcast, Episode
 
 
-class Feed(Source):
+class Rss(Source):
     """
     A source creating a podcast from an RSS/Atom feed.
     """
 
-    name = "feed"
+    name = "rss"
     description = "RSS/Atom feed"
 
     def __init__(self, url):

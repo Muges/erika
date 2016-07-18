@@ -46,6 +46,14 @@ class Application(Gtk.Application):
         action.connect("activate", self._on_add_podcast)
         self.add_action(action)
 
+        action = Gio.SimpleAction.new("import-opml", None)
+        action.connect("activate", self._on_import_opml)
+        self.add_action(action)
+
+        action = Gio.SimpleAction.new("export-opml", None)
+        action.connect("activate", self._on_export_opml)
+        self.add_action(action)
+
         action = Gio.SimpleAction.new("update", None)
         action.connect("activate", self._on_update_library)
         self.add_action(action)
@@ -80,3 +88,11 @@ class Application(Gtk.Application):
     def _on_add_podcast(self, action, param):
         if self.window:
             self.window.add_podcast()
+
+    def _on_import_opml(self, action, param):
+        if self.window:
+            self.window.import_opml()
+
+    def _on_export_opml(self, action, param):
+        if self.window:
+            self.window.export_opml()
