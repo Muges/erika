@@ -53,3 +53,25 @@ def set_tags(filename, episode):
         logger.warning(
             "Unable to set tags (unsupported file format) for "
             "'{}'.".format(filename))
+
+
+def get_tags(filename):
+    """
+    Get the tags of an audio file.
+
+    Parameters
+    ----------
+    filename : str
+        The audio file
+    """
+    logger = logging.getLogger(__name__)
+
+    audio = mutagen.File(filename)
+
+    if isinstance(audio, mutagen.mp3.MP3):
+        return mp3.get_tags(audio)
+    else:
+        logger.warning(
+            "Unable to set tags (unsupported file format) for "
+            "'{}'.".format(filename))
+        return None

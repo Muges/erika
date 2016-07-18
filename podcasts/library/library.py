@@ -32,8 +32,8 @@ import os.path
 import sqlite3
 import requests
 
-from podcasts.config import CONFIG_DIR
-from podcasts import sources
+from podcasts.config import CONFIG_DIR, LIBRARY_DIR
+from podcasts import sources, tags
 from podcasts.library.episode import Episode
 from podcasts.library.podcast import Podcast
 from podcasts.library.row import Row
@@ -64,16 +64,16 @@ class Library(object):
             "{}.{}".format(__name__, cls.__name__))
         logger.debug("Database initialization.")
 
+        # Create the boolean type
+        sqlite3.register_adapter(bool, int)
+        sqlite3.register_converter("boolean", lambda v: bool(int(v)))
+
         if not os.path.isfile(DATABASE_PATH):
             library = Library()
             library.create()
         else:
             library = Library()
             library.reset_new()
-
-        # Create the boolean type
-        sqlite3.register_adapter(bool, int)
-        sqlite3.register_converter("boolean", lambda v: bool(int(v)))
 
     def __init__(self):
         self.logger = logging.getLogger(
@@ -496,3 +496,113 @@ class Library(object):
 
         result = cursor.fetchone()
         return result["previous_track_number"] + 1
+
+    def add_local_file(self, path, audiotags):
+        """
+        Add a local file to the library.
+
+        Parameters
+        ----------
+        path : str
+            The path of the file.
+        audiotags : Dict[str, Any]
+            The audio tags of the path.
+        """
+        cursor = self.connection.cursor()
+
+        cursor.execute(
+            """
+                SELECT id
+                FROM podcasts
+                WHERE title = ?
+            """, (audiotags["podcast"],)
+        )
+        row = cursor.fetchone()
+
+        if not row:
+            self.logger.warning(
+                "The file '{}' belongs to an unknown podcast '{}'.".format(
+                    path, audiotags["podcast"]))
+            return
+
+        podcast_id = row["id"]
+
+        cursor.execute(
+            """
+                UPDATE episodes
+                SET
+                    local_path=?
+                WHERE
+                    podcast_id=? AND
+                    ((pubdate=? AND title=?) OR
+                    (guid IS NOT NULL AND guid=?))
+            """, (
+                # SET
+                path,
+                # WHERE
+                podcast_id,
+                audiotags["pubdate"], audiotags["title"],
+                audiotags["guid"]
+            )
+        )
+
+        if cursor.rowcount == 0:
+            self.logger.warning(
+                "The file '{}' is an unknown episode.".format(path))
+
+    def get_episodes_with_local_file(self):
+        """
+        Get the episodes that have a local file.
+
+        Yields
+        ------
+        int, str
+            The episode's id and the path of the file.
+        """
+        cursor = self.connection.cursor()
+        cursor.execute(
+            """
+                SELECT id, local_path
+                FROM episodes
+                WHERE local_path IS NOT NULL
+            """
+        )
+
+        return ((row["id"], row["local_path"]) for row in cursor.fetchall())
+
+    def remove_local_file(self, episode_id):
+        """
+        Remove the local_path column of an episode if the file does not exist.
+
+        Parameters
+        ----------
+        episode_id : int
+            The id of the episode.
+        """
+        cursor = self.connection.cursor()
+        cursor.execute(
+            """
+                UPDATE episodes
+                SET
+                    local_path = NULL
+                WHERE
+                    id = ?
+            """, (episode_id,)
+        )
+
+    def scan(self):
+        """
+        Scan the library directory to add the local episode files.
+        """
+        # Check that the files that are in the database still exist
+        for episode_id, path in self.get_episodes_with_local_file():
+            if not os.path.isfile(path):
+                self.remove_local_file(episode_id)
+
+        # Look for new local files
+        for dirpath, dirnames, filenames in os.walk(LIBRARY_DIR):
+            for filename in filenames:
+                path = os.path.join(dirpath, filename)
+                self.add_local_file(path, tags.get_tags(path))
+
+        self.connection.commit()

@@ -24,6 +24,7 @@
 
 # TODO : track number
 
+from datetime import datetime
 import imghdr
 from mutagen.id3 import (
     TPE1, TALB, TIT2, TSOT, TDRC, ID3TimeStamp, COMM, WOAF, WFED, WORS, TXXX,
@@ -47,13 +48,13 @@ def set_tags(audio, episode):
         audio.tags["TPE1"] = TPE1(3, episode.podcast.author)
     if episode.podcast.title:
         audio.tags["TALB"] = TALB(3, episode.podcast.title)
-    if "TIT2" not in audio.tags and episode.title:
+    if episode.title:
         audio.tags["TIT2"] = TIT2(3, episode.title)
         audio.tags["TSOT"] = TSOT(3, episode.title)
 
     # Publication date
     if episode.pubdate:
-        timestamp = ID3TimeStamp(episode.pubdate.isoformat())
+        timestamp = ID3TimeStamp(episode.pubdate.isoformat(' '))
         audio.tags["TDRC"] = TDRC(3, [timestamp])
 
     # Description
@@ -68,7 +69,7 @@ def set_tags(audio, episode):
     if episode.podcast.link:
         audio.tags["WORS"] = WORS(episode.podcast.link)
     if episode.guid:
-        audio.tags["TXXX"] = TXXX(3, episode.guid)
+        audio.tags["TXXX"] = TXXX(3, desc="", text=episode.guid)
 
     # Track number
     audio.tags["TRCK"] = TRCK(3, str(episode.track_number))
@@ -87,3 +88,31 @@ def set_tags(audio, episode):
                                       data=data)
 
     audio.tags.save()
+
+
+def get_tag(audio, tag):
+    """
+    Get an audio tag.
+    """
+    try:
+        return audio.tags[tag].text[0]
+    except (KeyError, IndexError):
+        return None
+
+
+def get_tags(audio):
+    """
+    Return the tags of an audio file.
+    """
+    date = get_tag(audio, "TDRC")
+    try:
+        date = datetime.strptime(date.text, "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        date = None
+
+    return {
+        "podcast": get_tag(audio, "TALB"),
+        "title": get_tag(audio, "TIT2"),
+        "guid": get_tag(audio, "TXXX"),
+        "pubdate": date
+    }

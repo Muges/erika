@@ -120,7 +120,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.podcast_list.update()
 
         # Library update
-        self.update_library()
+        self.update_library(scan=True)
         GObject.timeout_add_seconds(UPDATE_INTERVAL, self.update_library)
 
     def update_counts(self):
@@ -135,7 +135,7 @@ class MainWindow(Gtk.ApplicationWindow):
             unplayed
         ))
 
-    def update_library(self):
+    def update_library(self, scan=False):
         """
         Update the podcasts library
         """
@@ -152,6 +152,8 @@ class MainWindow(Gtk.ApplicationWindow):
             # TODO : handle errors
             library = Library()
             library.update_podcasts()
+            if scan:
+                library.scan()
 
             GObject.idle_add(_end)
 
