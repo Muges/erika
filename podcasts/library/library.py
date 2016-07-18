@@ -30,7 +30,7 @@ from collections import namedtuple
 import logging
 import os.path
 import sqlite3
-import urllib.request
+import requests
 
 from podcasts.config import CONFIG_DIR
 from podcasts import sources
@@ -167,11 +167,13 @@ class Library(object):
         # Get the image file
         self.logger.debug("Downloading image for %s.", url)
         try:
-            response = urllib.request.urlopen(podcast.image)
-            image_data = response.read()
-        except urllib.request.URLError:
+            response = requests.get(podcast.image)
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
             self.logger.exception("Unable to download image.")
             image_data = None
+        else:
+            image_data = response.content
 
         cursor = self.connection.cursor()
         cursor.execute(
@@ -294,10 +296,13 @@ class Library(object):
             # Get the image file
             self.logger.debug("Downloading image for %s.", oldpodcast.url)
             try:
-                response = urllib.request.urlopen(newpodcast.image)
-                image_data = response.read()
-            except urllib.request.URLError:
+                response = requests.get(newpodcast.image)
+                response.raise_for_status()
+            except requests.exceptions.RequestException:
                 self.logger.exception("Unable to download image.")
+                image_data = None
+            else:
+                image_data = response.content
 
         cursor = self.connection.cursor()
         cursor.execute(
