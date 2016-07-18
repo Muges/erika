@@ -200,6 +200,25 @@ def slugify(name):
     ])
 
 
+def podcast_dirname(podcast):
+    """
+    Return the path of the directory containing a podcast.
+
+    Parameters
+    ----------
+    podcast : Podcast
+
+    Returns
+    -------
+    str
+        The path of the directory.
+    """
+    return os.path.join(
+        LIBRARY_DIR,
+        sanitize_filename(DIRNAME_TEMPLATE.format(podcast=podcast))
+    )
+
+
 def episode_filename(episode, extension):
     """
     Return the filename of an episode.
@@ -214,10 +233,7 @@ def episode_filename(episode, extension):
     str
         The path of the episode.
     """
-    dirname = os.path.join(
-        LIBRARY_DIR,
-        sanitize_filename(DIRNAME_TEMPLATE.format(podcast=episode.podcast))
-    )
+    dirname = podcast_dirname(episode.podcast)
     filename = os.path.join(
         dirname,
         sanitize_filename(FILENAME_TEMPLATE.format(episode=episode))

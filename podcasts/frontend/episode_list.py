@@ -29,14 +29,17 @@
 List of episodes
 """
 
+import os
+
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk
 
 from podcasts.library import Library
-from podcasts.util import format_duration
+from podcasts.util import format_duration, podcast_dirname, episode_filename
 from podcasts.frontend.widgets import Label, IndexedListBox
 from podcasts.frontend import htmltopango
+from podcasts import tags
 
 SUBTITLE_LINES = 4
 CHUNK_SIZE = 10
@@ -206,6 +209,15 @@ class EpisodeList(IndexedListBox):
 
         menu = Gtk.Menu()
 
+        if any(not row.episode.local_path for row in selection):
+            menu_item = Gtk.MenuItem("Download")
+            menu_item.connect("activate", self._download_selection, selection)
+            menu.append(menu_item)
+
+            menu_item = Gtk.MenuItem("Import file")
+            menu_item.connect("activate", self._import_file, selection)
+            menu.append(menu_item)
+
         if any(not row.episode.played for row in selection):
             menu_item = Gtk.MenuItem("Mark as played")
             menu_item.connect("activate", self._mark_as_played, selection)
@@ -291,6 +303,66 @@ class EpisodeList(IndexedListBox):
         Called when the download button of an episode is clicked
         """
         self.emit("download", row.episode)
+
+    def _download_selection(self, menu_item, rows):
+        """
+        Download the episodes of the selected rows
+
+        Parameters
+        ----------
+        menu_item : Gtk.MenuItem
+            The menu item that was emitted the signal
+        rows : List[EpisodeRow]
+            The selected rows
+        """
+        for row in rows:
+            if row.episode.local_path is None:
+                self.emit("download", row.episode)
+
+    def _import_file(self, menu_item, rows):
+        """
+        Import files for the episodes of the selected rows
+
+        Parameters
+        ----------
+        menu_item : Gtk.MenuItem
+            The menu item that was emitted the signal
+        rows : List[EpisodeRow]
+            The selected rows
+        """
+        library = Library()
+
+        # Get parent window
+        window = self
+        while window.get_parent():
+            window = window.get_parent()
+
+        for row in rows:
+            if row.episode.local_path is None:
+                dialog = Gtk.FileChooserDialog(
+                    '"{}" file selection'.format(row.episode.title),
+                    window, Gtk.FileChooserAction.OPEN,
+                    (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                     Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+                dialog.set_current_folder(podcast_dirname(row.episode.podcast))
+
+                response = dialog.run()
+                if response == Gtk.ResponseType.OK:
+                    path = dialog.get_filename()
+                elif response == Gtk.ResponseType.CANCEL:
+                    path = None
+                dialog.destroy()
+
+                if path:
+                    # Rename and retag the episode
+                    ext = os.path.splitext(path)[1]
+                    newpath = episode_filename(row.episode, ext)
+                    os.rename(path, newpath)
+                    tags.set_tags(newpath, row.episode)
+
+                    row.episode.local_path = newpath
+                    library.commit([row.episode])
+                    row.update()
 
 
 class EpisodeRow(Gtk.ListBoxRow):
