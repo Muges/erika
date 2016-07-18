@@ -38,21 +38,23 @@ import lxml.html
 
 from gi.repository import GLib
 
-IGNORE = ["html", "body"]
-
-BLOCKS = ["p", "br"]
+BLOCKS = ["p", "br", "div"]
 BLOCK_PREFIX = {
     "p": "  "
 }
 BLOCK_SUFFIX = {
 }
-INLINE = ["span", "em"]
+INLINE = ["span", "em", "strong", "img"]
 TAG_STYLES = {
-    "em": {"style": "italic"}
+    "em": {"style": "italic"},
+    "strong": {"weight": "bold"}
 }
 
 
 def strip_url(url):
+    if not url:
+        return ""
+
     if url.startswith("http://"):
         url = url[7:]
     elif url.startswith("https://"):
@@ -96,7 +98,24 @@ class Parser(object):
             A string formatted with pango markup
         """
         self.clear()
-        self._parse_node(lxml.html.document_fromstring(html))
+
+        fragments = lxml.html.fragments_fromstring(html)
+
+        if not fragments:
+            return ""
+
+        # Add the trailing text
+        if isinstance(fragments[0], str):
+            text = fragments.pop(0)
+
+            if fragments:
+                text = re.sub("\s+", " ", text)
+
+            self._add_text(text)
+
+        for node in fragments:
+            self._parse_node(node)
+
         return self.get_text()
 
     def _parse_node(self, node):
@@ -108,7 +127,6 @@ class Parser(object):
         node : lxml.html.HtmlElement
             The current node.
         """
-        is_ignored = node.tag in IGNORE
         is_block = node.tag in BLOCKS
         is_inline = node.tag in INLINE
         is_link = node.tag == "a"
@@ -120,7 +138,7 @@ class Parser(object):
         except KeyError:
             pass
 
-        if not (is_ignored or is_block or is_inline or is_link):
+        if not (is_block or is_inline or is_link):
             self.logger.warning("Unknown tag '%s'.", node.tag)
 
         if style:
@@ -145,30 +163,28 @@ class Parser(object):
 
         if is_link:
             href = node.get("href")
-            if strip_url(href) == strip_url(node.text):
+            if not href:
+                self.logger.debug("Met a link without href attribute.")
+            elif strip_url(href) == strip_url(node.text):
                 pass
             elif href in self.links:
                 self._add_text(" [{}]".format(self.links.index(href) + 1))
-            elif href:
+            else:
                 self._add_text(" [{}]".format(self.link_counter))
                 self.link_counter += 1
                 self.links.append(href)
-            else:
-                self.logger.debug("Met a link without href attribute.")
 
         if style:
             self._close_span()
+
+        if is_block:
+            self._rstrip_text()
+            self._add_text(BLOCK_SUFFIX.get(node.tag, "\n"))
 
         # Handle node's tail
         if node.tail:
             tail = re.sub("\s+", " ", node.tail)
             self._add_text(tail)
-
-        if is_block or is_ignored:
-            self._rstrip_text()
-
-        if is_block:
-            self._add_text(BLOCK_SUFFIX.get(node.tag, "\n"))
 
     def get_text(self):
         """
@@ -182,7 +198,7 @@ class Parser(object):
         if self.links:
             return (
                 self.text + "\n\n" +
-                "\n".join("[{}] {}".format(i+1, link)
+                "\n".join("[{}] {}".format(i+1, GLib.markup_escape_text(link))
                           for i, link in enumerate(self.links))
             )
         else:

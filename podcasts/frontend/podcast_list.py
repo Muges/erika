@@ -39,6 +39,7 @@ from gi.repository import GObject
 
 from podcasts.library import Library
 from podcasts.frontend.widgets import Label, IndexedListBox
+from podcasts.frontend import htmltopango
 
 IMAGE_SIZE = 64
 SUBTITLE_LINES = 2
@@ -205,7 +206,7 @@ class PodcastRow(Gtk.ListBoxRow):
         ).format(
             title=self.podcast.title,
             total=self.podcast.episodes_count,
-            summary=self.podcast.summary
+            summary=htmltopango.convert(self.podcast.summary)
         ))
 
         # Podcast Image
