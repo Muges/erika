@@ -27,7 +27,11 @@ Utility functions
 """
 
 from itertools import chain
+import os.path
 import re
+import string
+
+from podcasts.config import LIBRARY_DIR, DIRNAME_TEMPLATE, FILENAME_TEMPLATE
 
 EXTENSIONS = {
     "audio/mpeg": ".mp3",
@@ -182,3 +186,41 @@ def sanitize_filename(filename):
         filename += "-podcast"
 
     return filename
+
+
+def slugify(name):
+    """
+    Remove non alphanumeric characters from a string and convert it to
+    lowercase.
+    """
+    name = name.lower()
+    return ''.join([
+        char for char in name
+        if char in string.ascii_lowercase + string.digits
+    ])
+
+
+def episode_filename(episode, extension):
+    """
+    Return the filename of an episode.
+
+    Parameters
+    ----------
+    episode : Episode
+    extension : str
+
+    Returns
+    -------
+    str
+        The path of the episode.
+    """
+    dirname = os.path.join(
+        LIBRARY_DIR,
+        sanitize_filename(DIRNAME_TEMPLATE.format(podcast=episode.podcast))
+    )
+    filename = os.path.join(
+        dirname,
+        sanitize_filename(FILENAME_TEMPLATE.format(episode=episode))
+    )
+
+    return filename + extension

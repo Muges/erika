@@ -30,6 +30,11 @@ from os.path import expanduser, join
 
 from .__version__ import __appname__
 
+# Directories
 HOME = expanduser("~")
 CONFIG_DIR = join(HOME, ".{}".format(__appname__.lower()))
 LIBRARY_DIR = join(HOME, "Podcasts")
+
+# Episode path template
+DIRNAME_TEMPLATE = "{podcast.title}"
+FILENAME_TEMPLATE = "{episode.pubdate:%Y.%m.%d} - {episode.title}"

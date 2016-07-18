@@ -36,16 +36,11 @@ import time
 import requests
 
 from podcasts import tags
-from podcasts.config import LIBRARY_DIR
 from podcasts.library import Library
-from podcasts.util import guess_extension, sanitize_filename
+from podcasts.util import guess_extension, episode_filename
 
 # Maximum number of concurrent downloads
 CONCURRENT_DOWNLOADS = 2
-
-# Episode path template
-DIRNAME_TEMPLATE = "{podcast.title}"
-FILENAME_TEMPLATE = "{episode.pubdate:%d.%m.%Y} - {episode.title}"
 
 # Smoothing factor used to compute the average download speed
 SMOOTHING_FACTOR = 0.01
@@ -63,16 +58,6 @@ def download_chunks(episode):
     int, int
         The size of the previous chunk, and the total size of the file
     """
-    # Set the path of the destination file (without its extension)
-    dirname = os.path.join(
-        LIBRARY_DIR,
-        sanitize_filename(DIRNAME_TEMPLATE.format(podcast=episode.podcast))
-    )
-    filename = os.path.join(
-        dirname,
-        sanitize_filename(FILENAME_TEMPLATE.format(episode=episode))
-    )
-
     # Start the download and get the mimetype of the file
     response = requests.get(episode.file_url, stream=True)
     mimetype = (
@@ -85,8 +70,10 @@ def download_chunks(episode):
 
     # Set the extension of the file
     ext = guess_extension(mimetype)
-    filename += ext
+
+    filename = episode_filename(episode, ext)
     tempfilename = filename + ".part"
+    dirname = os.path.dirname(filename)
 
     # Create the podcast directory if necessary
     if not os.path.isdir(dirname):

@@ -107,7 +107,7 @@ def get_tags(audio):
     date = get_tag(audio, "TDRC")
     try:
         date = datetime.strptime(date.text, "%Y-%m-%d %H:%M:%S")
-    except ValueError:
+    except (ValueError, AttributeError):
         date = None
 
     return {

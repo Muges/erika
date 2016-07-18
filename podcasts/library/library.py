@@ -37,6 +37,7 @@ from podcasts import sources, tags
 from podcasts.library.episode import Episode
 from podcasts.library.podcast import Podcast
 from podcasts.library.row import Row
+from podcasts.util import slugify, episode_filename
 
 DATABASE_PATH = os.path.join(CONFIG_DIR, "library")
 
@@ -497,58 +498,131 @@ class Library(object):
         result = cursor.fetchone()
         return result["previous_track_number"] + 1
 
-    def add_local_file(self, path, audiotags):
+    def get_podcast_with_title(self, title):
         """
-        Add a local file to the library.
+        Get the podcast from its title.
 
         Parameters
         ----------
-        path : str
-            The path of the file.
-        audiotags : Dict[str, Any]
-            The audio tags of the path.
+        title : str
+            The podcast's title.
+
+        Returns
+        -------
+        Union[Podcast, None]
+            None if there is no podcast with this title.
         """
         cursor = self.connection.cursor()
 
         cursor.execute(
             """
-                SELECT id
+                SELECT
+                    *,
+                    NULL AS new_count,
+                    NULL AS played_count,
+                    NULL AS episodes_count
                 FROM podcasts
                 WHERE title = ?
-            """, (audiotags["podcast"],)
+            """, (title,)
         )
         row = cursor.fetchone()
 
-        if not row:
+        if row:
+            return Podcast(**row)
+        else:
+            return None
+
+    def get_matching_episode(self, path):
+        """
+        Get the episode matching a file.
+
+        Parameters
+        ----------
+        path : str
+            The path of the file.
+
+        Returns
+        -------
+        Union[Episode, None], bool
+            The episode, or None if there was no match;
+            and True if it is a strict match (i.e. if the tags of the file are
+            correct)
+        """
+        # Get the file's audio tags
+        audiotags = tags.get_tags(path)
+
+        # Get podcast
+        podcast = self.get_podcast_with_title(audiotags["podcast"])
+        if not podcast:
             self.logger.warning(
                 "The file '{}' belongs to an unknown podcast '{}'.".format(
                     path, audiotags["podcast"]))
-            return
+            return None, False
 
-        podcast_id = row["id"]
+        # Get the podcast's episodes with no local file
+        episodes = [
+            episode for episode in self.get_episodes(podcast)
+            if episode.local_path is None
+        ]
 
-        cursor.execute(
-            """
-                UPDATE episodes
-                SET
-                    local_path=?
-                WHERE
-                    podcast_id=? AND
-                    ((pubdate=? AND title=?) OR
-                    (guid IS NOT NULL AND guid=?))
-            """, (
-                # SET
-                path,
-                # WHERE
-                podcast_id,
-                audiotags["pubdate"], audiotags["title"],
-                audiotags["guid"]
-            )
-        )
+        # Try to get the episode with the same GUID
+        filtered_episodes = [
+            episode for episode in episodes
+            if episode.guid == audiotags["guid"]
+        ]
+        if filtered_episodes:
+            return filtered_episodes[0], True
 
-        if cursor.rowcount == 0:
-            self.logger.warning(
-                "The file '{}' is an unknown episode.".format(path))
+        # Try to get the episode with the same publication date and title
+        filtered_episodes = [
+            episode for episode in episodes
+            if episode.pubdate == audiotags["pubdate"] and
+            episode.title == audiotags["title"]
+        ]
+        if filtered_episodes:
+            if len(filtered_episodes) > 1:
+                self.logger.warning(
+                    "Too many episodes with matching date and title for file "
+                    "'{}'.".format(path))
+                return None, False
+            else:
+                return filtered_episodes[0], True
+
+        # Try to get the episode with the same title
+        filtered_episodes = [
+            episode for episode in episodes
+            if episode.title == audiotags["title"]
+        ]
+        if filtered_episodes:
+            if len(filtered_episodes) > 1:
+                self.logger.warning(
+                    "Too many episodes with matching title for file "
+                    "'{}'.".format(path))
+                return None, False
+            else:
+                return filtered_episodes[0], False
+
+        # Try to get the episode with a filename similar to the title
+        filename = slugify(os.path.splitext(os.path.basename(path))[0])
+        title = slugify(audiotags["title"] or "")
+
+        filtered_episodes = [
+            episode for episode in episodes
+            if slugify(episode.title) in [title, filename]
+        ]
+        if filtered_episodes:
+            if len(filtered_episodes) > 1:
+                self.logger.warning(
+                    "Too many episodes with matching filename for file "
+                    "'{}'.".format(path))
+                return None, False
+            else:
+                return filtered_episodes[0], False
+
+        # No match was found
+        self.logger.warning(
+            "The file '{}' is an unknown episode.".format(path))
+        return None, False
 
     def get_episodes_with_local_file(self):
         """
@@ -594,15 +668,37 @@ class Library(object):
         """
         Scan the library directory to add the local episode files.
         """
+        paths = []
         # Check that the files that are in the database still exist
         for episode_id, path in self.get_episodes_with_local_file():
-            if not os.path.isfile(path):
+            if os.path.isfile(path):
+                paths.append(path)
+            else:
                 self.remove_local_file(episode_id)
+        self.connection.commit()
 
         # Look for new local files
+        episodes = []
         for dirpath, dirnames, filenames in os.walk(LIBRARY_DIR):
             for filename in filenames:
                 path = os.path.join(dirpath, filename)
-                self.add_local_file(path, tags.get_tags(path))
+                if path in paths:
+                    # The file is already in the library
+                    continue
 
-        self.connection.commit()
+                episode, strict = self.get_matching_episode(path)
+                if not episode:
+                    # No match was found
+                    continue
+
+                if not strict:
+                    # Rename and retag the episode
+                    ext = os.path.splitext(path)[1]
+                    newpath = episode_filename(episode, ext)
+                    os.rename(path, newpath)
+                    tags.set_tags(newpath, episode)
+                    path = newpath
+
+                episode.local_path = path
+                episodes.append(episode)
+        self.commit(episodes)
