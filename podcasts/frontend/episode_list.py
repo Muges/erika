@@ -35,7 +35,8 @@ from gi.repository import Gtk
 
 from podcasts.library import Library
 from podcasts.util import format_duration
-from .widgets import Label, IndexedListBox
+from podcasts.frontend.widgets import Label, IndexedListBox
+from podcasts.frontend import htmltopango
 
 SUBTITLE_LINES = 4
 CHUNK_SIZE = 10
@@ -386,7 +387,8 @@ class EpisodeRow(Gtk.ListBoxRow):
         """
         Update the widget
         """
-        self.grid.set_tooltip_text(self.episode.subtitle)
+        summary = htmltopango.convert(self.episode.summary)
+        self.grid.set_tooltip_markup(summary)
 
         # Episode status
         if self.episode.new:
@@ -407,7 +409,7 @@ class EpisodeRow(Gtk.ListBoxRow):
 
         # Episode subtitle
         self.subtitle.set_sensitive(not self.episode.played)
-        self.subtitle.set_text(self.episode.subtitle.split("\n")[0])
+        self.subtitle.set_markup(summary.split("\n")[0].strip())
 
         # Episode duration
         self.duration.set_sensitive(not self.episode.played)

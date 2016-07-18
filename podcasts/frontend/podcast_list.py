@@ -38,7 +38,7 @@ from gi.repository import GdkPixbuf
 from gi.repository import GObject
 
 from podcasts.library import Library
-from .widgets import Label, IndexedListBox
+from podcasts.frontend.widgets import Label, IndexedListBox
 
 IMAGE_SIZE = 64
 SUBTITLE_LINES = 2
@@ -224,7 +224,7 @@ class PodcastRow(Gtk.ListBoxRow):
             "{} ({})".format(unplayed, self.podcast.new_count))
 
         # Podcast subtitle
-        self.subtitle.set_text(self.podcast.subtitle)
+        self.subtitle.set_text(self.podcast.subtitle or self.podcast.summary)
 
     def get_pixbuf(self):
         """
