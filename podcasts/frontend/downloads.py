@@ -31,6 +31,7 @@ import logging
 from gi.repository import GdkPixbuf
 from gi.repository import GObject
 from gi.repository import Gtk
+from gi.repository import GLib
 
 from podcasts.downloads import DownloadsPool, download_with_average_speed
 from podcasts.library import Library
@@ -228,8 +229,9 @@ class DownloadRow(Gtk.ListBoxRow):
             self.icon.hide()
 
         self.title.set_markup(
-            "{} - <i>{}</i>".format(self.job.episode.title,
-                                    self.job.episode.podcast.title))
+            "{} - <i>{}</i>".format(
+                GLib.markup_escape_text(self.job.episode.title),
+                GLib.markup_escape_text(self.job.episode.podcast.title)))
 
         self.progress_label.set_text("Pending...")
 

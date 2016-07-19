@@ -36,6 +36,7 @@ List of podcasts
 from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 from gi.repository import GObject
+from gi.repository import GLib
 
 from podcasts.library import Library
 from podcasts.frontend.widgets import Label, IndexedListBox
@@ -217,12 +218,16 @@ class PodcastRow(Gtk.ListBoxRow):
             self.icon.hide()
 
         # Podcast title
-        self.title.set_markup("<b>{}</b>".format(self.podcast.title))
+        self.title.set_markup("<b>{}</b>".format(
+            GLib.markup_escape_text(self.podcast.title)))
 
         # Unplayed and new counts
         unplayed = self.podcast.episodes_count - self.podcast.played_count
-        self.counts.set_text(
-            "{} ({})".format(unplayed, self.podcast.new_count))
+        if self.podcast.new_count > 0:
+            self.counts.set_markup(
+                "{} <b>({})</b>".format(unplayed, self.podcast.new_count))
+        else:
+            self.counts.set_text("{}".format(unplayed))
 
         # Podcast subtitle
         self.subtitle.set_text(self.podcast.subtitle or self.podcast.summary)

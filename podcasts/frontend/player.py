@@ -34,6 +34,7 @@ import os
 from gi.repository import GObject
 from gi.repository import Gst
 from gi.repository import Gtk
+from gi.repository import GLib
 
 from podcasts.__version__ import __appname__
 from podcasts.library import Library
@@ -346,7 +347,8 @@ class PlayerWidgets(GObject.Object):
         for playing in self.playing:
             playing.set_markup(
                 "<b>{}</b> from <b><i>{}</i></b>".format(
-                    episode.title, episode.podcast.title))
+                    GLib.markup_escape_text(episode.title),
+                    GLib.markup_escape_text(episode.podcast.title)))
 
     def _on_play_clicked(self, button):
         """
