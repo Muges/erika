@@ -79,7 +79,8 @@ class Application(Gtk.Application):
         self.window.present()
 
     def _on_quit(self, action, param):
-        self.quit()
+        if self.window:
+            self.window.close()
 
     def _on_update_library(self, action, param):
         if self.window:

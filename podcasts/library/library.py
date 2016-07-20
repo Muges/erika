@@ -381,7 +381,7 @@ class Library(object):
 
         return (Podcast(**row) for row in cursor.fetchall())
 
-    def get_episodes(self, podcast):
+    def get_episodes(self, podcast, sort=None):
         """
         Return a list of podcasts.
 
@@ -389,11 +389,19 @@ class Library(object):
         ----------
         podcast : podcasts.library.Podcast
             The podcasts whose episodes will be returned
+        sort : Union[FilterSort, None]
+            A FilterSort indicating which episodes should be returned first, or
+            None not to sort the results.
 
         Yields
         ------
         Episode
         """
+        if sort:
+            order_query = sort.query()
+        else:
+            order_query = ""
+
         cursor = self.connection.cursor()
         cursor.execute("""
             SELECT
@@ -401,8 +409,7 @@ class Library(object):
             FROM episodes
             WHERE
                 podcast_id=?
-            ORDER BY pubdate DESC
-        """, (podcast.id,))
+        """ + order_query, (podcast.id,))
 
         return (Episode(**row, podcast=podcast) for row in cursor.fetchall())
 

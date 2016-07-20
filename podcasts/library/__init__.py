@@ -27,3 +27,4 @@ Podcast library
 """
 
 from podcasts.library.library import Library
+from podcasts.library.filtersort import EpisodeFilterSort

@@ -35,9 +35,11 @@ from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk
 
-from podcasts.library import Library
+from podcasts.library import Library, EpisodeFilterSort
 from podcasts.util import format_duration, podcast_dirname, episode_filename
-from podcasts.frontend.widgets import Label, IndexedListBox
+from podcasts.frontend.widgets import (
+    Label, IndexedListBox, FilterButton, SortButton
+)
 from podcasts.frontend import htmltopango
 from podcasts import tags
 
@@ -45,7 +47,7 @@ SUBTITLE_LINES = 4
 CHUNK_SIZE = 10
 
 
-class EpisodeList(IndexedListBox):
+class EpisodeList(Gtk.VBox):
     """
     List of episodes
 
@@ -69,13 +71,44 @@ class EpisodeList(IndexedListBox):
     }
 
     def __init__(self):
-        IndexedListBox.__init__(self)
+        Gtk.VBox.__init__(self)
+
         self.current_podcast = None
         self.update_id = None
 
-        self.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
-        self.set_sort_func(self.sort_func, -1)
-        self.connect("popup-menu", EpisodeList._on_popup_menu)
+        self.filtersort = EpisodeFilterSort()
+
+        # Episode list
+        self.list = IndexedListBox()
+        self.list.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
+        self.list.set_sort_func(self.sort_func)
+        self.list.set_filter_func(self.filter_func)
+        self.list.connect("popup-menu", self._on_popup_menu)
+
+        scrolled_window = Gtk.ScrolledWindow()
+        scrolled_window.add_with_viewport(self.list)
+        self.pack_start(scrolled_window, True, True, 0)
+
+        # Filter and sort buttons
+        self.action_bar = Gtk.ActionBar()
+        self.pack_start(self.action_bar, False, False, 0)
+
+        filter_new = FilterButton("starred-symbolic")
+        filter_new.connect("toggled", self._filter_toggled, "new")
+        self.action_bar.pack_start(filter_new)
+
+        filter_played = FilterButton("media-playback-start-symbolic")
+        filter_played.connect("toggled", self._filter_toggled, "played")
+        self.action_bar.pack_start(filter_played)
+
+        filter_downloaded = FilterButton("document-save-symbolic")
+        filter_downloaded.connect("toggled", self._filter_toggled,
+                                  "downloaded")
+        self.action_bar.pack_start(filter_downloaded)
+
+        sort = SortButton()
+        sort.connect("clicked", self._sort_toggled)
+        self.action_bar.pack_end(sort)
 
     def select(self, podcast):
         """
@@ -93,10 +126,11 @@ class EpisodeList(IndexedListBox):
             GLib.source_remove(self.update_id)
 
         # Remove children
-        self.clear()
+        self.list.clear()
 
         library = Library()
-        self._load_by_chunks(library.get_episodes(podcast), set())
+        self._load_by_chunks(library.get_episodes(podcast, self.filtersort),
+                             set())
 
     def update(self):
         """
@@ -108,8 +142,9 @@ class EpisodeList(IndexedListBox):
                 GLib.source_remove(self.update_id)
 
             library = Library()
-            self._load_by_chunks(library.get_episodes(self.current_podcast),
-                                 self.get_ids())
+            self._load_by_chunks(
+                library.get_episodes(self.current_podcast, self.filtersort),
+                self.list.get_ids())
 
     def update_episode(self, episode):
         """
@@ -120,7 +155,7 @@ class EpisodeList(IndexedListBox):
         episode : Episode
         """
         try:
-            row = self.get_row(episode.id)
+            row = self.list.get_row(episode.id)
         except ValueError:
             pass
         else:
@@ -145,19 +180,19 @@ class EpisodeList(IndexedListBox):
             except StopIteration:
                 # Remove the episodes that are not in the database anymore
                 for episode_id in remove_ids:
-                    self.remove_id(episode_id)
+                    self.list.remove_id(episode_id)
 
                 self.update_id = None
                 return
             else:
                 try:
-                    row = self.get_row(episode.id)
+                    row = self.list.get_row(episode.id)
                 except ValueError:
                     # The row does not exist, create it
                     row = EpisodeRow(episode)
                     row.connect("play", self._play)
                     row.connect("download", self._download)
-                    self.add_with_id(row, episode.id)
+                    self.list.add_with_id(row, episode.id)
                 else:
                     # The row already exists, update it
                     remove_ids.remove(episode.id)
@@ -169,7 +204,7 @@ class EpisodeList(IndexedListBox):
         self.update_id = GLib.idle_add(self._load_by_chunks, episodes,
                                        remove_ids)
 
-    def sort_func(self, row1, row2, asc):
+    def sort_func(self, row1, row2):
         """
         Compare two rows to determine which should be first. Sort them
         by date.
@@ -180,9 +215,6 @@ class EpisodeList(IndexedListBox):
             The first row
         row2 : Gtk.ListBoxRow
             The second row
-        asc : int
-            1 to sort by ascending dates
-            -1 to sort by descending dates
 
         Returns
         -------
@@ -191,18 +223,52 @@ class EpisodeList(IndexedListBox):
             0 if they are equal,
             1 otherwise
         """
+        if self.filtersort.sort_descending:
+            delta = 1
+        else:
+            delta = -1
+
         if row1.episode.pubdate < row2.episode.pubdate:
-            return -1*asc
+            return delta
         elif row1.episode.pubdate == row2.episode.pubdate:
             return 0
         else:
-            return 1*asc
+            return -delta
 
-    def _on_popup_menu(self):
+    def filter_func(self, row):
+        """
+        Check if a row should be visible or not.
+
+        Parameters
+        ----------
+        row : Gtk.ListBoxRow
+            The row
+
+        Returns
+        -------
+        bool
+            True if the row should be visible.
+        """
+        new = self.filtersort.get_filter("new")
+        if new is not None and row.episode.new != new:
+            return False
+
+        played = self.filtersort.get_filter("played")
+        if played is not None and row.episode.played != played:
+            return False
+
+        downloaded = self.filtersort.get_filter("downloaded")
+        episode_downloaded = row.episode.local_path is not None
+        if downloaded is not None and episode_downloaded != downloaded:
+            return False
+
+        return True
+
+    def _on_popup_menu(self, list):
         """
         Display the context menu
         """
-        selection = self.get_selected_rows()
+        selection = self.list.get_selected_rows()
 
         if selection == []:
             return
@@ -363,6 +429,27 @@ class EpisodeList(IndexedListBox):
                     row.episode.local_path = newpath
                     library.commit([row.episode])
                     row.update()
+
+    def _filter_toggled(self, button, field):
+        """
+        Called when a filter button is clicked.
+
+        Parameters
+        ----------
+        button : FilterButton
+            The button that was clicked
+        field : str
+            The field that should be modified in the FilterSort object.
+        """
+        self.filtersort.filter(field, button.get_state())
+        self.list.invalidate_filter()
+
+    def _sort_toggled(self, button):
+        """
+        Called when the sort button is clicked.
+        """
+        self.filtersort.sort_descending = button.get_descending()
+        self.list.invalidate_sort()
 
 
 class EpisodeRow(Gtk.ListBoxRow):

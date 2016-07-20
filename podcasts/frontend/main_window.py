@@ -102,9 +102,7 @@ class MainWindow(Gtk.ApplicationWindow):
         scrolled_window.add_with_viewport(self.podcast_list)
         paned.add1(scrolled_window)
 
-        scrolled_window = Gtk.ScrolledWindow()
-        scrolled_window.add_with_viewport(self.episode_list)
-        paned.add2(scrolled_window)
+        paned.add2(self.episode_list)
 
         status_bar = Gtk.HBox()
         status_bar.set_margin_top(5)

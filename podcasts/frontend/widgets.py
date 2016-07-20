@@ -391,3 +391,130 @@ class StatusBox(Gtk.HBox):
         # Stop the spinner if no message is being displayed
         if not self.messages:
             self.spinner.stop()
+
+
+class FilterButton(Gtk.ToggleButton):
+    """
+    A toggle button used to represent filtering options.
+
+    The button has three states:
+     - inactive (i.e. show everything);
+     - filter true (e.g. show new episodes);
+     - filter false (e.g. show non new episodes).
+    """
+    def __init__(self, icon_name):
+        Gtk.ToggleButton.__init__(self)
+        self.connect("button-press-event", FilterButton._on_button_press_event)
+
+        self.state = None
+
+        self.inactive_image = Gtk.Image.new_from_icon_name(
+            icon_name, Gtk.IconSize.SMALL_TOOLBAR)
+        self.filter_true_image = Gtk.Image.new_from_icon_name(
+            icon_name, Gtk.IconSize.SMALL_TOOLBAR)
+        self.filter_false_image = Gtk.Image.new_from_icon_name(
+            icon_name, Gtk.IconSize.SMALL_TOOLBAR)
+        self.filter_false_image.set_opacity(0.5)
+
+        self.set_state(None)
+
+    def set_state(self, state):
+        """
+        Set the state of the button.
+
+        Parameters
+        ----------
+        state : Union[bool, None]
+        """
+        self.state = state
+        self.set_active(state is not None)
+
+        if self.state is None:
+            self.set_image(self.inactive_image)
+        elif self.state:
+            self.set_image(self.filter_true_image)
+        else:
+            self.set_image(self.filter_false_image)
+
+    def get_state(self):
+        """
+        Get the state of the button.
+
+        Returns
+        -------
+        Union[bool, None]
+        """
+        return self.state
+
+    def _on_button_press_event(self, event):
+        """
+        Called when the button is clicked.
+        """
+        # Propagate the event if it is not a single left button click
+        if event.type != Gdk.EventType.BUTTON_PRESS or event.button != 1:
+            return False
+
+        if self.state is None:
+            self.set_state(True)
+        elif self.state:
+            self.set_state(False)
+            self.emit("toggled")
+        else:
+            self.set_state(None)
+
+        return True
+
+
+class SortButton(Gtk.Button):
+    """
+    A button used to represent sorting options.
+
+    The button has two states : ascending or descending.
+    """
+    def __init__(self):
+        Gtk.Button.__init__(self)
+        self.connect("clicked", SortButton._on_clicked)
+
+        self.descending = True
+
+        self.ascending_image = Gtk.Image.new_from_icon_name(
+            "view-sort-ascending-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+        self.descending_image = Gtk.Image.new_from_icon_name(
+            "view-sort-descending-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+
+        self.set_descending(True)
+
+    def set_descending(self, descending):
+        """
+        Change the state of the button.
+
+        Parameters
+        ----------
+        descending : bool
+            True if the sorting order whould be descending.
+        """
+        self.descending = descending
+
+        if descending:
+            self.set_image(self.descending_image)
+        else:
+            self.set_image(self.ascending_image)
+
+    def get_descending(self):
+        """
+        Return the state of the button.
+
+        Returns
+        -------
+        bool
+            True if the sorting order whould be descending.
+        """
+        return self.descending
+
+    def _on_clicked(self):
+        """
+        Called when the button is clicked.
+
+        Change the state of the button.
+        """
+        self.set_descending(not self.get_descending())
