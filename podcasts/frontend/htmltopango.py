@@ -257,5 +257,8 @@ def convert(html):
     str
         A string formatted with pango markup
     """
+    if html == None:
+        return ""
+
     parser = Parser()
     return parser.parse_string(html)

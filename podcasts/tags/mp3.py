@@ -87,7 +87,7 @@ def set_tags(audio, episode):
             audio.tags["APIC"] = APIC(3, desc="", mime=mimetype, type=3,
                                       data=data)
 
-    audio.tags.save()
+    audio.save()
 
 
 def get_tag(audio, tag):
