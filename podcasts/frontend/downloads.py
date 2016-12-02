@@ -36,7 +36,7 @@ from gi.repository import GLib
 from podcasts.downloads import DownloadsPool, download_with_average_speed
 from podcasts.library import Library
 from podcasts.util import format_fulltext_duration, format_size
-from podcasts.frontend.widgets import Label
+from podcasts.frontend.widgets import Label, ScrolledWindow
 
 # Size of the episode icon in the download list
 IMAGE_SIZE = 64
@@ -80,12 +80,13 @@ class DownloadsButton(Gtk.MenuButton):
         self.list.connect("remove", self._on_list_changed)
         self.list.show()
 
-        scrolled_window = Gtk.ScrolledWindow()
+        scrolled_window = ScrolledWindow()
         scrolled_window.add_with_viewport(self.list)
         scrolled_window.show_all()
         scrolled_window.set_vexpand(True)
         scrolled_window.set_size_request(POPOVER_WIDTH, 0)
         try:
+            scrolled_window.set_min_content_height(10)
             scrolled_window.set_max_content_height(POPOVER_HEIGHT)
         except AttributeError:
             self.logger.warning(
