@@ -89,6 +89,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         headerbar = Gtk.HeaderBar()
         headerbar.set_custom_title(self.player.widgets.title)
+        headerbar.set_show_close_button(True)
         headerbar.pack_start(self.menu_button)
         headerbar.pack_start(self.player.widgets.controls)
         headerbar.pack_end(self.downloads_button)
@@ -98,10 +99,7 @@ class MainWindow(Gtk.ApplicationWindow):
         paned.set_position(300)
         vbox.pack_start(paned, True, True, 0)
 
-        scrolled_window = Gtk.ScrolledWindow()
-        scrolled_window.add_with_viewport(self.podcast_list)
-        paned.add1(scrolled_window)
-
+        paned.add1(self.podcast_list)
         paned.add2(self.episode_list)
 
         status_bar = Gtk.HBox()
@@ -185,7 +183,7 @@ class MainWindow(Gtk.ApplicationWindow):
             def _add(url):
                 # TODO : handle errors
                 library = Library()
-                library.add_source("feed", url)
+                library.add_source("rss", url)
 
                 GObject.idle_add(_end)
 

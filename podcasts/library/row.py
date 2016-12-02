@@ -49,6 +49,14 @@ class RowType(type):
                 attrs['PRIMARY_KEY']
             )
 
+            attrs["DELETE_QUERY"] = """
+                DELETE FROM {}
+                WHERE {}=?
+            """.format(
+                attrs['TABLE'],
+                attrs['PRIMARY_KEY']
+            )
+
         return super(RowType, cls).__new__(cls, name, bases, attrs)
 
 
@@ -112,6 +120,20 @@ class Row(object, metaclass=RowType):
             [getattr(self, self.__class__.PRIMARY_KEY)]
         )
 
+    def get_delete_attrs(self):
+        """
+        Return a list containing the primary key of the row
+
+        Returns
+        -------
+        List[Any]
+            List containing the primary key of the row
+        """
+        return (
+            [getattr(self, self.__class__.PRIMARY_KEY)]
+        )
+        
+    
     def __eq__(self, other):
         """
         Check if two rows are the same.

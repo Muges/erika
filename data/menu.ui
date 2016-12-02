@@ -7,18 +7,6 @@
         <attribute name="label" translatable="yes">_Update library</attribute>
       </item>
       <item>
-        <attribute name="action">app.add-podcast</attribute>
-        <attribute name="label" translatable="yes">_Add podcast</attribute>
-      </item>
-      <item>
-        <attribute name="action">app.import-opml</attribute>
-        <attribute name="label" translatable="yes">_Import OPML</attribute>
-      </item>
-      <item>
-        <attribute name="action">app.export-opml</attribute>
-        <attribute name="label" translatable="yes">_Export OPML</attribute>
-      </item>
-      <item>
         <attribute name="action">app.quit</attribute>
         <attribute name="label" translatable="yes">_Quit</attribute>
         <attribute name="accel">&lt;Primary&gt;q</attribute>

@@ -46,7 +46,7 @@ IMAGE_SIZE = 64
 SUBTITLE_LINES = 2
 
 
-class PodcastList(IndexedListBox):
+class PodcastList(Gtk.VBox):
     """
     List of podcasts
 
@@ -63,25 +63,56 @@ class PodcastList(IndexedListBox):
 
     def __init__(self):
         super().__init__()
-        self.set_selection_mode(Gtk.SelectionMode.BROWSE)
-        self.set_sort_func(self.sort_func)
-        self.connect("row-selected", PodcastList._on_row_selected)
+
+        # Podcast list
+        self.list = IndexedListBox()
+        self.list.set_selection_mode(Gtk.SelectionMode.BROWSE)
+        self.list.set_sort_func(self.sort_func)
+        self.list.connect("row-selected", self._on_row_selected)
+
+        scrolled_window = Gtk.ScrolledWindow()
+        scrolled_window.add_with_viewport(self.list)
+        self.pack_start(scrolled_window, True, True, 0)
+
+        # Action bar
+        self.action_bar = Gtk.ActionBar()
+        self.pack_start(self.action_bar, False, False, 0)
+
+        add_podcast = Gtk.Button.new_from_icon_name(
+            "feed-add-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+        add_podcast.set_action_name("app.add-podcast")
+        self.action_bar.pack_start(add_podcast)
+
+        remove_podcast = Gtk.Button.new_from_icon_name(
+            "feed-remove-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+        remove_podcast.connect("clicked", self._remove_podcast)
+        self.action_bar.pack_start(remove_podcast)
+
+        import_opml = Gtk.Button.new_from_icon_name(
+            "document-open-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+        import_opml.set_action_name("app.import-opml")
+        self.action_bar.pack_end(import_opml)
+
+        export_opml = Gtk.Button.new_from_icon_name(
+            "document-save-as-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+        export_opml.set_action_name("app.export-opml")
+        self.action_bar.pack_end(export_opml)
 
     def update(self):
         """
         Update the list of podcasts
         """
         # Set of ids that should be removed
-        remove_ids = self.get_ids()
+        remove_ids = self.list.get_ids()
 
         library = Library()
         for podcast in library.get_podcasts():
             try:
-                row = self.get_row(podcast.id)
+                row = self.list.get_row(podcast.id)
             except ValueError:
                 # The row does not exist, create it
                 row = PodcastRow(podcast)
-                self.add_with_id(row, podcast.id)
+                self.list.add_with_id(row, podcast.id)
             else:
                 # The row already exists, update it
                 remove_ids.remove(podcast.id)
@@ -90,10 +121,10 @@ class PodcastList(IndexedListBox):
 
         # Remove the podcasts that are not in the database anymore
         for podcast_id in remove_ids:
-            self.remove_id(podcast_id)
+            self.list.remove_id(podcast_id)
 
-        if self.get_selected_row() is None:
-            self.select_row(self.get_row_at_index(0))
+        if self.list.get_selected_row() is None:
+            self.list.select_row(self.list.get_row_at_index(0))
 
     def update_podcast(self, podcast_id):
         """
@@ -105,7 +136,7 @@ class PodcastList(IndexedListBox):
             The id of the podcast
         """
         try:
-            row = self.get_row(podcast_id)
+            row = self.list.get_row(podcast_id)
         except ValueError:
             pass
         else:
@@ -117,14 +148,14 @@ class PodcastList(IndexedListBox):
         """
         Update the selected row
         """
-        row = self.get_selected_row()
+        row = self.list.get_selected_row()
 
         if row:
             library = Library()
             library.update_counts(row.podcast)
             row.update()
 
-    def _on_row_selected(self, row):
+    def _on_row_selected(self, list, row):
         """
         Called when a row is selected.
 
@@ -159,6 +190,38 @@ class PodcastList(IndexedListBox):
         else:
             return 1
 
+    def _remove_podcast(self, button):
+        selection = self.list.get_selected_row()
+
+        if selection == None:
+            return
+
+        # Get parent window
+        window = self
+        while window.get_parent():
+            window = window.get_parent()
+
+        # Ask for confirmation
+        dialog = Gtk.MessageDialog(window, 0, Gtk.MessageType.QUESTION,
+                                   Gtk.ButtonsType.YES_NO)
+        dialog.set_markup(
+            "Are you sure you want to remove the podcast <b>{}</b>?".format(
+                selection.podcast.title))
+        response = dialog.run()
+        dialog.destroy()
+
+        if response == Gtk.ResponseType.NO:
+            return
+
+        # Delete the podcast
+        library = Library()
+        library.remove(selection.podcast)
+
+        selection.destroy()
+
+        # Select the first row
+        first_row = self.list.get_row_at_index(0)
+        self.list.select_row(first_row)
 
 class PodcastRow(Gtk.ListBoxRow):
     """

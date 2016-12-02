@@ -83,6 +83,7 @@ class Library(object):
         self.connection = sqlite3.connect(DATABASE_PATH,
                                           detect_types=sqlite3.PARSE_DECLTYPES)
         self.connection.row_factory = sqlite3.Row
+        self.connection.execute("PRAGMA foreign_keys = ON")
 
     def create(self):
         """
@@ -114,7 +115,7 @@ class Library(object):
 
         self.connection.execute("""
             CREATE TABLE episodes (
-                podcast_id integer REFERENCES podcasts(id),
+                podcast_id integer REFERENCES podcasts(id) ON DELETE CASCADE,
                 id integer PRIMARY KEY,
 
                 guid text,
@@ -448,6 +449,20 @@ class Library(object):
 
         for row in rows:
             cursor.execute(row.__class__.UPDATE_QUERY, row.get_update_attrs())
+
+        self.connection.commit()
+
+    def remove(self, row):
+        """
+        Remove a Row from the database.
+
+        Parameters
+        ----------
+        row : Row
+        """
+        cursor = self.connection.cursor()
+
+        cursor.execute(row.__class__.DELETE_QUERY, row.get_delete_attrs())
 
         self.connection.commit()
 
