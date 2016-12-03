@@ -34,9 +34,10 @@ from podcasts.frontend.main_window import MainWindow
 from podcasts.frontend import preferences
 from podcasts.library import Library
 from podcasts.opml import import_opml, export_opml
+from podcasts import gpodder
 
 # Library update interval in seconds
-UPDATE_INTERVAL = 15*60
+SYNCHRONIZE_INTERVAL = 15*60
 
 
 class Application(Gtk.Application):
@@ -64,7 +65,7 @@ class Application(Gtk.Application):
         self.add_action(action)
 
         action = Gio.SimpleAction.new("update", None)
-        action.connect("activate", lambda a, p: self.update_library())
+        action.connect("activate", lambda a, p: self.synchronize_library())
         self.add_action(action)
 
         action = Gio.SimpleAction.new("preferences", None)
@@ -72,7 +73,7 @@ class Application(Gtk.Application):
         self.add_action(action)
 
         action = Gio.SimpleAction.new("quit", None)
-        action.connect("activate", self._on_quit)
+        action.connect("activate", lambda a, p: self.quit())
         self.add_action(action)
         self.add_accelerator("<Primary>q", "app.quit", None)
 
@@ -89,11 +90,49 @@ class Application(Gtk.Application):
                 self.quit()
                 return
 
-            # Library update
-            self.update_library(scan=True)
-            GObject.timeout_add_seconds(UPDATE_INTERVAL, self.update_library)
+            self.synchronize_library(scan=True)
+            GObject.timeout_add_seconds(SYNCHRONIZE_INTERVAL, self.synchronize_library)
 
         self.window.present()
+
+    def do_shutdown(self):
+        if self.window:
+            self.window.close()
+
+        self.synchronize_library(update=False)
+
+        Gtk.Application.do_shutdown(self)
+
+    def synchronize_library(self, update=True, scan=False):
+        """
+        Synchronize the podcasts library with gpodder.net.
+        """
+        if self.window:
+            message_id = self.window.statusbox.add("Synchronizing library...")
+        else:
+            message_id = None
+
+        def _end():
+            if self.window:
+                if message_id:
+                    self.window.statusbox.remove(message_id)
+
+                self.window.podcast_list.update()
+                self.window.episode_list.update()
+                self.window.update_counts()
+
+            if update:
+                self.update_library(scan)
+
+        def _synchronize():
+            # TODO : handle errors
+            gpodder.synchronize()
+            GObject.idle_add(_end)
+
+        thread = threading.Thread(target=_synchronize)
+        thread.start()
+
+        return True
 
     def update_library(self, scan=False):
         """
@@ -129,6 +168,8 @@ class Application(Gtk.Application):
 
         thread = threading.Thread(target=_update)
         thread.start()
+
+        return True
 
     def add_podcast(self):
         """
@@ -268,10 +309,6 @@ class Application(Gtk.Application):
 
         thread = threading.Thread(target=_export, args=(filename,))
         thread.start()
-
-    def _on_quit(self, action, param):
-        if self.window:
-            self.window.close()
 
     def _on_import_opml(self, action, param):
         if self.window:

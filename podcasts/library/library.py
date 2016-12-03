@@ -116,6 +116,8 @@ class Library(object):
                 summary text,
                 link text,
 
+                synced INTEGER DEFAULT 0,
+
                 UNIQUE (source, url)
             )
         """)
@@ -151,7 +153,28 @@ class Library(object):
             )
         """)
 
+        self.connection.execute("""
+            CREATE TABLE removed_podcasts (
+                url text UNIQUE
+            )
+        """)
+
         self.connection.commit()
+
+    def has_podcast(self, source_name, url):
+        cursor = self.connection.cursor()
+
+        cursor.execute(
+            """
+                SELECT id FROM podcasts
+                WHERE source = ? AND URL = ?
+            """, (
+                source_name, url
+            )
+        )
+
+        row = cursor.fetchone()
+        return row is not None
 
     def _add_podcast(self, source_name, url, podcast):
         """
@@ -185,6 +208,7 @@ class Library(object):
             image_data = response.content
 
         cursor = self.connection.cursor()
+
         cursor.execute(
             """
                 INSERT OR IGNORE INTO podcasts
@@ -199,6 +223,8 @@ class Library(object):
                 podcast.summary, podcast.link
             )
         )
+
+        self.connection.commit()
 
         return cursor.lastrowid
 
@@ -276,14 +302,15 @@ class Library(object):
         url : str
             URL of the podcast
         """
+        if self.has_podcast(source_name, url):
+            return
+
         source = sources.get(source_name, url)
         source.parse()
 
         podcast = source.get_podcast()
         podcast_id = self._add_podcast(source_name, url, podcast)
         next_track_number = 1
-
-        self.connection.commit()
 
         for episode in source.get_episodes():
             next_track_number = self._add_episode(podcast_id, episode,
@@ -472,6 +499,13 @@ class Library(object):
         cursor = self.connection.cursor()
 
         cursor.execute(row.__class__.DELETE_QUERY, row.get_delete_attrs())
+
+        if isinstance(row, Podcast) and row.source == "rss":
+            cursor.execute(
+                """
+                    INSERT INTO removed_podcasts (url)
+                    VALUES (?)
+                """, (row.url,))
 
         self.connection.commit()
 
@@ -782,5 +816,88 @@ class Library(object):
                     key, value
                 )
             )
+
+        self.connection.commit()
+
+    def get_added_podcasts(self):
+        """
+        Return a list of podcast url that were added since the last
+        synchronization.
+        """
+        cursor = self.connection.cursor()
+        cursor.execute(
+            """
+                SELECT
+                    url
+                FROM podcasts
+                WHERE
+                    source = 'rss' AND
+                    synced = 0
+            """)
+        return [row["url"] for row in cursor.fetchall()]
+
+    def get_removed_podcasts(self):
+        """
+        Return a list of podcast url that were removed since the last
+        synchronization.
+        """
+        cursor = self.connection.cursor()
+        cursor.execute(
+            """
+                SELECT
+                    url
+                FROM removed_podcasts
+            """)
+        return [row["url"] for row in cursor.fetchall()]
+
+    def update_urls(self, update_urls):
+        """
+        Update the podcasts urls after the synchronization.
+        """
+        cursor = self.connection.cursor()
+
+        for old_url, new_url in update_urls:
+            if new_url:
+                self.logger.debug("Updating url '%s' to '%s'.", old_url, new_url)
+                cursor.execute(
+                    """
+                        UPDATE podcasts
+                        SET url = ?
+                        WHERE url = ?
+                    """,
+                    (new_url, old_url))
+
+        self.connection.commit()
+
+    def reset_podcast_synchronization(self):
+        cursor = self.connection.cursor()
+
+        cursor.execute(
+            """
+               UPDATE podcasts
+               SET synced = 1
+            """)
+        cursor.execute(
+            """
+               DELETE FROM removed_podcasts
+            """)
+
+    def remove_podcast_with_url(self, url):
+        """
+        Remove a podcast from its url.
+
+        Parameters
+        ----------
+        url : str
+            The podcast's url.
+        """
+        cursor = self.connection.cursor()
+
+        cursor.execute(
+            """
+                DELETE FROM podcasts
+                WHERE url = ?
+            """, (url,)
+        )
 
         self.connection.commit()

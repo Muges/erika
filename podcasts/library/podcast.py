@@ -63,13 +63,15 @@ class Podcast(Row):
         Number of played episodes
     episodes_count : int
         Number of episodes
+    synced : int
+        1 if the podcast has been synced with gpodder.net, else 0
     """
 
     TABLE = "podcasts"
     PRIMARY_KEY = 'id'
     COLUMNS = [
         "source", "url", "title", "author", "image_url", "image_data",
-        "language", "subtitle", "summary", "link"
+        "language", "subtitle", "summary", "link", "synced"
     ]
     ATTRS = [
         "new_count", "played_count", "episodes_count"
