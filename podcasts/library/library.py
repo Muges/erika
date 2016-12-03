@@ -93,6 +93,13 @@ class Library(object):
 
         # Create tables
         self.connection.execute("""
+            CREATE TABLE config (
+                key text PRIMARY KEY,
+                value text
+            )
+        """)
+
+        self.connection.execute("""
             CREATE TABLE podcasts (
                 id INTEGER PRIMARY KEY,
 
@@ -275,6 +282,8 @@ class Library(object):
         podcast = source.get_podcast()
         podcast_id = self._add_podcast(source_name, url, podcast)
         next_track_number = 1
+
+        self.connection.commit()
 
         for episode in source.get_episodes():
             next_track_number = self._add_episode(podcast_id, episode,
@@ -724,3 +733,52 @@ class Library(object):
                 episode.local_path = path
                 episodes.append(episode)
         self.commit(episodes)
+
+    def get_config(self, key, default=None):
+        """
+        Get a value from the config table.
+        """
+        cursor = self.connection.cursor()
+        cursor.execute(
+            """
+                SELECT value
+                FROM config
+                WHERE key = ?
+            """, (key,)
+        )
+
+        row = cursor.fetchone()
+        if row:
+            return row["value"]
+        else:
+            return default
+
+    def set_config(self, key, value):
+        """
+        Set a value in the config table.
+        """
+        cursor = self.connection.cursor()
+
+        # Try to update the value
+        cursor.execute(
+            """
+                UPDATE config
+                SET value = ?
+                WHERE key = ?
+            """, (value, key)
+        )
+
+        if cursor.rowcount == 0:
+            # No row has been changed : the value is new
+            cursor.execute(
+                """
+                    INSERT INTO config
+                    (key, value)
+                    VALUES
+                    (?, ?)
+                """, (
+                    key, value
+                )
+            )
+
+        self.connection.commit()
