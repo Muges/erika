@@ -92,11 +92,11 @@ def download_chunks(episode):
 
                     yield (chunk_size, file_size)
 
-        # Set the tags of the downloaded file
-        tags.set_tags(tempfilename, episode)
-
         # Move the temporary file to the destination file
         os.rename(tempfilename, filename)
+
+        # Set the tags of the downloaded file
+        tags.set_tags(filename, episode)
 
         library = Library()
         episode.local_path = filename

@@ -581,6 +581,8 @@ class Library(object):
         """
         # Get the file's audio tags
         audiotags = tags.get_tags(path)
+        if not audiotags:
+            return None, False
 
         # Get podcast
         podcast = self.get_podcast_with_title(audiotags["podcast"])

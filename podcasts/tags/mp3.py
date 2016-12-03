@@ -43,6 +43,9 @@ def set_tags(audio, episode):
     episode : Episode
         The corresponding episode
     """
+    if not audio.tags:
+        audio.add_tags()
+
     # Author and titles
     if episode.podcast.author:
         audio.tags["TPE1"] = TPE1(3, episode.podcast.author)
@@ -96,7 +99,7 @@ def get_tag(audio, tag):
     """
     try:
         return audio.tags[tag].text[0]
-    except (KeyError, IndexError):
+    except (KeyError, IndexError, TypeError):
         return None
 
 
