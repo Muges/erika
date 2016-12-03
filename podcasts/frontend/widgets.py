@@ -318,7 +318,7 @@ class StatusBox(Gtk.HBox):
         Gtk.HBox.__init__(self)
         self.set_spacing(5)
 
-        self.next_id = 0
+        self.next_id = 1
         self.messages = OrderedDict()
         self.separators = []
 

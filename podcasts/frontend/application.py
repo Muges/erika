@@ -24,10 +24,18 @@
 
 import logging
 
+import threading
 from gi.repository import Gio
+from gi.repository import GLib
+from gi.repository import GObject
 from gi.repository import Gtk
 
 from podcasts.frontend.main_window import MainWindow
+from podcasts.library import Library
+from podcasts.opml import import_opml, export_opml
+
+# Library update interval in seconds
+UPDATE_INTERVAL = 15*60
 
 
 class Application(Gtk.Application):
@@ -43,19 +51,19 @@ class Application(Gtk.Application):
         Gtk.Application.do_startup(self)
 
         action = Gio.SimpleAction.new("add-podcast", None)
-        action.connect("activate", self._on_add_podcast)
+        action.connect("activate", lambda a, p: self.add_podcast())
         self.add_action(action)
 
         action = Gio.SimpleAction.new("import-opml", None)
-        action.connect("activate", self._on_import_opml)
+        action.connect("activate", lambda a, p: self.import_opml())
         self.add_action(action)
 
         action = Gio.SimpleAction.new("export-opml", None)
-        action.connect("activate", self._on_export_opml)
+        action.connect("activate", lambda a, p: self.export_opml())
         self.add_action(action)
 
         action = Gio.SimpleAction.new("update", None)
-        action.connect("activate", self._on_update_library)
+        action.connect("activate", lambda a, p: self.update_library())
         self.add_action(action)
 
         action = Gio.SimpleAction.new("quit", None)
@@ -76,19 +84,189 @@ class Application(Gtk.Application):
                 self.quit()
                 return
 
+            # Library update
+            self.update_library(scan=True)
+            GObject.timeout_add_seconds(UPDATE_INTERVAL, self.update_library)
+
         self.window.present()
+
+    def update_library(self, scan=False):
+        """
+        Update the podcasts library
+        """
+        action = self.lookup_action("update")
+        action.set_enabled(False)
+
+        if self.window:
+            message_id = self.window.statusbox.add("Updating library...")
+        else:
+            message_id = None
+
+        def _end():
+            if self.window:
+                if message_id:
+                    self.window.statusbox.remove(message_id)
+
+                self.window.podcast_list.update()
+                self.window.episode_list.update()
+                self.window.update_counts()
+
+            action.set_enabled(True)
+
+        def _update():
+            # TODO : handle errors
+            library = Library()
+            library.update_podcasts()
+            if scan:
+                library.scan()
+
+            GObject.idle_add(_end)
+
+        thread = threading.Thread(target=_update)
+        thread.start()
+
+    def add_podcast(self):
+        """
+        Add a new podcast.
+        """
+        # Open the "Add a podcast" dialog
+        builder = Gtk.Builder.new_from_file("data/add_podcast.ui")
+        dialog = builder.get_object("add_dialog")
+        url_entry = builder.get_object("url_entry")
+
+        if self.window:
+            dialog.set_transient_for(self.window)
+
+        response = dialog.run()
+        url = url_entry.get_text()
+        dialog.destroy()
+
+        if response != Gtk.ResponseType.OK or not url:
+            return
+
+        if self.window:
+            message_id = self.window.statusbox.add("Adding podcast...")
+        else:
+            message_id = None
+
+        def _end():
+            if self.window:
+                if message_id:
+                    self.window.statusbox.remove(message_id)
+
+                self.window.podcast_list.update()
+                self.window.episode_list.update()
+                self.window.update_counts()
+
+        def _add(url):
+            # TODO : handle errors
+            library = Library()
+            library.add_source("rss", url)
+
+            GObject.idle_add(_end)
+
+        thread = threading.Thread(target=_add, args=(url,))
+        thread.start()
+
+    def import_opml(self):
+        """
+        Import the podcasts subscriptions from an OPML file.
+        """
+        dialog = Gtk.FileChooserDialog(
+            "Import OPML file", self.window,
+            Gtk.FileChooserAction.OPEN,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+
+        # Add filters
+        filter_xml = Gtk.FileFilter()
+        filter_xml.set_name("XML files")
+        filter_xml.add_mime_type("text/xml")
+        dialog.add_filter(filter_xml)
+
+        filter_text = Gtk.FileFilter()
+        filter_text.set_name("Text files")
+        filter_text.add_mime_type("text/plain")
+        dialog.add_filter(filter_text)
+
+        filter_any = Gtk.FileFilter()
+        filter_any.set_name("Any files")
+        filter_any.add_pattern("*")
+        dialog.add_filter(filter_any)
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            filename = dialog.get_filename()
+        elif response == Gtk.ResponseType.CANCEL:
+            filename = None
+        dialog.destroy()
+
+        if not filename:
+            return
+
+        if self.window:
+            message_id = self.window.statusbox.add("Importing OPML...")
+        else:
+            message_id = None
+
+        def _end():
+            if self.window:
+                if message_id:
+                    self.window.statusbox.remove(message_id)
+
+                self.window.podcast_list.update()
+                self.window.episode_list.update()
+                self.window.update_counts()
+
+        def _import(filename):
+            # TODO : handle errors
+            import_opml(filename)
+
+            GObject.idle_add(_end)
+
+        thread = threading.Thread(target=_import, args=(filename,))
+        thread.start()
+
+    def export_opml(self):
+        """
+        Export the podcasts subscriptions in an OPML file.
+        """
+        dialog = Gtk.FileChooserDialog(
+            "Export OPML file", self.window,
+            Gtk.FileChooserAction.SAVE,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            filename = dialog.get_filename()
+        elif response == Gtk.ResponseType.CANCEL:
+            filename = None
+        dialog.destroy()
+
+        if not filename:
+            return
+
+        if self.window:
+            message_id = self.window.statusbox.add("Exporting OPML...")
+        else:
+            message_id = None
+
+        def _end():
+            if self.window and message_id:
+                self.window.statusbox.remove(message_id)
+
+        def _export(filename):
+            export_opml(filename)
+
+            GObject.idle_add(_end)
+
+        thread = threading.Thread(target=_export, args=(filename,))
+        thread.start()
 
     def _on_quit(self, action, param):
         if self.window:
             self.window.close()
-
-    def _on_update_library(self, action, param):
-        if self.window:
-            self.window.update_library()
-
-    def _on_add_podcast(self, action, param):
-        if self.window:
-            self.window.add_podcast()
 
     def _on_import_opml(self, action, param):
         if self.window:
