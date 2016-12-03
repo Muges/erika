@@ -31,6 +31,7 @@ from gi.repository import GObject
 from gi.repository import Gtk
 
 from podcasts.frontend.main_window import MainWindow
+from podcasts.frontend import preferences
 from podcasts.library import Library
 from podcasts.opml import import_opml, export_opml
 
@@ -64,6 +65,10 @@ class Application(Gtk.Application):
 
         action = Gio.SimpleAction.new("update", None)
         action.connect("activate", lambda a, p: self.update_library())
+        self.add_action(action)
+
+        action = Gio.SimpleAction.new("preferences", None)
+        action.connect("activate", lambda a, p: preferences.run(self.window))
         self.add_action(action)
 
         action = Gio.SimpleAction.new("quit", None)

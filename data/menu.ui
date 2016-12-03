@@ -6,6 +6,10 @@
         <attribute name="action">app.update</attribute>
         <attribute name="label" translatable="yes">_Update library</attribute>
       </item>
+      <item>
+        <attribute name="action">app.preferences</attribute>
+        <attribute name="label" translatable="yes">_Preferences</attribute>
+      </item>
     </section>
     <section>
       <item>

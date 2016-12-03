@@ -736,7 +736,7 @@ class Library(object):
                 episodes.append(episode)
         self.commit(episodes)
 
-    def get_config(self, key, default=None):
+    def get_config(self, key, default=""):
         """
         Get a value from the config table.
         """
