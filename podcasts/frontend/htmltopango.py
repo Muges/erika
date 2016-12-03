@@ -38,16 +38,30 @@ import lxml.html
 
 from gi.repository import GLib
 
-BLOCKS = ["p", "br", "div"]
+BLOCKS = ["p", "br", "div", "h1", "h2", "h3", "h4", "h5", "h6"]
 BLOCK_PREFIX = {
-    "p": "  "
+    "p": "  ",
+    "h1": "\n",
+    "h2": "\n",
+    "h3": "\n",
+    "h4": "\n",
+    "h5": "\n",
+    "h6": "\n",
 }
 BLOCK_SUFFIX = {
 }
-INLINE = ["span", "em", "strong", "img"]
+INLINE = ["span", "em", "i", "strong", "b", "img"]
 TAG_STYLES = {
     "em": {"style": "italic"},
-    "strong": {"weight": "bold"}
+    "i": {"style": "italic"},
+    "strong": {"weight": "bold"},
+    "b": {"weight": "bold"},
+    "h1": {"weight": "bold", "font": "17"},
+    "h2": {"weight": "bold", "font": "16"},
+    "h3": {"weight": "bold", "font": "15"},
+    "h4": {"weight": "bold", "font": "14"},
+    "h5": {"weight": "bold", "font": "13"},
+    "h6": {"weight": "bold", "font": "12"},
 }
 
 
