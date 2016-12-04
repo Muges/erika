@@ -124,7 +124,7 @@ class Player(GObject.Object):
             self.episode.progress = position
 
         library = Library()
-        action = EpisodeAction.new(self.episode, "play", position, duration)
+        action = EpisodeAction.new(self.episode, "play", 0, position, duration)
         library.commit([self.episode, action])
 
         self.emit("episode-updated", self.episode)

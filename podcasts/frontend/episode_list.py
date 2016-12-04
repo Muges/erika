@@ -29,7 +29,6 @@
 List of episodes
 """
 
-from itertools import chain
 import os
 
 from gi.repository import GObject
@@ -319,10 +318,10 @@ class EpisodeList(Gtk.VBox):
             row.update()
 
         library = Library()
-        episodes = (row.episode for row in rows)
-        actions = (EpisodeAction.new(episode, "play", episode.duration, episode.duration)
-                   for episode in episodes)
-        library.commit(chain(episodes, actions))
+        episodes = [row.episode for row in rows]
+        actions = [EpisodeAction.new(episode, "play", 0, episode.duration, episode.duration)
+                   for episode in episodes]
+        library.commit(episodes + actions)
 
         self.emit("episodes-changed")
 
@@ -360,10 +359,10 @@ class EpisodeList(Gtk.VBox):
             row.update()
 
         library = Library()
-        episodes = (row.episode for row in rows)
-        actions = (EpisodeAction.new(episode, "play", 0, episode.duration)
-                   for episode in episodes)
-        library.commit(chain(episodes, actions))
+        episodes = [row.episode for row in rows]
+        actions = [EpisodeAction.new(episode, "play", 0, 0, episode.duration)
+                   for episode in episodes]
+        library.commit(episodes + actions)
 
     def _play(self, row):
         """

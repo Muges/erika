@@ -506,7 +506,7 @@ class Library(object):
 
         for row in rows:
             if row.get_primary_key() is not None:
-                cursor.execute(row.__class__.UPDATE_QUERY, row.get_update_attrs())
+                cursor.execute(row.UPDATE_QUERY, row.get_update_attrs())
             else:
                 cursor.execute(row.INSERT_QUERY, row.get_insert_attrs())
 
@@ -522,7 +522,7 @@ class Library(object):
         """
         cursor = self.connection.cursor()
 
-        cursor.execute(row.__class__.DELETE_QUERY, row.get_delete_attrs())
+        cursor.execute(row.DELETE_QUERY, row.get_delete_attrs())
 
         if isinstance(row, Podcast) and row.source == "rss":
             cursor.execute(

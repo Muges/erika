@@ -75,6 +75,7 @@ class EpisodeAction(Row):
     @staticmethod
     def new(episode, action, started=None, position=None, total=None):
         timestamp = datetime_to_iso8601(datetime.utcnow())
+
         return EpisodeAction(podcast_id=episode.podcast.id, episode_id=episode.id,
                              action=action, timestamp=timestamp, started=started,
                              position=position, total=total, podcast=episode.podcast,
