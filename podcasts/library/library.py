@@ -970,7 +970,7 @@ class Library(object):
                 """
                     UPDATE episodes
                     SET
-                        played = 0 AND progress = 0
+                        played = 0
                     WHERE
                         file_url = ?
                 """, (action.episode,))

@@ -69,6 +69,7 @@ class Player(GObject.Object):
             "{}.{}".format(__name__, self.__class__.__name__))
 
         self.episode = None
+        self._started = 0
         self._position = 0
         self._duration = 0
 
@@ -95,6 +96,7 @@ class Player(GObject.Object):
         """
         self.stop()
         self.episode = episode
+        self._started = self.episode.progress
 
         self.widgets.set_current_episode(episode)
 
@@ -119,12 +121,13 @@ class Player(GObject.Object):
             # Mark as read and unset progress
             self.episode.progress = 0
             self.episode.mark_as_played()
+            position = duration
         else:
             # Save progress
             self.episode.progress = position
 
         library = Library()
-        action = EpisodeAction.new(self.episode, "play", 0, position, duration)
+        action = EpisodeAction.new(self.episode, "play", self._started, position, duration)
         library.commit([self.episode, action])
 
         self.emit("episode-updated", self.episode)

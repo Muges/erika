@@ -319,7 +319,8 @@ class EpisodeList(Gtk.VBox):
 
         library = Library()
         episodes = [row.episode for row in rows]
-        actions = [EpisodeAction.new(episode, "play", 0, episode.duration, episode.duration)
+        actions = [EpisodeAction.new(episode, "play", episode.duration, episode.duration,
+                                     episode.duration)
                    for episode in episodes]
         library.commit(episodes + actions)
 
@@ -341,6 +342,10 @@ class EpisodeList(Gtk.VBox):
             row.update()
 
         library = Library()
+        episodes = [row.episode for row in rows]
+        actions = [EpisodeAction.new(episode, "new")
+                   for episode in episodes]
+        library.commit(episodes + actions)
         library.commit(row.episode for row in rows)
 
     def _reset_progress(self, menu_item, rows):
