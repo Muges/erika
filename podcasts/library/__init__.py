@@ -28,3 +28,6 @@ Podcast library
 
 from podcasts.library.library import Library
 from podcasts.library.filtersort import EpisodeFilterSort
+from podcasts.library.episode import Episode
+from podcasts.library.episode_action import EpisodeAction
+from podcasts.library.podcast import Podcast

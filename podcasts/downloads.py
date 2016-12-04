@@ -36,7 +36,7 @@ import time
 import requests
 
 from podcasts import tags
-from podcasts.library import Library
+from podcasts.library import Library, EpisodeAction
 from podcasts.util import guess_extension, episode_filename
 
 # Maximum number of concurrent downloads
@@ -100,8 +100,9 @@ def download_chunks(episode):
 
         library = Library()
         episode.local_path = filename
-        library.commit([episode])
-        library.add_episode_action(episode, "download")
+
+        action = EpisodeAction.new(episode, "download")
+        library.commit([episode, action])
     finally:
         # Remove the temporary file if it exists (if the download failed or was
         # canceled)

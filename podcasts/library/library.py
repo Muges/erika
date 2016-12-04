@@ -38,6 +38,7 @@ from mygpoclient.util import datetime_to_iso8601
 from podcasts.config import CONFIG_DIR, LIBRARY_DIR
 from podcasts import sources, tags
 from podcasts.library.episode import Episode
+from podcasts.library.episode_action import EpisodeAction
 from podcasts.library.podcast import Podcast
 from podcasts.library.row import Row
 from podcasts.util import slugify, episode_filename
@@ -173,6 +174,7 @@ class Library(object):
                 action text,
                 timestamp text,
 
+                started integer,
                 position integer,
                 total integer
             )
@@ -503,7 +505,10 @@ class Library(object):
         cursor = self.connection.cursor()
 
         for row in rows:
-            cursor.execute(row.__class__.UPDATE_QUERY, row.get_update_attrs())
+            if row.get_primary_key() is not None:
+                cursor.execute(row.__class__.UPDATE_QUERY, row.get_update_attrs())
+            else:
+                cursor.execute(row.INSERT_QUERY, row.get_insert_attrs())
 
         self.connection.commit()
 
@@ -764,7 +769,7 @@ class Library(object):
         self.connection.commit()
 
         # Look for new local files
-        episodes = []
+        modifications = []
         for dirpath, dirnames, filenames in os.walk(LIBRARY_DIR):
             for filename in filenames:
                 path = os.path.join(dirpath, filename)
@@ -786,8 +791,9 @@ class Library(object):
                     path = newpath
 
                 episode.local_path = path
-                episodes.append(episode)
-        self.commit(episodes)
+                modifications.append(episode)
+                modifications.append(EpisodeAction.new(episode, "download"))
+        self.commit(modifications)
 
     def get_config(self, key, default=""):
         """
@@ -929,14 +935,13 @@ class Library(object):
                     podcasts.url AS podcast,
                     episodes.file_url AS episode,
                     config.value AS device,
-                    0 AS started,
-                    action, timestamp, position, total
+                    episode_actions.rowid, episode_actions.*
                 FROM episode_actions
                 JOIN episodes ON episode_actions.episode_id = episodes.id
                 JOIN podcasts ON episode_actions.podcast_id = podcasts.id
 		JOIN config ON config.key = 'gpodder.deviceid'
             """)
-        return [dict(row) for row in cursor.fetchall()]
+        return [EpisodeAction(**row) for row in cursor.fetchall()]
 
     def handle_episode_action(self, action):
         cursor = self.connection.cursor()
@@ -969,20 +974,6 @@ class Library(object):
                     WHERE
                         file_url = ?
                 """, (action.episode,))
-
-        self.connection.commit()
-
-    def add_episode_action(self, episode, action, position=None, total=None):
-        cursor = self.connection.cursor()
-
-        timestamp = datetime_to_iso8601(datetime.utcnow())
-
-        cursor.execute(
-            """
-                INSERT INTO episode_actions
-                (podcast_id, episode_id, action, timestamp, position, total)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (episode.podcast.id, episode.id, action, timestamp, position, total))
 
         self.connection.commit()
 

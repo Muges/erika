@@ -29,13 +29,14 @@
 List of episodes
 """
 
+from itertools import chain
 import os
 
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk
 
-from podcasts.library import Library, EpisodeFilterSort
+from podcasts.library import Library, EpisodeFilterSort, EpisodeAction
 from podcasts.util import format_duration, podcast_dirname, episode_filename
 from podcasts.frontend.widgets import (
     Label, IndexedListBox, FilterButton, SortButton
@@ -318,9 +319,10 @@ class EpisodeList(Gtk.VBox):
             row.update()
 
         library = Library()
-        library.commit(row.episode for row in rows)
-        for row in rows:
-            library.add_episode_action(row.episode, "play", row.episode.duration, row.episode.duration)
+        episodes = (row.episode for row in rows)
+        actions = (EpisodeAction.new(episode, "play", episode.duration, episode.duration)
+                   for episode in episodes)
+        library.commit(chain(episodes, actions))
 
         self.emit("episodes-changed")
 
@@ -358,9 +360,10 @@ class EpisodeList(Gtk.VBox):
             row.update()
 
         library = Library()
-        library.commit(row.episode for row in rows)
-        for row in rows:
-            library.add_episode_action(row.episode, "play", 0, row.episode.duration)
+        episodes = (row.episode for row in rows)
+        actions = (EpisodeAction.new(episode, "play", 0, episode.duration)
+                   for episode in episodes)
+        library.commit(chain(episodes, actions))
 
     def _play(self, row):
         """
@@ -431,8 +434,9 @@ class EpisodeList(Gtk.VBox):
                     tags.set_tags(newpath, row.episode)
 
                     row.episode.local_path = newpath
-                    library.commit([row.episode])
-                    library.add_episode_action(row.episode, "download")
+
+                    action = EpisodeAction.new(row.episode, "download")
+                    library.commit([row.episode, action])
                     row.update()
 
     def _filter_toggled(self, button, field):

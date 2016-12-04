@@ -39,6 +39,15 @@ class RowType(type):
                 attrs['COLUMNS'] + attrs['ATTRS'] + [attrs['PRIMARY_KEY']]
             )
 
+            attrs["INSERT_QUERY"] = """
+                INSERT INTO {} ({})
+                VALUES ({})
+            """.format(
+                attrs['TABLE'],
+                ", ".join(attrs['COLUMNS']),
+                ", ".join("?" for col in attrs['COLUMNS'])
+            )
+
             attrs["UPDATE_QUERY"] = """
                 UPDATE {}
                 SET {}
@@ -106,6 +115,19 @@ class Row(object, metaclass=RowType):
                 "{}.__init__() got an unexpected keyword argument '{}'"
             ).format(self.__class__.__name__, arg))
 
+    def get_insert_attrs(self):
+        """
+        Return a list of values to save in the database
+
+        Returns
+        -------
+        List[Any]
+            List of columns values to save in the database
+        """
+        return (
+            [getattr(self, column) for column in self.__class__.COLUMNS]
+        )
+
     def get_update_attrs(self):
         """
         Return a list of values to save in the database
@@ -117,7 +139,7 @@ class Row(object, metaclass=RowType):
         """
         return (
             [getattr(self, column) for column in self.__class__.COLUMNS] +
-            [getattr(self, self.__class__.PRIMARY_KEY)]
+            [self.get_primary_key()]
         )
 
     def get_delete_attrs(self):
@@ -130,9 +152,17 @@ class Row(object, metaclass=RowType):
             List containing the primary key of the row
         """
         return (
-            [getattr(self, self.__class__.PRIMARY_KEY)]
+            [self.get_primary_key()]
         )
         
+    def get_primary_key(self):
+        """
+        Returns
+        -------
+        Any
+            The primary key of the row
+        """
+        return getattr(self, self.__class__.PRIMARY_KEY)
     
     def __eq__(self, other):
         """

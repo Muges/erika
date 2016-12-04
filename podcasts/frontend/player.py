@@ -37,7 +37,7 @@ from gi.repository import Gtk
 from gi.repository import GLib
 
 from podcasts.__version__ import __appname__
-from podcasts.library import Library
+from podcasts.library import Library, EpisodeAction
 from podcasts.util import format_duration
 
 # Mark episodes as read if there are less than MARK_MARGIN seconds remaining
@@ -124,8 +124,8 @@ class Player(GObject.Object):
             self.episode.progress = position
 
         library = Library()
-        library.commit([self.episode])
-        library.add_episode_action(self.episode, "play", position, duration)
+        action = EpisodeAction.new(self.episode, "play", position, duration)
+        library.commit([self.episode, action])
 
         self.emit("episode-updated", self.episode)
 

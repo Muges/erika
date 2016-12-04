@@ -30,25 +30,6 @@ from mygpoclient.util import iso8601_to_datetime
 from podcasts.library import Library
 
 
-def make_action(dictionnary):
-    """
-    Parameters
-    ----------
-    dictionnary : dict
-        A dictionnary representing an episode action
-
-    Returns
-    -------
-    EpisodeAction
-        The corresponding EpisodeAction object
-    """
-    if dictionnary["action"] != "play":
-        del dictionnary["started"]
-        del dictionnary["position"]
-        del dictionnary["total"]
-
-    return EpisodeAction(**dictionnary)
-
 def synchronize_subscriptions():
     """
     Synchronize the podcasts subscriptions with a gpodder.net account.
@@ -95,7 +76,7 @@ def synchronize_subscriptions():
             library.remove_podcast_with_url(url)
 
         for url in changes.add:
-            library.add_source("rss", url, synced=True)
+            library.add_source("rss", url)
 
         library.reset_podcast_synchronization()
         library.set_config("gpodder.last_subscription_sync", result.since)
@@ -123,7 +104,7 @@ def synchronize_episode_actions(download=True):
     last_episodes_sync = library.get_config("gpodder.last_episodes_sync", "0")
 
     # Get the episode actions from the library
-    actions = [make_action(a) for a in library.get_episode_actions()]
+    actions = [a.for_gpodder() for a in library.get_episode_actions()]
 
     try:
         logger.debug("Connecting to gpodder.net.")

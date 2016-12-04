@@ -37,7 +37,7 @@ class Episode(Row):
 
     Attributes
     ----------
-    podcastid : int
+    podcast_id : int
         The id of the podcast in the database
     id : int
         The id of the episode in the database
