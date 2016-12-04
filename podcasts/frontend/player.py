@@ -125,6 +125,7 @@ class Player(GObject.Object):
 
         library = Library()
         library.commit([self.episode])
+        library.add_episode_action(self.episode, "play", position, duration)
 
         self.emit("episode-updated", self.episode)
 

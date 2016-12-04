@@ -368,6 +368,21 @@ class StatusBox(Gtk.HBox):
 
         return message_id
 
+    def edit(self, message_id, message):
+        """
+        Edit a message.
+
+        Parameters
+        ----------
+        message_id : int
+            The id of the message.
+        """
+        index = self._get_message_index(message_id)
+
+        # Edit the label
+        label = self.messages[message_id]
+        label.set_text(message)
+
     def remove(self, message_id):
         """
         Remove a message.

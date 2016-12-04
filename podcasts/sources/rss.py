@@ -131,7 +131,7 @@ class Rss(Source):
         )
 
     def parse(self):
-        self.logger.info("Parsing %s.", self.url)
+        self.logger.debug("Parsing %s.", self.url)
 
         document = feedparser.parse(self.url)
 

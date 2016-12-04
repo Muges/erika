@@ -319,6 +319,8 @@ class EpisodeList(Gtk.VBox):
 
         library = Library()
         library.commit(row.episode for row in rows)
+        for row in rows:
+            library.add_episode_action(row.episode, "play", row.episode.duration, row.episode.duration)
 
         self.emit("episodes-changed")
 
@@ -357,6 +359,8 @@ class EpisodeList(Gtk.VBox):
 
         library = Library()
         library.commit(row.episode for row in rows)
+        for row in rows:
+            library.add_episode_action(row.episode, "play", 0, row.episode.duration)
 
     def _play(self, row):
         """
@@ -428,6 +432,7 @@ class EpisodeList(Gtk.VBox):
 
                     row.episode.local_path = newpath
                     library.commit([row.episode])
+                    library.add_episode_action(row.episode, "download")
                     row.update()
 
     def _filter_toggled(self, button, field):

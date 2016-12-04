@@ -101,7 +101,7 @@ def download_chunks(episode):
         library = Library()
         episode.local_path = filename
         library.commit([episode])
-
+        library.add_episode_action(episode, "download")
     finally:
         # Remove the temporary file if it exists (if the download failed or was
         # canceled)

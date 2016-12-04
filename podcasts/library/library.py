@@ -27,10 +27,13 @@ Podcast library
 """
 
 from collections import namedtuple
+from datetime import datetime
 import logging
 import os.path
 import sqlite3
 import requests
+
+from mygpoclient.util import datetime_to_iso8601
 
 from podcasts.config import CONFIG_DIR, LIBRARY_DIR
 from podcasts import sources, tags
@@ -40,6 +43,9 @@ from podcasts.library.row import Row
 from podcasts.util import slugify, episode_filename
 
 DATABASE_PATH = os.path.join(CONFIG_DIR, "library")
+
+# Mark episodes as read if there are less than MARK_MARGIN seconds remaining
+MARK_MARGIN = 30
 
 
 class Library(object):
@@ -156,6 +162,19 @@ class Library(object):
         self.connection.execute("""
             CREATE TABLE removed_podcasts (
                 url text UNIQUE
+            )
+        """)
+
+        self.connection.execute("""
+            CREATE TABLE episode_actions (
+                podcast_id integer REFERENCES podcasts(id) ON DELETE CASCADE,
+                episode_id integer REFERENCES episodes(id) ON DELETE CASCADE,
+
+                action text,
+                timestamp text,
+
+                position integer,
+                total integer
             )
         """)
 
@@ -366,7 +385,7 @@ class Library(object):
         """
         Update the podcasts
         """
-        self.logger.debug("Updating podcasts.")
+        self.logger.info("Updating podcasts.")
 
         for podcast in self.get_podcasts(fast=True):
             source = sources.get(podcast.source, podcast.url)
@@ -899,5 +918,79 @@ class Library(object):
                 WHERE url = ?
             """, (url,)
         )
+
+        self.connection.commit()
+
+    def get_episode_actions(self):
+        cursor = self.connection.cursor()
+        cursor.execute(
+            """
+                SELECT
+                    podcasts.url AS podcast,
+                    episodes.file_url AS episode,
+                    config.value AS device,
+                    0 AS started,
+                    action, timestamp, position, total
+                FROM episode_actions
+                JOIN episodes ON episode_actions.episode_id = episodes.id
+                JOIN podcasts ON episode_actions.podcast_id = podcasts.id
+		JOIN config ON config.key = 'gpodder.deviceid'
+            """)
+        return [dict(row) for row in cursor.fetchall()]
+
+    def handle_episode_action(self, action):
+        cursor = self.connection.cursor()
+
+        if action.action == "play":
+            if action.position + MARK_MARGIN >= action.total:
+                cursor.execute(
+                    """
+                        UPDATE episodes
+                        SET
+                            played = 1 AND progress = 0
+                        WHERE
+                            file_url = ?
+                    """, (action.episode,))
+            else:
+                cursor.execute(
+                    """
+                        UPDATE episodes
+                        SET
+                            progress = ?
+                        WHERE
+                            file_url = ?
+                    """, (action.position, action.episode))
+        elif action.action == "new":
+            cursor.execute(
+                """
+                    UPDATE episodes
+                    SET
+                        played = 0 AND progress = 0
+                    WHERE
+                        file_url = ?
+                """, (action.episode,))
+
+        self.connection.commit()
+
+    def add_episode_action(self, episode, action, position=None, total=None):
+        cursor = self.connection.cursor()
+
+        timestamp = datetime_to_iso8601(datetime.utcnow())
+
+        cursor.execute(
+            """
+                INSERT INTO episode_actions
+                (podcast_id, episode_id, action, timestamp, position, total)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (episode.podcast.id, episode.id, action, timestamp, position, total))
+
+        self.connection.commit()
+
+    def remove_episode_actions(self):
+        cursor = self.connection.cursor()
+
+        cursor.execute("""
+            DELETE FROM episode_actions
+        """)
 
         self.connection.commit()

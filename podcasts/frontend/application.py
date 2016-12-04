@@ -108,65 +108,47 @@ class Application(Gtk.Application):
         Synchronize the podcasts library with gpodder.net.
         """
         if self.window:
-            message_id = self.window.statusbox.add("Synchronizing library...")
+            message_id = self.window.statusbox.add("Synchronizing subscriptions...")
         else:
             message_id = None
-
-        def _end():
-            if self.window:
-                if message_id:
-                    self.window.statusbox.remove(message_id)
-
-                self.window.podcast_list.update()
-                self.window.episode_list.update()
-                self.window.update_counts()
-
-            if update:
-                self.update_library(scan)
-
-        def _synchronize():
-            # TODO : handle errors
-            gpodder.synchronize()
-            GObject.idle_add(_end)
-
-        thread = threading.Thread(target=_synchronize)
-        thread.start()
-
-        return True
-
-    def update_library(self, scan=False):
-        """
-        Update the podcasts library
-        """
-        action = self.lookup_action("update")
-        action.set_enabled(False)
-
-        if self.window:
-            message_id = self.window.statusbox.add("Updating library...")
-        else:
-            message_id = None
-
-        def _end():
-            if self.window:
-                if message_id:
-                    self.window.statusbox.remove(message_id)
-
-                self.window.podcast_list.update()
-                self.window.episode_list.update()
-                self.window.update_counts()
-
-            action.set_enabled(True)
 
         def _update():
+            if self.window and message_id:
+                self.window.statusbox.edit(message_id, "Updating library...")
+
+        def _synchronize():
+            if self.window and message_id:
+                self.window.statusbox.edit(message_id, "Synchronizing episode actions...")
+
+        def _end():
+            if self.window:
+                if message_id:
+                    self.window.statusbox.remove(message_id)
+
+                self.window.podcast_list.update()
+                self.window.episode_list.update()
+                self.window.update_counts()
+
+        def _thread():
             # TODO : handle errors
-            library = Library()
-            library.update_podcasts()
-            if scan:
-                library.scan()
+            gpodder.synchronize_subscriptions()
+
+            if update:
+                GObject.idle_add(_update)
+                library = Library()
+                library.update_podcasts()
+                if scan:
+                    library.scan()
+
+                GObject.idle_add(_synchronize)
+                gpodder.synchronize_episode_actions()
+            else:
+                GObject.idle_add(_synchronize)
+                gpodder.upload_episode_actions()
 
             GObject.idle_add(_end)
 
-        thread = threading.Thread(target=_update)
+        thread = threading.Thread(target=_thread)
         thread.start()
 
         return True
