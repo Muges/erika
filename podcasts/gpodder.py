@@ -123,7 +123,7 @@ def synchronize_episode_actions(download=True):
 
         if download:
             logger.debug("Downloading episode actions.")
-            changes = client.download_episode_actions(last_episodes_sync, device_id=deviceid)
+            changes = client.download_episode_actions(last_episodes_sync)
     except:
         logger.exception("Unable to sync episode actions with gpodder.net")
         return
