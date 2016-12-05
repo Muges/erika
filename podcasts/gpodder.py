@@ -30,7 +30,7 @@ from mygpoclient.util import iso8601_to_datetime
 from podcasts.library import Library
 
 
-def synchronize_subscriptions():
+def synchronize_subscriptions(download=True):
     """
     Synchronize the podcasts subscriptions with a gpodder.net account.
     """
@@ -60,26 +60,34 @@ def synchronize_subscriptions():
         logger.debug("Connecting to gpodder.net.")
         client = MygPodderClient(username, password, hostname)
 
-        logger.debug("Downloading subscription changes.")
-        changes = client.pull_subscriptions(deviceid, last_subscription_sync)
-
         logger.debug("Uploading subscription changes.")
         result = client.update_subscriptions(deviceid, added, removed)
+
+        if download:
+            logger.debug("Downloading subscription changes.")
+            changes = client.pull_subscriptions(deviceid, last_subscription_sync)
     except:
         logger.exception("Unable to sync subscriptions with gpodder.net")
         return
     else:
         logger.debug("Syncing with library.")
         library.update_urls(result.update_urls)
-
-        for url in changes.remove:
-            library.remove_podcast_with_url(url)
-
-        for url in changes.add:
-            library.add_source("rss", url)
-
         library.reset_podcast_synchronization()
-        library.set_config("gpodder.last_subscription_sync", result.since)
+
+        if download:
+            for url in changes.remove:
+                library.remove_podcast_with_url(url)
+
+            for url in changes.add:
+                library.add_source("rss", url)
+
+            library.set_config("gpodder.last_subscription_sync", result.since)
+
+def upload_subscriptions():
+    """
+    Upload the subscriptions to a gpodder.net account.
+    """
+    synchronize_subscriptions(download=False)
 
 def synchronize_episode_actions(download=True):
     """
@@ -104,14 +112,14 @@ def synchronize_episode_actions(download=True):
     last_episodes_sync = library.get_config("gpodder.last_episodes_sync", "0")
 
     # Get the episode actions from the library
-    actions = [a.for_gpodder() for a in library.get_episode_actions()]
+    local_actions = [a.for_gpodder() for a in library.get_episode_actions()]
 
     try:
         logger.debug("Connecting to gpodder.net.")
         client = MygPodderClient(username, password, hostname)
 
         logger.debug("Uploading episode actions.")
-        since = client.upload_episode_actions(actions)
+        since = client.upload_episode_actions(local_actions)
 
         if download:
             logger.debug("Downloading episode actions.")
@@ -124,10 +132,9 @@ def synchronize_episode_actions(download=True):
         library.remove_episode_actions()
 
         if download:
-            actions = sorted(changes.actions, key=lambda a: iso8601_to_datetime(a.timestamp))
+            remote_actions = sorted(changes.actions, key=lambda a: iso8601_to_datetime(a.timestamp))
 
-            for action in actions:
-                library.handle_episode_action(action)
+            library.handle_episode_actions(remote_actions)
 
             library.set_config("gpodder.last_episodes_sync", since)
 

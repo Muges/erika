@@ -777,6 +777,10 @@ class Library(object):
                     # The file is already in the library
                     continue
 
+                if path.endswith(".part"):
+                    # The file is incomplete
+                    continue
+
                 episode, strict = self.get_matching_episode(path)
                 if not episode:
                     # No match was found
@@ -943,37 +947,38 @@ class Library(object):
             """)
         return [EpisodeAction(**row) for row in cursor.fetchall()]
 
-    def handle_episode_action(self, action):
+    def handle_episode_actions(self, actions):
         cursor = self.connection.cursor()
 
-        if action.action == "play":
-            if action.position + MARK_MARGIN >= action.total:
+        for action in actions:
+            if action.action == "play":
+                if action.position + MARK_MARGIN >= action.total:
+                    cursor.execute(
+                        """
+                            UPDATE episodes
+                            SET
+                                played = 1 AND progress = 0
+                            WHERE
+                                file_url = ?
+                        """, (action.episode,))
+                else:
+                    cursor.execute(
+                        """
+                            UPDATE episodes
+                            SET
+                                progress = ?
+                            WHERE
+                                file_url = ?
+                        """, (action.position, action.episode))
+            elif action.action == "new":
                 cursor.execute(
                     """
                         UPDATE episodes
                         SET
-                            played = 1 AND progress = 0
+                            played = 0
                         WHERE
                             file_url = ?
                     """, (action.episode,))
-            else:
-                cursor.execute(
-                    """
-                        UPDATE episodes
-                        SET
-                            progress = ?
-                        WHERE
-                            file_url = ?
-                    """, (action.position, action.episode))
-        elif action.action == "new":
-            cursor.execute(
-                """
-                    UPDATE episodes
-                    SET
-                        played = 0
-                    WHERE
-                        file_url = ?
-                """, (action.episode,))
 
         self.connection.commit()
 

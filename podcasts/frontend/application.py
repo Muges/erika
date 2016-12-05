@@ -131,9 +131,9 @@ class Application(Gtk.Application):
 
         def _thread():
             # TODO : handle errors
-            gpodder.synchronize_subscriptions()
-
             if update:
+                gpodder.synchronize_subscriptions()
+
                 GObject.idle_add(_update)
                 library = Library()
                 library.update_podcasts()
@@ -143,6 +143,8 @@ class Application(Gtk.Application):
                 GObject.idle_add(_synchronize)
                 gpodder.synchronize_episode_actions()
             else:
+                gpodder.upload_subscriptions()
+
                 GObject.idle_add(_synchronize)
                 gpodder.upload_episode_actions()
 

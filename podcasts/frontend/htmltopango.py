@@ -113,7 +113,10 @@ class Parser(object):
         """
         self.clear()
 
-        fragments = lxml.html.fragments_fromstring(html)
+        parser = lxml.etree.HTMLParser(remove_blank_text=True,
+                                       remove_comments=True,
+                                       remove_pis=True)
+        fragments = lxml.html.fragments_fromstring(html, parser=parser)
 
         if not fragments:
             return ""
@@ -177,9 +180,7 @@ class Parser(object):
 
         if is_link:
             href = node.get("href")
-            if not href:
-                self.logger.debug("Met a link without href attribute.")
-            elif strip_url(href) == strip_url(node.text):
+            if not href or strip_url(href) == strip_url(node.text):
                 pass
             elif href in self.links:
                 self._add_text(" [{}]".format(self.links.index(href) + 1))

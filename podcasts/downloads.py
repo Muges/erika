@@ -58,7 +58,10 @@ def download_chunks(episode):
     int, int
         The size of the previous chunk, and the total size of the file
     """
+    logger = logging.getLogger(__name__)
+
     # Start the download and get the mimetype of the file
+    logger.debug("Getting file mimetype.")
     response = requests.get(episode.file_url, stream=True)
     mimetype = (
         response.headers.get('content-type') or episode.mimetype
@@ -79,6 +82,7 @@ def download_chunks(episode):
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
 
+    logger.debug("Downloading to temporary file '%s'.", tempfilename)
     try:
         # Download to a temporary file
         with open(tempfilename, "wb") as fileobj:
