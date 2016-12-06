@@ -33,7 +33,7 @@ import os.path
 import sqlite3
 import requests
 
-from mygpoclient.util import datetime_to_iso8601
+from mygpoclient.util import datetime_to_iso8601, iso8601_to_datetime
 
 from podcasts.config import CONFIG_DIR, LIBRARY_DIR
 from podcasts import sources, tags
@@ -948,6 +948,7 @@ class Library(object):
         return [EpisodeAction(**row) for row in cursor.fetchall()]
 
     def handle_episode_actions(self, actions):
+        actions.sort(key=lambda a: iso8601_to_datetime(a.timestamp))
         cursor = self.connection.cursor()
 
         for action in actions:
@@ -957,7 +958,8 @@ class Library(object):
                         """
                             UPDATE episodes
                             SET
-                                played = 1 AND progress = 0
+                                played = 1,
+                                progress = 0
                             WHERE
                                 file_url = ?
                         """, (action.episode,))

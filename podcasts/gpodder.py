@@ -25,7 +25,6 @@
 import logging
 
 from mygpoclient.api import MygPodderClient, EpisodeAction
-from mygpoclient.util import iso8601_to_datetime
 
 from podcasts.library import Library
 
@@ -132,9 +131,7 @@ def synchronize_episode_actions(download=True):
         library.remove_episode_actions()
 
         if download:
-            remote_actions = sorted(changes.actions, key=lambda a: iso8601_to_datetime(a.timestamp))
-
-            library.handle_episode_actions(remote_actions)
+            library.handle_episode_actions(local_actions + changes.actions)
 
             library.set_config("gpodder.last_episodes_sync", since)
 
