@@ -33,12 +33,9 @@ import os
 
 from gi.repository import GObject
 from gi.repository import Gst
-from gi.repository import Gtk
 from gi.repository import GLib
 
-from podcasts.__version__ import __appname__
 from podcasts.library import Library, EpisodeAction
-from podcasts.util import format_duration, cb
 
 # Mark episodes as read if there are less than MARK_MARGIN seconds remaining
 MARK_MARGIN = 30
@@ -57,6 +54,8 @@ class Player(GObject.Object):
         Emitted at the end of the playback of an episode.
     progress-changed(position, duration)
         Emitted every 200ms during playback.
+    state-changed(episode, state)
+        Emitted when the player state has changed.
     """
 
     STOPPED = 0
@@ -70,9 +69,7 @@ class Player(GObject.Object):
         'progress-changed':
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_LONG, GObject.TYPE_LONG)),
         'state-changed':
-            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_INT,)),
-        'episode-changed':
-            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT, GObject.TYPE_INT,)),
     }
 
     def __init__(self):
@@ -98,13 +95,6 @@ class Player(GObject.Object):
         bus.add_signal_watch()
         bus.connect("message", self._on_message)
 
-        # Create widgets
-        self.widgets = PlayerWidgets(self)
-
-        self.connect('progress-changed', cb(self.widgets.set_progress))
-        self.connect('state-changed', cb(self.widgets.set_state))
-        self.connect('episode-changed', cb(self.widgets.set_current_episode))
-
     def play(self, episode):
         """
         Start the playback of an episode
@@ -117,7 +107,7 @@ class Player(GObject.Object):
         self.episode = episode
         self._started = self.episode.progress
 
-        self.emit('episode-changed', episode)
+        self.emit('state-changed', self.episode, Player.BUFFERING)
 
         if episode.local_path and os.path.isfile(episode.local_path):
             uri = Gst.filename_to_uri(episode.local_path)
@@ -158,7 +148,7 @@ class Player(GObject.Object):
         self.emit("episode-updated", self.episode)
 
         self.player.set_state(Gst.State.NULL)
-        self.emit('state-changed', Player.STOPPED)
+        self.emit('state-changed', self.episode, Player.STOPPED)
         self.episode = None
         self._position = 0
         self._duration = 0
@@ -294,11 +284,11 @@ class Player(GObject.Object):
                 self.seek(self.episode.progress * Gst.SECOND)
 
             if newstate == Gst.State.READY:
-                self.emit('state-changed', Player.BUFFERING)
+                self.emit('state-changed', self.episode, Player.BUFFERING)
             if newstate == Gst.State.PLAYING:
-                self.emit('state-changed', Player.PLAYING)
+                self.emit('state-changed', self.episode, Player.PLAYING)
             elif newstate == Gst.State.PAUSED:
-                self.emit('state-changed', Player.PAUSED)
+                self.emit('state-changed', self.episode, Player.PAUSED)
 
     def _emit_progress(self):
         position = self.get_position()
@@ -306,134 +296,3 @@ class Player(GObject.Object):
         self.emit('progress-changed', position, duration)
 
         return True
-
-class PlayerWidgets(GObject.Object):
-    """
-    Object handling the playback interface
-    """
-    def __init__(self, player):
-        self.player = player
-        self.state = None
-        self.seeking = False
-
-        builder = Gtk.Builder()
-        builder.add_from_file("data/player.ui")
-        builder.connect_signals(self)
-
-        self.controls = builder.get_object("controls")
-        self.title = builder.get_object("title")
-
-        self.play = builder.get_object("play")
-        self.pause = builder.get_object("pause")
-
-        self.playing = [
-            builder.get_object("playing_1"),
-            builder.get_object("playing_2")
-        ]
-        self.progress = builder.get_object("progress")
-        self.position = builder.get_object("position")
-        self.duration = builder.get_object("duration")
-
-        self.set_state(Player.STOPPED)
-
-    def set_state(self, state):
-        """
-        Set the current state (called by the player)
-
-        Parameters
-        ----------
-        state : int
-        """
-        self.state = state
-
-        if state in [Player.PLAYING, Player.PAUSED]:
-            self.pause.set_visible(state == Player.PLAYING)
-            self.play.set_visible(state == Player.PAUSED)
-            self.controls.show()
-            self.title.set_visible_child_name('player')
-
-            self._update_progress()
-        elif state == Player.BUFFERING:
-            self.controls.hide()
-            self.title.set_visible_child_name('loading')
-        elif state == Player.STOPPED:
-            self.controls.hide()
-            self.title.set_visible_child_name('title')
-        else:
-            raise ValueError("Invalid player state : {}.".format(state))
-
-    def set_current_episode(self, episode):
-        """
-        Change the episode informations in the header bar
-
-        Parameters
-        ----------
-        episode : Episode
-            The episode currently being played.
-        """
-        library = Library()
-
-        for playing in self.playing:
-            playing.set_markup(
-                "<b>{}</b> from <b><i>{}</i></b>".format(
-                    GLib.markup_escape_text(episode.title),
-                    GLib.markup_escape_text(episode.podcast.title)))
-
-    def set_progress(self, position, duration):
-        self.progress.set_range(0, duration)
-        if not self.seeking:
-            self.progress.set_value(position)
-        self.progress.set_fill_level(self.player.get_buffered())
-
-        self.position.set_text(format_duration(position // Gst.SECOND))
-        self.duration.set_text(format_duration(duration // Gst.SECOND))
-
-    def _on_play_clicked(self, button):
-        """
-        Called when the play button is clicked
-        """
-        self.player.set_state(Gst.State.PLAYING)
-
-    def _on_pause_clicked(self, button):
-        """
-        Called when the pause button is clicked
-        """
-        self.player.set_state(Gst.State.PAUSED)
-
-    def _on_forward_clicked(self, button):
-        """
-        Called when the forward button is clicked
-        """
-        self.player.seek_relative(30 * Gst.SECOND)
-        self._update_progress()
-
-    def _on_backward_clicked(self, button):
-        """
-        Called when the backward button is clicked
-        """
-        self.player.seek_relative(-30 * Gst.SECOND)
-        self._update_progress()
-
-    def _on_seeking_start(self, scale, event):
-        """
-        Called when the user starts seeking
-        """
-        if event.button == 1:
-            self.seeking = True
-
-    def _on_seeking_end(self, scale, event):
-        """
-        Called when the user ends seeking
-        """
-        if event.button == 1:
-            self.player.seek(self.progress.get_value())
-            self.seeking = False
-
-    def _update_progress(self):
-        """
-        Update the slider
-        """
-        position = self.player.get_position()
-        duration = self.player.get_duration()
-
-        self.set_progress(position, duration)

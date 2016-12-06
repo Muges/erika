@@ -32,8 +32,10 @@ from podcasts.frontend.downloads import DownloadsButton
 from podcasts.frontend.podcast_list import PodcastList
 from podcasts.frontend.episode_list import EpisodeList
 from podcasts.frontend.player import Player
+from podcasts.frontend.player_widgets import PlayerWidgets
 from podcasts.frontend.widgets import StatusBox
 from podcasts.library import Library
+from podcasts.util import cb
 
 
 class MainWindow(Gtk.ApplicationWindow):
@@ -62,6 +64,11 @@ class MainWindow(Gtk.ApplicationWindow):
         self.player = Player()
         self.player.connect("episode-updated", self._on_episode_updated)
 
+        self.player_widgets = PlayerWidgets(self.player)
+
+        self.player.connect('progress-changed', cb(self.player_widgets.set_progress))
+        self.player.connect('state-changed', cb(self.player_widgets.set_state))
+
         # Views
         self.podcast_list = PodcastList()
         self.podcast_list.connect('podcast-selected',
@@ -84,10 +91,10 @@ class MainWindow(Gtk.ApplicationWindow):
         self.add(vbox)
 
         headerbar = Gtk.HeaderBar()
-        headerbar.set_custom_title(self.player.widgets.title)
+        headerbar.set_custom_title(self.player_widgets.title)
         headerbar.set_show_close_button(True)
         headerbar.pack_start(self.menu_button)
-        headerbar.pack_start(self.player.widgets.controls)
+        headerbar.pack_start(self.player_widgets.controls)
         headerbar.pack_end(self.downloads_button)
         vbox.pack_start(headerbar, False, False, 0)
 
