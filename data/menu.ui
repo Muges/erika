@@ -7,6 +7,10 @@
         <attribute name="label" translatable="yes">_Update library</attribute>
       </item>
       <item>
+        <attribute name="action">app.force-synchronization</attribute>
+        <attribute name="label" translatable="yes">_Force synchronization</attribute>
+      </item>
+      <item>
         <attribute name="action">app.preferences</attribute>
         <attribute name="label" translatable="yes">_Preferences</attribute>
       </item>

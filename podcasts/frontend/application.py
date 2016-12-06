@@ -68,6 +68,10 @@ class Application(Gtk.Application):
         action.connect("activate", lambda a, p: self.synchronize_library())
         self.add_action(action)
 
+        action = Gio.SimpleAction.new("force-synchronization", None)
+        action.connect("activate", lambda a, p: self.force_synchronization())
+        self.add_action(action)
+
         action = Gio.SimpleAction.new("preferences", None)
         action.connect("activate", lambda a, p: preferences.run(self.window))
         self.add_action(action)
@@ -102,6 +106,17 @@ class Application(Gtk.Application):
         self.synchronize_library(update=False)
 
         Gtk.Application.do_shutdown(self)
+
+    def force_synchronization(self):
+        """
+        Synchronize the podcasts library with gpodder.net, taking into account
+        every episode action and every subscriptions changes.
+        """
+        library = Library()
+        library.set_config("gpodder.last_subscription_sync", "0")
+        library.set_config("gpodder.last_episodes_sync", "0")
+
+        self.synchronize_library()
 
     def synchronize_library(self, update=True, scan=False):
         """
