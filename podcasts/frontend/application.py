@@ -48,6 +48,7 @@ class Application(Gtk.Application):
             "{}.{}".format(__name__, self.__class__.__name__))
 
         self.window = None
+        self.syncing = False
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
@@ -122,6 +123,11 @@ class Application(Gtk.Application):
         """
         Synchronize the podcasts library with gpodder.net.
         """
+        # Prevent concurrent synchronizations
+        if self.syncing:
+            return
+        self.syncing = True
+
         if self.window:
             message_id = self.window.statusbox.add("Synchronizing subscriptions...")
         else:
@@ -143,6 +149,8 @@ class Application(Gtk.Application):
                 self.window.podcast_list.update()
                 self.window.episode_list.update()
                 self.window.update_counts()
+
+            self.syncing = False
 
         def _thread():
             # TODO : handle errors
