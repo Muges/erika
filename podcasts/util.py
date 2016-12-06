@@ -240,3 +240,12 @@ def episode_filename(episode, extension):
     )
 
     return filename + extension
+
+def cb(function, n=1):
+    """
+    Returns a function whose first n arguments are ignored, and which returns
+    the result of the function passed in parameters :
+    cb(f)(ignored, *args) == f(*args)
+    cb(f, 2)(i1, i2, *args) == f(*args)
+    """
+    return lambda *args: function(*args[1:])

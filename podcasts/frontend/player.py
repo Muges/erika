@@ -38,7 +38,7 @@ from gi.repository import GLib
 
 from podcasts.__version__ import __appname__
 from podcasts.library import Library, EpisodeAction
-from podcasts.util import format_duration
+from podcasts.util import format_duration, cb
 
 # Mark episodes as read if there are less than MARK_MARGIN seconds remaining
 MARK_MARGIN = 30
@@ -55,10 +55,23 @@ class Player(GObject.Object):
     -------
     episode-updated(Episode)
         Emitted at the end of the playback of an episode.
+    progress-changed(position, duration)
+        Emitted every 200ms during playback.
     """
+
+    STOPPED = 0
+    PLAYING = 1
+    PAUSED = 2
+    BUFFERING = 3
 
     __gsignals__ = {
         'episode-updated':
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+        'progress-changed':
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_LONG, GObject.TYPE_LONG)),
+        'state-changed':
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_INT,)),
+        'episode-changed':
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
     }
 
@@ -73,6 +86,8 @@ class Player(GObject.Object):
         self._position = 0
         self._duration = 0
 
+        self.progress_timer = None
+
         # Create player
         self.player = Gst.ElementFactory.make("playbin")
         flags = self.player.get_property("flags")
@@ -86,6 +101,10 @@ class Player(GObject.Object):
         # Create widgets
         self.widgets = PlayerWidgets(self)
 
+        self.connect('progress-changed', cb(self.widgets.set_progress))
+        self.connect('state-changed', cb(self.widgets.set_state))
+        self.connect('episode-changed', cb(self.widgets.set_current_episode))
+
     def play(self, episode):
         """
         Start the playback of an episode
@@ -98,7 +117,7 @@ class Player(GObject.Object):
         self.episode = episode
         self._started = self.episode.progress
 
-        self.widgets.set_current_episode(episode)
+        self.emit('episode-changed', episode)
 
         if episode.local_path and os.path.isfile(episode.local_path):
             uri = Gst.filename_to_uri(episode.local_path)
@@ -108,10 +127,16 @@ class Player(GObject.Object):
         self.player.set_property("uri", uri)
         self.player.set_state(Gst.State.PLAYING)
 
+        self.progress_timer = GObject.timeout_add(200, self._emit_progress)
+
     def stop(self):
         """
         Stop the playback of an episode.
         """
+        if self.progress_timer:
+            GLib.source_remove(self.progress_timer)
+            self.progress_timer = None
+
         if not self.episode:
             return
 
@@ -133,7 +158,7 @@ class Player(GObject.Object):
         self.emit("episode-updated", self.episode)
 
         self.player.set_state(Gst.State.NULL)
-        self.widgets.set_state(PlayerWidgets.TITLE)
+        self.emit('state-changed', Player.STOPPED)
         self.episode = None
         self._position = 0
         self._duration = 0
@@ -269,22 +294,23 @@ class Player(GObject.Object):
                 self.seek(self.episode.progress * Gst.SECOND)
 
             if newstate == Gst.State.READY:
-                self.widgets.set_state(PlayerWidgets.BUFFERING)
+                self.emit('state-changed', Player.BUFFERING)
             if newstate == Gst.State.PLAYING:
-                self.widgets.set_state(PlayerWidgets.PLAYING)
+                self.emit('state-changed', Player.PLAYING)
             elif newstate == Gst.State.PAUSED:
-                self.widgets.set_state(PlayerWidgets.PAUSED)
+                self.emit('state-changed', Player.PAUSED)
 
+    def _emit_progress(self):
+        position = self.get_position()
+        duration = self.get_duration()
+        self.emit('progress-changed', position, duration)
+
+        return True
 
 class PlayerWidgets(GObject.Object):
     """
     Object handling the playback interface
     """
-    TITLE = 0
-    PLAYING = 1
-    PAUSED = 2
-    BUFFERING = 3
-
     def __init__(self, player):
         self.player = player
         self.state = None
@@ -308,7 +334,7 @@ class PlayerWidgets(GObject.Object):
         self.position = builder.get_object("position")
         self.duration = builder.get_object("duration")
 
-        self.set_state(PlayerWidgets.TITLE)
+        self.set_state(Player.STOPPED)
 
     def set_state(self, state):
         """
@@ -320,18 +346,17 @@ class PlayerWidgets(GObject.Object):
         """
         self.state = state
 
-        if state in [PlayerWidgets.PLAYING, PlayerWidgets.PAUSED]:
-            self.pause.set_visible(state == PlayerWidgets.PLAYING)
-            self.play.set_visible(state == PlayerWidgets.PAUSED)
+        if state in [Player.PLAYING, Player.PAUSED]:
+            self.pause.set_visible(state == Player.PLAYING)
+            self.play.set_visible(state == Player.PAUSED)
             self.controls.show()
             self.title.set_visible_child_name('player')
 
             self._update_progress()
-            GObject.timeout_add(200, self._update_progress)
-        elif state == PlayerWidgets.BUFFERING:
+        elif state == Player.BUFFERING:
             self.controls.hide()
             self.title.set_visible_child_name('loading')
-        elif state == PlayerWidgets.TITLE:
+        elif state == Player.STOPPED:
             self.controls.hide()
             self.title.set_visible_child_name('title')
         else:
@@ -353,6 +378,15 @@ class PlayerWidgets(GObject.Object):
                 "<b>{}</b> from <b><i>{}</i></b>".format(
                     GLib.markup_escape_text(episode.title),
                     GLib.markup_escape_text(episode.podcast.title)))
+
+    def set_progress(self, position, duration):
+        self.progress.set_range(0, duration)
+        if not self.seeking:
+            self.progress.set_value(position)
+        self.progress.set_fill_level(self.player.get_buffered())
+
+        self.position.set_text(format_duration(position // Gst.SECOND))
+        self.duration.set_text(format_duration(duration // Gst.SECOND))
 
     def _on_play_clicked(self, button):
         """
@@ -402,12 +436,4 @@ class PlayerWidgets(GObject.Object):
         position = self.player.get_position()
         duration = self.player.get_duration()
 
-        self.progress.set_range(0, duration)
-        if not self.seeking:
-            self.progress.set_value(position)
-        self.progress.set_fill_level(self.player.get_buffered())
-
-        self.position.set_text(format_duration(position // Gst.SECOND))
-        self.duration.set_text(format_duration(duration // Gst.SECOND))
-
-        return (self.state != PlayerWidgets.TITLE)
+        self.set_progress(position, duration)
