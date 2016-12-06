@@ -74,11 +74,13 @@ class MainWindow(Gtk.ApplicationWindow):
         self.podcast_list.connect('podcast-selected',
                                   self._on_podcast_selected)
 
-        self.episode_list = EpisodeList()
+        self.episode_list = EpisodeList(self.player)
         self.episode_list.connect('episodes-changed',
                                   self._on_episodes_changed)
-        self.episode_list.connect('play', self._on_episode_play)
         self.episode_list.connect('download', self._on_episode_download)
+
+        self.player.connect('progress-changed', cb(self.episode_list.set_player_progress))
+        self.player.connect('state-changed', cb(self.episode_list.set_player_state))
 
         # Statusbar
         self.counts = Gtk.Label()
@@ -160,12 +162,6 @@ class MainWindow(Gtk.ApplicationWindow):
         Called when the download button of an episode is clicked
         """
         self.downloads_button.download(episode)
-
-    def _on_episode_play(self, episode_list, episode):
-        """
-        Called when the play button of an episode is clicked
-        """
-        self.player.play(episode)
 
     def _on_episode_updated(self, widget, episode):
         """

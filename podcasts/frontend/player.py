@@ -79,6 +79,7 @@ class Player(GObject.Object):
             "{}.{}".format(__name__, self.__class__.__name__))
 
         self.episode = None
+        self.state = Player.STOPPED
         self._started = 0
         self._position = 0
         self._duration = 0
@@ -95,7 +96,7 @@ class Player(GObject.Object):
         bus.add_signal_watch()
         bus.connect("message", self._on_message)
 
-    def play(self, episode):
+    def play_episode(self, episode):
         """
         Start the playback of an episode
 
@@ -107,7 +108,7 @@ class Player(GObject.Object):
         self.episode = episode
         self._started = self.episode.progress
 
-        self.emit('state-changed', self.episode, Player.BUFFERING)
+        self.set_state(Player.BUFFERING)
 
         if episode.local_path and os.path.isfile(episode.local_path):
             uri = Gst.filename_to_uri(episode.local_path)
@@ -130,6 +131,8 @@ class Player(GObject.Object):
         if not self.episode:
             return
 
+        self.set_state(Player.STOPPED)
+
         position = self.get_position() // Gst.SECOND
         duration = self.get_duration() // Gst.SECOND
         if position >= duration - MARK_MARGIN:
@@ -148,7 +151,6 @@ class Player(GObject.Object):
         self.emit("episode-updated", self.episode)
 
         self.player.set_state(Gst.State.NULL)
-        self.emit('state-changed', self.episode, Player.STOPPED)
         self.episode = None
         self._position = 0
         self._duration = 0
@@ -167,16 +169,24 @@ class Player(GObject.Object):
     def get_position(self):
         """
         Return the current playback position, or 0 if it is unknown.
-
-        Parameters
-        ----------
-        format : Gst.Format
         """
         success, position = self.player.query_position(Gst.Format.TIME)
         if success:
             self._position = position
 
         return self._position
+
+    def get_seconds_duration(self):
+        """
+        Return the duration of the current episode in seconds, or 0 if it is unknown.
+        """
+        return self.get_duration() // Gst.SECOND
+
+    def get_seconds_position(self):
+        """
+        Return the current playback position in seconds, or 0 if it is unknown.
+        """
+        return self.get_position() // Gst.SECOND
 
     def percent_to_time(self, percent):
         """
@@ -210,7 +220,7 @@ class Player(GObject.Object):
 
     def set_state(self, state):
         """
-        Set the player state
+        Set the state of the Gstreamer player.
 
         Parameters
         ----------
@@ -284,15 +294,46 @@ class Player(GObject.Object):
                 self.seek(self.episode.progress * Gst.SECOND)
 
             if newstate == Gst.State.READY:
-                self.emit('state-changed', self.episode, Player.BUFFERING)
+                self.set_state(Player.BUFFERING)
             if newstate == Gst.State.PLAYING:
-                self.emit('state-changed', self.episode, Player.PLAYING)
+                self.set_state(Player.PLAYING)
             elif newstate == Gst.State.PAUSED:
-                self.emit('state-changed', self.episode, Player.PAUSED)
+                self.set_state(Player.PAUSED)
 
     def _emit_progress(self):
+        """
+        Emit a progress-changed signal. Called every 200ms during playback.
+        """
         position = self.get_position()
         duration = self.get_duration()
         self.emit('progress-changed', position, duration)
 
         return True
+
+    def set_state(self, state):
+        """
+        Set the current state of the player.
+        """
+        self.state = state
+        self.emit('state-changed', self.episode, state)
+
+    def play(self):
+        """
+        Start the playback.
+        """
+        self.player.set_state(Gst.State.PLAYING)
+
+    def pause(self):
+        """
+        Pause the playback.
+        """
+        self.player.set_state(Gst.State.PAUSED)
+
+    def toggle(self):
+        """
+        Toggle between play and pause.
+        """
+        if self.state == Player.PLAYING or self.state == Player.BUFFERING:
+            self.pause()
+        else:
+            self.play()

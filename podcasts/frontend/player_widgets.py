@@ -113,13 +113,13 @@ class PlayerWidgets(GObject.Object):
         """
         Called when the play button is clicked
         """
-        self.player.set_state(Gst.State.PLAYING)
+        self.player.play()
 
     def _on_pause_clicked(self, button):
         """
         Called when the pause button is clicked
         """
-        self.player.set_state(Gst.State.PAUSED)
+        self.player.pause()
 
     def _on_forward_clicked(self, button):
         """

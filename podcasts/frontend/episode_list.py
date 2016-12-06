@@ -34,12 +34,14 @@ import os
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk
+from gi.repository import Gst
 
 from podcasts.library import Library, EpisodeFilterSort, EpisodeAction
 from podcasts.util import format_duration, podcast_dirname, episode_filename
 from podcasts.frontend.widgets import (
     Label, IndexedListBox, FilterButton, SortButton
 )
+from podcasts.frontend.player import Player
 from podcasts.frontend import htmltopango
 from podcasts import tags
 
@@ -55,8 +57,6 @@ class EpisodeList(Gtk.VBox):
     -------
     episodes-changed
         Emitted when episodes are modified (e.g. marked as played)
-    play(Episode)
-        Emitted when the play button of an episode is clicked
     download(Episode)
         Emitted when the download button of an episode is clicked
     """
@@ -64,17 +64,17 @@ class EpisodeList(Gtk.VBox):
     __gsignals__ = {
         'episodes-changed':
             (GObject.SIGNAL_RUN_FIRST, None, ()),
-        'play':
-            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
         'download':
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
     }
 
-    def __init__(self):
+    def __init__(self, player):
         Gtk.VBox.__init__(self)
 
         self.current_podcast = None
         self.update_id = None
+
+        self.player = player
 
         self.filtersort = EpisodeFilterSort()
 
@@ -190,8 +190,15 @@ class EpisodeList(Gtk.VBox):
                 except ValueError:
                     # The row does not exist, create it
                     row = EpisodeRow(episode)
-                    row.connect("play", self._play)
+                    row.connect("toggle", self._toggle)
                     row.connect("download", self._download)
+
+                    if episode == self.player.episode:
+                        # The episode is currently being played
+                        row.set_progress(self.player.get_seconds_position(),
+                                         self.player.get_seconds_duration())
+                        row.set_state(self.player.state)
+
                     self.list.add_with_id(row, episode.id)
                 else:
                     # The row already exists, update it
@@ -369,11 +376,14 @@ class EpisodeList(Gtk.VBox):
                    for episode in episodes]
         library.commit(episodes + actions)
 
-    def _play(self, row):
+    def _toggle(self, row):
         """
-        Called when the play button of an episode is clicked
+        Called when the toggle button of an episode is clicked
         """
-        self.emit("play", row.episode)
+        if self.player.episode == row.episode:
+            self.player.toggle()
+        else:
+            self.player.play_episode(row.episode)
 
     def _download(self, row):
         """
@@ -464,6 +474,30 @@ class EpisodeList(Gtk.VBox):
         self.filtersort.sort_descending = button.get_descending()
         self.list.invalidate_sort()
 
+    def set_player_progress(self, position, duration):
+        """
+        Called when the progress of the playback changes. Updates the
+        row of the episode being played.
+        """
+        try:
+            row = self.list.get_row(self.player.episode.id)
+        except ValueError:
+            pass
+        else:
+            row.set_progress(position // Gst.SECOND, duration // Gst.SECOND)
+
+    def set_player_state(self, episode, state):
+        """
+        Called when the state of the player changes. Updates the
+        row of the episode being played.
+        """
+        try:
+            row = self.list.get_row(episode.id)
+        except ValueError:
+            pass
+        else:
+            row.set_state(state)
+
 
 class EpisodeRow(Gtk.ListBoxRow):
     """
@@ -471,14 +505,14 @@ class EpisodeRow(Gtk.ListBoxRow):
 
     Signals
     -------
-    play
-        Emitted when the play button is clicked
+    toggle
+        Emitted when the toggle button is clicked
     download
         Emitted when the download button is clicked
     """
 
     __gsignals__ = {
-        'play': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        'toggle': (GObject.SIGNAL_RUN_FIRST, None, ()),
         'download': (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
@@ -522,11 +556,10 @@ class EpisodeRow(Gtk.ListBoxRow):
         topgrid.attach(self.download_button, 1, 0, 1, 2)
 
         # Play button
-        button = Gtk.Button.new_from_icon_name("media-playback-start-symbolic",
-                                               Gtk.IconSize.BUTTON)
-        button.set_relief(Gtk.ReliefStyle.NONE)
-        button.connect('clicked', self._on_play_clicked)
-        topgrid.attach(button, 2, 0, 1, 2)
+        self.toggle_button = Gtk.Button()
+        self.toggle_button.set_relief(Gtk.ReliefStyle.NONE)
+        self.toggle_button.connect('clicked', self._on_toggle_clicked)
+        topgrid.attach(self.toggle_button, 2, 0, 1, 2)
 
         # Episode subtitle
         self.subtitle = Label(lines=SUBTITLE_LINES)
@@ -585,31 +618,53 @@ class EpisodeRow(Gtk.ListBoxRow):
 
         # Episode duration
         self.duration.set_sensitive(not self.episode.played)
-        if self.episode.duration:
-            self.duration.set_text(format_duration(self.episode.duration))
-            self.duration.show()
-        else:
-            self.duration.hide()
 
-        # Playback progress
-        if self.episode.duration and self.episode.progress > 0:
-            self.progress.show()
-            self.progress.set_fraction(
-                self.episode.progress/self.episode.duration)
-        else:
-            self.progress.hide()
+        self.set_progress(self.episode.progress, self.episode.duration)
+        self.set_state(Player.STOPPED)
 
         # Download button
         self.download_button.set_visible(not self.episode.local_path)
 
-    def _on_play_clicked(self, button):
+    def _on_toggle_clicked(self, button):
         """
         Called when the play button is clicked
         """
-        self.emit("play")
+        self.emit('toggle')
 
     def _on_download_clicked(self, button):
         """
         Called when the download button is clicked
         """
         self.emit("download")
+
+    def set_progress(self, position, duration):
+        """
+        Set the progress of the playback of the episode
+        """
+        # Episode duration
+        if duration:
+            self.duration.set_text(format_duration(duration))
+            self.duration.show()
+        else:
+            self.duration.hide()
+
+        # Playback progress
+        if duration and position > 0:
+            self.progress.show()
+            self.progress.set_fraction(
+                position/duration)
+        else:
+            self.progress.hide()
+
+    def set_state(self, state):
+        """
+        Set the state of the player for this episode
+        """
+        if state == Player.PLAYING or state == Player.BUFFERING:
+            self.toggle_button.set_image(
+                Gtk.Image.new_from_icon_name("media-playback-pause-symbolic",
+                                             Gtk.IconSize.BUTTON))
+        else:
+            self.toggle_button.set_image(
+                Gtk.Image.new_from_icon_name("media-playback-start-symbolic",
+                                             Gtk.IconSize.BUTTON))
