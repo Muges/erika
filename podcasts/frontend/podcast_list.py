@@ -33,6 +33,8 @@ List of podcasts
 # TODO : Add "All podcasts" row
 # TODO : Escape markup
 
+import locale
+
 from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 from gi.repository import GObject
@@ -126,6 +128,8 @@ class PodcastList(Gtk.VBox):
         if self.list.get_selected_row() is None:
             self.list.select_row(self.list.get_row_at_index(0))
 
+        self.list.invalidate_sort()
+
     def update_podcast(self, podcast_id):
         """
         Update a podcast
@@ -187,13 +191,8 @@ class PodcastList(Gtk.VBox):
             return 1
         elif row2.podcast.title == None:
             return -1
-
-        if row1.podcast.title < row2.podcast.title:
-            return -1
-        elif row1.podcast.title == row2.podcast.title:
-            return 0
         else:
-            return 1
+            return locale.strcoll(row1.podcast.title, row2.podcast.title)
 
     def _remove_podcast(self, button):
         selection = self.list.get_selected_row()
