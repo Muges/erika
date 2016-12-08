@@ -29,13 +29,6 @@ from .library import Library
 from .config import CONFIG_DIR
 from . import frontend
 
-FILENAMES = [
-    "tests/data/itunes.xml",
-    "http://www.bbc.co.uk/programmes/p02nrvd3/episodes/downloads.rss",
-    "http://aliceisntdead.libsyn.com/rss",
-    "http://feeds.feedburner.com/WelcomeToNightVale"
-]
-
 
 def main():
     logger = logging.getLogger(__name__)
@@ -55,9 +48,5 @@ def main():
         os.makedirs(CONFIG_DIR)
 
     Library.init()
-    """library = Library()
-
-    for filename in FILENAMES:
-        library.add_source("feed", filename)"""
 
     frontend.run()
