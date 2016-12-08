@@ -31,8 +31,6 @@ import os.path
 import re
 import string
 
-from podcasts.config import LIBRARY_DIR, DIRNAME_TEMPLATE, FILENAME_TEMPLATE
-
 EXTENSIONS = {
     "audio/mpeg": ".mp3",
     "audio/x-m4a": ".m4a",
@@ -198,48 +196,6 @@ def slugify(name):
         char for char in name
         if char in string.ascii_lowercase + string.digits
     ])
-
-
-def podcast_dirname(podcast):
-    """
-    Return the path of the directory containing a podcast.
-
-    Parameters
-    ----------
-    podcast : Podcast
-
-    Returns
-    -------
-    str
-        The path of the directory.
-    """
-    return os.path.join(
-        LIBRARY_DIR,
-        sanitize_filename(DIRNAME_TEMPLATE.format(podcast=podcast))
-    )
-
-
-def episode_filename(episode, extension):
-    """
-    Return the filename of an episode.
-
-    Parameters
-    ----------
-    episode : Episode
-    extension : str
-
-    Returns
-    -------
-    str
-        The path of the episode.
-    """
-    dirname = podcast_dirname(episode.podcast)
-    filename = os.path.join(
-        dirname,
-        sanitize_filename(FILENAME_TEMPLATE.format(episode=episode))
-    )
-
-    return filename + extension
 
 def cb(function, n=1):
     """

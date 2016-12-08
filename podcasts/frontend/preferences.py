@@ -55,11 +55,11 @@ def run(window=None):
     # Get values from library
     library = Library()
 
-    synchronize = library.get_config("gpodder.synchronize") == "true"
-    hostname = library.get_config("gpodder.hostname") or DEFAULT_HOSTNAME
+    synchronize = library.get_config("gpodder.synchronize")
+    hostname = library.get_config("gpodder.hostname")
     username = library.get_config("gpodder.username")
     password = library.get_config("gpodder.password")
-    deviceid = library.get_config("gpodder.deviceid") or DEFAULT_DEVICEID
+    deviceid = library.get_config("gpodder.deviceid")
     devicename = DEFAULT_DEVICENAME
 
     if synchronize:
@@ -107,7 +107,7 @@ def run(window=None):
                 continue
 
         # Save preferences
-        library.set_config("gpodder.synchronize", str(synchronize).lower())
+        library.set_config("gpodder.synchronize", synchronize)
         library.set_config("gpodder.hostname", hostname)
         library.set_config("gpodder.username", username)
         library.set_config("gpodder.password", password)

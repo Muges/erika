@@ -35,18 +35,15 @@ import requests
 
 from mygpoclient.util import datetime_to_iso8601, iso8601_to_datetime
 
-from podcasts.config import CONFIG_DIR, LIBRARY_DIR
+from podcasts.config import CONFIG_DIR, CONFIG_DEFAULTS, CONFIG_TYPES
 from podcasts import sources, tags
 from podcasts.library.episode import Episode
 from podcasts.library.episode_action import EpisodeAction
 from podcasts.library.podcast import Podcast
 from podcasts.library.row import Row
-from podcasts.util import slugify, episode_filename
+from podcasts.util import slugify, sanitize_filename
 
 DATABASE_PATH = os.path.join(CONFIG_DIR, "library")
-
-# Mark episodes as read if there are less than MARK_MARGIN seconds remaining
-MARK_MARGIN = 30
 
 
 class Library(object):
@@ -769,8 +766,9 @@ class Library(object):
         self.connection.commit()
 
         # Look for new local files
+        library_root = self.get_config("library.root")
         modifications = []
-        for dirpath, dirnames, filenames in os.walk(LIBRARY_DIR):
+        for dirpath, dirnames, filenames in os.walk(library_root):
             for filename in filenames:
                 path = os.path.join(dirpath, filename)
                 if path in paths:
@@ -787,12 +785,7 @@ class Library(object):
                     continue
 
                 if not strict:
-                    # Rename and retag the episode
-                    ext = os.path.splitext(path)[1]
-                    newpath = episode_filename(episode, ext)
-                    os.rename(path, newpath)
-                    tags.set_tags(newpath, episode)
-                    path = newpath
+                    path = self.import_episode_file(episode, path)
 
                 episode.local_path = path
                 modifications.append(episode)
@@ -814,15 +807,17 @@ class Library(object):
 
         row = cursor.fetchone()
         if row:
-            return row["value"]
-        else:
-            return default
+            return CONFIG_TYPES[key].read(row["value"])
+
+        return CONFIG_DEFAULTS[key]
 
     def set_config(self, key, value):
         """
         Set a value in the config table.
         """
         cursor = self.connection.cursor()
+
+        value = CONFIG_TYPES[key].write(value)
 
         # Try to update the value
         cursor.execute(
@@ -951,9 +946,11 @@ class Library(object):
         actions.sort(key=lambda a: iso8601_to_datetime(a.timestamp))
         cursor = self.connection.cursor()
 
+        smart_mark_seconds = self.get_config("smart_mark_seconds")
+
         for action in actions:
             if action.action == "play":
-                if action.position + MARK_MARGIN >= action.total:
+                if action.position + smart_mark_seconds >= action.total:
                     cursor.execute(
                         """
                             UPDATE episodes
@@ -992,3 +989,53 @@ class Library(object):
         """)
 
         self.connection.commit()
+
+    def import_episode_file(self, episode, path):
+        # Rename and retag the episode
+        ext = os.path.splitext(path)[1]
+        newpath = self.get_episode_filename(episode, ext)
+        os.rename(path, newpath)
+        tags.set_tags(newpath, episode)
+        return newpath
+
+    def get_podcast_directory(self, podcast):
+        """
+        Return the path of the directory containing a podcast.
+
+        Parameters
+        ----------
+            podcast : Podcast
+
+        Returns
+        -------
+        str
+            The path of the directory.
+        """
+        template = self.get_config("library.podcast_directory_template")
+        return os.path.join(
+            self.get_config("library.root"),
+            sanitize_filename(template.format(podcast=podcast))
+        )
+
+    def get_episode_filename(self, episode, extension):
+        """
+        Return the filename of an episode.
+
+        Parameters
+        ----------
+        episode : Episode
+        extension : str
+
+        Returns
+        -------
+        str
+            The path of the episode.
+        """
+        dirname = self.get_podcast_directory(episode.podcast)
+        template = self.get_config("library.episode_file_template")
+        filename = os.path.join(
+            dirname,
+            sanitize_filename(template.format(episode=episode))
+        )
+
+        return filename + extension

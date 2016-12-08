@@ -37,10 +37,7 @@ import requests
 
 from podcasts import tags
 from podcasts.library import Library, EpisodeAction
-from podcasts.util import guess_extension, episode_filename
-
-# Maximum number of concurrent downloads
-CONCURRENT_DOWNLOADS = 2
+from podcasts.util import guess_extension
 
 # Smoothing factor used to compute the average download speed
 SMOOTHING_FACTOR = 0.01
@@ -60,6 +57,8 @@ def download_chunks(episode):
     """
     logger = logging.getLogger(__name__)
 
+    library = Library()
+
     # Start the download and get the mimetype of the file
     logger.debug("Getting file mimetype.")
     response = requests.get(episode.file_url, stream=True)
@@ -74,7 +73,7 @@ def download_chunks(episode):
     # Set the extension of the file
     ext = guess_extension(mimetype)
 
-    filename = episode_filename(episode, ext)
+    filename = library.get_episode_filename(episode, ext)
     tempfilename = filename + ".part"
     dirname = os.path.dirname(filename)
 
@@ -102,7 +101,6 @@ def download_chunks(episode):
         # Set the tags of the downloaded file
         tags.set_tags(filename, episode)
 
-        library = Library()
         episode.local_path = filename
 
         action = EpisodeAction.new(episode, "download")
@@ -163,8 +161,11 @@ class DownloadsPool(object):
     def __init__(self):
         self.queue = Queue()
 
+        library = Library()
+        workers = library.get_config("downloads.workers")
+
         self.workers = [
-            DownloadWorker(self.queue) for _ in range(0, CONCURRENT_DOWNLOADS)
+            DownloadWorker(self.queue) for _ in range(0, workers)
         ]
 
     def add(self, job):

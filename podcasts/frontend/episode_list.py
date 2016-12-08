@@ -37,7 +37,7 @@ from gi.repository import Gtk
 from gi.repository import Gst
 
 from podcasts.library import Library, EpisodeFilterSort, EpisodeAction
-from podcasts.util import format_duration, podcast_dirname, episode_filename
+from podcasts.util import format_duration
 from podcasts.frontend.widgets import (
     Label, IndexedListBox, FilterButton, SortButton
 )
@@ -434,7 +434,7 @@ class EpisodeList(Gtk.VBox):
                     window, Gtk.FileChooserAction.OPEN,
                     (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                      Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
-                dialog.set_current_folder(podcast_dirname(row.episode.podcast))
+                dialog.set_current_folder(library.get_podcast_directory(row.episode.podcast))
 
                 response = dialog.run()
                 if response == Gtk.ResponseType.OK:
@@ -444,13 +444,7 @@ class EpisodeList(Gtk.VBox):
                 dialog.destroy()
 
                 if path:
-                    # Rename and retag the episode
-                    ext = os.path.splitext(path)[1]
-                    newpath = episode_filename(row.episode, ext)
-                    os.rename(path, newpath)
-                    tags.set_tags(newpath, row.episode)
-
-                    row.episode.local_path = newpath
+                    row.episode.local_path = library.import_episode_file(row.episode, path)
 
                     action = EpisodeAction.new(row.episode, "download")
                     library.commit([row.episode, action])

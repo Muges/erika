@@ -27,14 +27,50 @@ Module defining some constants
 """
 
 from os.path import expanduser, join
+import platform
 
 from .__version__ import __appname__
+from .config_types import String, Integer, Boolean
 
 # Directories
 HOME = expanduser("~")
 CONFIG_DIR = join(HOME, ".{}".format(__appname__.lower()))
 LIBRARY_DIR = join(HOME, "Podcasts")
 
-# Episode path template
-DIRNAME_TEMPLATE = "{podcast.title}"
-FILENAME_TEMPLATE = "{episode.pubdate:%Y.%m.%d} - {episode.title}"
+CONFIG_DEFAULTS = {
+    "library.root" : join(HOME, "Podcasts"),
+    "library.podcast_directory_template" : "{podcast.title}",
+    "library.episode_file_template" : "{episode.pubdate:%Y.%m.%d} - {episode.title}",
+    "library.synchronize_interval" : 60*60,
+
+    "player.smart_mark_seconds" : 30,
+
+    "downloads.workers" : 2,
+
+    "gpodder.synchronize" : False,
+    "gpodder.hostname" : "gpodder.net",
+    "gpodder.username" : "",
+    "gpodder.password" : "",
+    "gpodder.deviceid" : "podcasts-{}".format(platform.node()),
+    "gpodder.last_subscription_sync" : 0,
+    "gpodder.last_episodes_sync" : 0,
+}
+
+CONFIG_TYPES = {
+    "library.root" : String,
+    "library.podcast_directory_template" : String,
+    "library.episode_file_template" : String,
+    "library.synchronize_interval" : Integer,
+
+    "player.smart_mark_seconds" : Integer,
+
+    "downloads.workers" : Integer,
+
+    "gpodder.synchronize" : Boolean,
+    "gpodder.hostname" : String,
+    "gpodder.username" : String,
+    "gpodder.password" : String,
+    "gpodder.deviceid" : String,
+    "gpodder.last_subscription_sync" : Integer,
+    "gpodder.last_episodes_sync" : Integer,
+}

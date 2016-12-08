@@ -37,9 +37,6 @@ from gi.repository import GLib
 
 from podcasts.library import Library, EpisodeAction
 
-# Mark episodes as read if there are less than MARK_MARGIN seconds remaining
-MARK_MARGIN = 30
-
 # For some reason this is not defined in the python gstreamer bindings.
 GST_PLAY_FLAG_DOWNLOAD = 1 << 7
 
@@ -133,9 +130,12 @@ class Player(GObject.Object):
 
         self.set_state(Player.STOPPED)
 
+        library = Library()
+        smart_mark_seconds = library.get_config("player.smart_mark_seconds")
+
         position = self.get_position() // Gst.SECOND
         duration = self.get_duration() // Gst.SECOND
-        if position >= duration - MARK_MARGIN:
+        if position + smart_mark_seconds >= duration:
             # Mark as read and unset progress
             self.episode.progress = 0
             self.episode.mark_as_played()
@@ -144,7 +144,6 @@ class Player(GObject.Object):
             # Save progress
             self.episode.progress = position
 
-        library = Library()
         action = EpisodeAction.new(self.episode, "play", self._started, position, duration)
         library.commit([self.episode, action])
 

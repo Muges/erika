@@ -39,7 +39,7 @@ def synchronize_subscriptions(download=True):
     library = Library()
 
     # Check that the synchronization is enabled
-    synchronize = library.get_config("gpodder.synchronize") == "true"
+    synchronize = library.get_config("gpodder.synchronize")
     if not synchronize:
         return
 
@@ -50,7 +50,7 @@ def synchronize_subscriptions(download=True):
     username = library.get_config("gpodder.username")
     password = library.get_config("gpodder.password")
     deviceid = library.get_config("gpodder.deviceid")
-    last_subscription_sync = library.get_config("gpodder.last_subscription_sync", "0")
+    last_subscription_sync = library.get_config("gpodder.last_subscription_sync")
 
     # Get the podcasts changes from the library
     added = library.get_added_podcasts()
@@ -98,7 +98,7 @@ def synchronize_episode_actions(download=True):
     library = Library()
 
     # Check that the synchronization is enabled
-    synchronize = library.get_config("gpodder.synchronize") == "true"
+    synchronize = library.get_config("gpodder.synchronize")
     if not synchronize:
         return
 
@@ -109,7 +109,7 @@ def synchronize_episode_actions(download=True):
     username = library.get_config("gpodder.username")
     password = library.get_config("gpodder.password")
     deviceid = library.get_config("gpodder.deviceid")
-    last_episodes_sync = library.get_config("gpodder.last_episodes_sync", "0")
+    last_episodes_sync = library.get_config("gpodder.last_episodes_sync")
 
     # Get the episode actions from the library
     local_actions = [a.for_gpodder() for a in library.get_episode_actions()]

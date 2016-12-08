@@ -36,9 +36,6 @@ from podcasts.library import Library
 from podcasts.opml import import_opml, export_opml
 from podcasts import gpodder
 
-# Library update interval in seconds
-SYNCHRONIZE_INTERVAL = 15*60
-
 
 class Application(Gtk.Application):
     def __init__(self, *args, **kwargs):
@@ -102,8 +99,11 @@ class Application(Gtk.Application):
 
             self.set_offline(self.offline)
 
+            library = Library()
+            interval = library.get_config("library.synchronize_interval")
+
             self.synchronize_library(scan=True)
-            GObject.timeout_add_seconds(SYNCHRONIZE_INTERVAL, self.synchronize_library)
+            GObject.timeout_add_seconds(interval, self.synchronize_library)
 
         self.window.present()
 
