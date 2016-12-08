@@ -23,6 +23,7 @@
 # SOFTWARE.
 
 import logging
+import socket
 
 from mygpoclient.api import MygPodderClient, EpisodeAction
 
@@ -140,3 +141,16 @@ def upload_episode_actions():
     Upload the episode actions to a gpodder.net account.
     """
     synchronize_episode_actions(download=False)
+
+def check_connection(hostname="gpodder.net", timeout=2):
+    """
+    Check that there is a network connection.
+    """
+    try:
+        # Resolve the hostname
+        host = socket.gethostbyname(hostname)
+        # Connect to the server
+        socket.create_connection((host, 80), timeout)
+        return True
+    except:
+        return False

@@ -42,20 +42,25 @@ SYNCHRONIZE_INTERVAL = 15*60
 
 class Application(Gtk.Application):
     def __init__(self, *args, **kwargs):
-        Gtk.Application.__init__(self, application_id="fr.muges.podcasts")
+        Gtk.Application.__init__(self, application_id="fr.muges.podcasts",
+                                 flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
 
         self.logger = logging.getLogger(
             "{}.{}".format(__name__, self.__class__.__name__))
 
         self.window = None
         self.syncing = False
+        self.offline = False
+
+        self.add_main_option("offline", ord("o"), GLib.OptionFlags.NONE,
+                             GLib.OptionArg.NONE, "Enable offline mode", None)
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
 
-        action = Gio.SimpleAction.new("add-podcast", None)
-        action.connect("activate", lambda a, p: self.add_podcast())
-        self.add_action(action)
+        self.add_podcast_action = Gio.SimpleAction.new("add-podcast", None)
+        self.add_podcast_action.connect("activate", lambda a, p: self.add_podcast())
+        self.add_action(self.add_podcast_action)
 
         action = Gio.SimpleAction.new("import-opml", None)
         action.connect("activate", lambda a, p: self.import_opml())
@@ -65,13 +70,13 @@ class Application(Gtk.Application):
         action.connect("activate", lambda a, p: self.export_opml())
         self.add_action(action)
 
-        action = Gio.SimpleAction.new("update", None)
-        action.connect("activate", lambda a, p: self.synchronize_library())
-        self.add_action(action)
+        self.update_action = Gio.SimpleAction.new("update", None)
+        self.update_action.connect("activate", lambda a, p: self.synchronize_library())
+        self.add_action(self.update_action)
 
-        action = Gio.SimpleAction.new("force-synchronization", None)
-        action.connect("activate", lambda a, p: self.force_synchronization())
-        self.add_action(action)
+        self.sync_action = Gio.SimpleAction.new("force-synchronization", None)
+        self.sync_action.connect("activate", lambda a, p: self.force_synchronization())
+        self.add_action(self.sync_action)
 
         action = Gio.SimpleAction.new("preferences", None)
         action.connect("activate", lambda a, p: preferences.run(self.window))
@@ -95,10 +100,22 @@ class Application(Gtk.Application):
                 self.quit()
                 return
 
+            self.set_offline(self.offline)
+
             self.synchronize_library(scan=True)
             GObject.timeout_add_seconds(SYNCHRONIZE_INTERVAL, self.synchronize_library)
 
         self.window.present()
+
+    def do_command_line(self, command_line):
+        options = command_line.get_options_dict()
+
+        if options.contains("offline"):
+            self.logger.info("Started in offline mode.")
+            self.offline = True
+
+        self.activate()
+        return 0
 
     def do_shutdown(self):
         if self.window:
@@ -124,8 +141,14 @@ class Application(Gtk.Application):
         Synchronize the podcasts library with gpodder.net.
         """
         # Prevent concurrent synchronizations
-        if self.syncing:
+        if self.syncing or self.offline:
             return
+
+        # Test connection
+        if not gpodder.check_connection():
+            self.set_offline(error=True)
+            return
+
         self.syncing = True
 
         if self.window:
@@ -324,3 +347,18 @@ class Application(Gtk.Application):
     def _on_export_opml(self, action, param):
         if self.window:
             self.window.export_opml()
+
+    def set_offline(self, offline=True, error=False):
+        if not offline and not error:
+            error = not gpodder.check_connection()
+        if error:
+            offline = True
+
+        self.offline = offline
+
+        self.add_podcast_action.set_enabled(not offline)
+        self.update_action.set_enabled(not offline)
+        self.sync_action.set_enabled(not offline)
+
+        if self.window:
+            self.window.set_network_state(offline, error)

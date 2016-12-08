@@ -33,7 +33,7 @@ from podcasts.frontend.podcast_list import PodcastList
 from podcasts.frontend.episode_list import EpisodeList
 from podcasts.frontend.player import Player
 from podcasts.frontend.player_widgets import PlayerWidgets
-from podcasts.frontend.widgets import StatusBox
+from podcasts.frontend.widgets import StatusBox, NetworkButton
 from podcasts.library import Library
 from podcasts.util import cb
 
@@ -83,6 +83,10 @@ class MainWindow(Gtk.ApplicationWindow):
         self.player.connect('state-changed', cb(self.episode_list.set_player_state))
 
         # Statusbar
+        self.network_button = NetworkButton()
+        self.network_button.connect('clicked',
+                                    lambda b: application.set_offline(not b.get_offline()))
+
         self.counts = Gtk.Label()
         self.update_counts()
 
@@ -114,6 +118,7 @@ class MainWindow(Gtk.ApplicationWindow):
         status_bar.set_margin_end(5)
         vbox.pack_start(status_bar, False, False, 0)
 
+        status_bar.pack_start(self.network_button, False, False, 0)
         status_bar.pack_start(self.counts, False, False, 0)
         status_bar.pack_end(self.statusbox, False, False, 0)
 
@@ -169,3 +174,8 @@ class MainWindow(Gtk.ApplicationWindow):
         """
         self.podcast_list.update_podcast(episode.podcast_id)
         self.episode_list.update_episode(episode)
+
+    def set_network_state(self, offline, error):
+        self.network_button.set_state(offline, error)
+        self.podcast_list.add_podcast.set_sensitive(not offline)
+        self.episode_list.set_offline(offline)

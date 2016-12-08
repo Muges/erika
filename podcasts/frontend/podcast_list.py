@@ -78,10 +78,10 @@ class PodcastList(Gtk.VBox):
         self.action_bar = Gtk.ActionBar()
         self.pack_start(self.action_bar, False, False, 0)
 
-        add_podcast = Gtk.Button.new_from_icon_name(
+        self.add_podcast = Gtk.Button.new_from_icon_name(
             "feed-add-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
-        add_podcast.set_action_name("app.add-podcast")
-        self.action_bar.pack_start(add_podcast)
+        self.add_podcast.set_action_name("app.add-podcast")
+        self.action_bar.pack_start(self.add_podcast)
 
         remove_podcast = Gtk.Button.new_from_icon_name(
             "feed-remove-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
@@ -286,11 +286,20 @@ class PodcastRow(Gtk.ListBoxRow):
 
         # Unplayed and new counts
         unplayed = self.podcast.episodes_count - self.podcast.played_count
-        if self.podcast.new_count > 0:
-            self.counts.set_markup(
-                "{} <b>({})</b>".format(unplayed, self.podcast.new_count))
+        if unplayed > 0:
+            unplayed = str(unplayed)
         else:
-            self.counts.set_text("{}".format(unplayed))
+            unplayed = ""
+
+        if self.podcast.new_count > 0:
+            new = "<b>({})</b>".format(self.podcast.new_count)
+        else:
+            new = ""
+
+        if unplayed and new:
+            self.counts.set_markup(unplayed + " " + new)
+        else:
+            self.counts.set_markup(unplayed + " " + new)
 
         # Podcast subtitle
         self.subtitle.set_text(self.podcast.subtitle or self.podcast.summary)

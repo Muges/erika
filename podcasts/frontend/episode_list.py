@@ -76,6 +76,8 @@ class EpisodeList(Gtk.VBox):
 
         self.player = player
 
+        self.offline = False
+
         self.filtersort = EpisodeFilterSort()
 
         # Episode list
@@ -192,6 +194,7 @@ class EpisodeList(Gtk.VBox):
                     row = EpisodeRow(episode)
                     row.connect("toggle", self._toggle)
                     row.connect("download", self._download)
+                    row.set_offline(self.offline)
 
                     if episode == self.player.episode:
                         # The episode is currently being played
@@ -498,6 +501,11 @@ class EpisodeList(Gtk.VBox):
         else:
             row.set_state(state)
 
+    def set_offline(self, offline):
+        self.offline = offline
+
+        for row in self.list.rows.values():
+            row.set_offline(offline)
 
 class EpisodeRow(Gtk.ListBoxRow):
     """
@@ -668,3 +676,6 @@ class EpisodeRow(Gtk.ListBoxRow):
             self.toggle_button.set_image(
                 Gtk.Image.new_from_icon_name("media-playback-start-symbolic",
                                              Gtk.IconSize.BUTTON))
+
+    def set_offline(self, offline):
+        self.download_button.set_sensitive(not offline)
