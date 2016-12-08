@@ -183,6 +183,11 @@ class PodcastList(Gtk.VBox):
             0 if they are equal,
             1 otherwise
         """
+        if row1.podcast.title == None:
+            return 1
+        elif row2.podcast.title == None:
+            return -1
+
         if row1.podcast.title < row2.podcast.title:
             return -1
         elif row1.podcast.title == row2.podcast.title:
@@ -262,16 +267,25 @@ class PodcastRow(Gtk.ListBoxRow):
         """
         Update the widget
         """
-        self.grid.set_tooltip_markup((
-            "<b>{title}</b>\n"
-            "{total} episodes\n\n"
+        if self.podcast.summary:
+            self.grid.set_tooltip_markup((
+                "<b>{title}</b>\n"
+                "{total} episodes\n\n"
 
-            "{summary}"
-        ).format(
-            title=self.podcast.title,
-            total=self.podcast.episodes_count,
-            summary=htmltopango.convert(self.podcast.summary)
-        ))
+                "{summary}"
+            ).format(
+                title=self.podcast.title or "",
+                total=self.podcast.episodes_count,
+                summary=htmltopango.convert(self.podcast.summary)
+            ))
+        else:
+            self.grid.set_tooltip_markup((
+                "<b>{title}</b>\n"
+                "{total} episodes\n\n"
+            ).format(
+                title=self.podcast.title or "",
+                total=self.podcast.episodes_count
+            ))
 
         # Podcast Image
         if self.podcast.image_data:
@@ -281,8 +295,11 @@ class PodcastRow(Gtk.ListBoxRow):
             self.icon.hide()
 
         # Podcast title
-        self.title.set_markup("<b>{}</b>".format(
-            GLib.markup_escape_text(self.podcast.title)))
+        if self.podcast.title:
+            self.title.set_markup("<b>{}</b>".format(
+                GLib.markup_escape_text(self.podcast.title)))
+        else:
+            self.title.set_text(self.podcast.url)
 
         # Unplayed and new counts
         unplayed = self.podcast.episodes_count - self.podcast.played_count
@@ -302,7 +319,7 @@ class PodcastRow(Gtk.ListBoxRow):
             self.counts.set_markup(unplayed + " " + new)
 
         # Podcast subtitle
-        self.subtitle.set_text(self.podcast.subtitle or self.podcast.summary)
+        self.subtitle.set_text(self.podcast.subtitle or self.podcast.summary or "")
 
     def get_pixbuf(self):
         """
