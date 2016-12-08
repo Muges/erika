@@ -36,7 +36,7 @@ from gi.repository import GLib
 from podcasts.downloads import DownloadsPool, download_with_average_speed
 from podcasts.library import Library
 from podcasts.util import format_fulltext_duration, format_size
-from podcasts.frontend.widgets import Label, ScrolledWindow
+from podcasts.frontend.widgets import Label, ScrolledWindow, IndexedListBox
 
 # Size of the episode icon in the download list
 IMAGE_SIZE = 64
@@ -74,7 +74,7 @@ class DownloadsButton(Gtk.MenuButton):
 
         self.popover = Gtk.Popover()
 
-        self.list = Gtk.ListBox()
+        self.list = IndexedListBox()
         self.list.set_selection_mode(Gtk.SelectionMode.NONE)
         self.list.connect("add", self._on_list_changed)
         self.list.connect("remove", self._on_list_changed)
@@ -102,11 +102,15 @@ class DownloadsButton(Gtk.MenuButton):
         """
         Add an episode to the download queue.
         """
+        if episode.id in self.list.get_ids():
+            self.logger.debug("The episode is already in the download list.")
+            return
+
         job = DownloadJob(episode)
 
         row = DownloadRow(job)
         row.connect("episode-updated", self._on_episode_updated)
-        self.list.add(row)
+        self.list.add_with_id(row, episode.id)
 
         self.pool.add(job)
 
