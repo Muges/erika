@@ -103,7 +103,7 @@ class Application(Gtk.Application):
             interval = library.get_config("library.synchronize_interval")
 
             self.synchronize_library(scan=True)
-            GObject.timeout_add_seconds(interval, self.synchronize_library)
+            GObject.timeout_add_seconds(interval*60, self.synchronize_library)
 
         self.window.present()
 

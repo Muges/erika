@@ -52,6 +52,19 @@ def synchronize_subscriptions(download=True):
     deviceid = library.get_config("gpodder.deviceid")
     last_subscription_sync = library.get_config("gpodder.last_subscription_sync")
 
+    # Test connection and get device name
+    try:
+        client = MygPodderClient(username, password, hostname)
+        devices = client.get_devices()
+    except:
+        logger.exception("Unable to connect to gpodder.net")
+        return
+    else:
+        for device in devices:
+            if device.device_id == deviceid:
+                library.set_config("gpodder.devicename", device.caption)
+                break
+
     # Get the podcasts changes from the library
     added = library.get_added_podcasts()
     removed = library.get_removed_podcasts()

@@ -811,7 +811,26 @@ class Library(object):
 
         return CONFIG_DEFAULTS[key]
 
-    def set_config(self, key, value):
+    def get_all_config(self):
+        cursor = self.connection.cursor()
+        cursor.execute(
+            """
+                SELECT key, value
+                FROM config
+            """
+        )
+
+        config = CONFIG_DEFAULTS.copy()
+
+        rows = cursor.fetchall()
+        for row in rows:
+            config[row['key']] = CONFIG_TYPES[row['key']].read(row['value'])
+
+        del config['gpodder.password']
+
+        return config
+
+    def set_config(self, key, value, commit=False):
         """
         Set a value in the config table.
         """
@@ -840,6 +859,12 @@ class Library(object):
                     key, value
                 )
             )
+
+        self.connection.commit()
+
+    def save_config(self, config):
+        for key, value in config.items():
+            self.set_config(key, value, commit=False)
 
         self.connection.commit()
 
@@ -946,7 +971,7 @@ class Library(object):
         actions.sort(key=lambda a: iso8601_to_datetime(a.timestamp))
         cursor = self.connection.cursor()
 
-        smart_mark_seconds = self.get_config("smart_mark_seconds")
+        smart_mark_seconds = self.get_config("player.smart_mark_seconds")
 
         for action in actions:
             if action.action == "play":

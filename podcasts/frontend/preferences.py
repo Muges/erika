@@ -29,10 +29,8 @@ from gi.repository import Gtk
 from mygpoclient.api import MygPodderClient
 
 from podcasts.library import Library
-
-DEFAULT_HOSTNAME = "gpodder.net"
-DEFAULT_DEVICEID = "podcasts-{}".format(platform.node())
-DEFAULT_DEVICENAME = "Podcasts on {}".format(platform.node())
+from podcasts.config import CONFIG_TYPES
+from podcasts.config_types import String, Path, Integer, Boolean
 
 
 def run(window=None):
@@ -54,64 +52,23 @@ def run(window=None):
 
     # Get values from library
     library = Library()
+    config = library.get_all_config()
 
-    synchronize = library.get_config("gpodder.synchronize")
-    hostname = library.get_config("gpodder.hostname")
-    username = library.get_config("gpodder.username")
-    password = library.get_config("gpodder.password")
-    deviceid = library.get_config("gpodder.deviceid")
-    devicename = DEFAULT_DEVICENAME
+    for key, value in config.items():
+        widget = builder.get_object(key)
+        if widget:
+            CONFIG_TYPES[key].write_widget(widget, value)
 
-    if synchronize:
-        # Test connection and get device name
-        try:
-            client = MygPodderClient(username, password, hostname)
-            devices = client.get_devices()
-        except:
-            logger.exception("Unable to connect to gpodder.net")
-            error_bar.show()
-        else:
-            for device in devices:
-                if device.device_id == deviceid:
-                    devicename = device.caption
-                    break
-    
-    synchronize_checkbutton.set_active(synchronize)
-    hostname_entry.set_text(hostname)
-    username_entry.set_text(username)
-    deviceid_entry.set_text(deviceid)
-    devicename_entry.set_text(devicename)
-    
-    while True:
-        response = dialog.run()
-        if response == Gtk.ResponseType.CANCEL:
-            break
+    response = dialog.run()
 
-        synchronize = synchronize_checkbutton.get_active()
-        hostname = hostname_entry.get_text()
-        username = username_entry.get_text()
-        deviceid = deviceid_entry.get_text()
-        devicename = devicename_entry.get_text()
-        if password_entry.get_text():
-            password = password_entry.get_text()
+    if response == Gtk.ResponseType.APPLY:
+        # Save values to library
+        for key in config:
+            widget = builder.get_object(key)
+            if widget:
+                value = CONFIG_TYPES[key].read_widget(widget)
+                config[key] = value
 
-        if synchronize:
-            # Test connection and set device name
-            try:
-                client = MygPodderClient(username, password, hostname)
-                client.update_device_settings(deviceid, devicename, "desktop")
-            except:
-                logger.exception("Unable to connect to gpodder.net")
-                error_bar.show()
-                dialog.run()
-                continue
-
-        # Save preferences
-        library.set_config("gpodder.synchronize", synchronize)
-        library.set_config("gpodder.hostname", hostname)
-        library.set_config("gpodder.username", username)
-        library.set_config("gpodder.password", password)
-        library.set_config("gpodder.deviceid", deviceid)
-        break
+        library.save_config(config)
 
     dialog.destroy()

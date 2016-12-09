@@ -32,6 +32,23 @@ class String(object):
     def write(value):
         return value
 
+    @staticmethod
+    def read_widget(widget):
+        return widget.get_text()
+
+    @staticmethod
+    def write_widget(widget, value):
+        widget.set_text(value)
+
+class Path(String):
+    @staticmethod
+    def read_widget(widget):
+        return widget.get_filename()
+
+    @staticmethod
+    def write_widget(widget, value):
+        widget.set_filename(value)
+
 class Integer(object):
     @staticmethod
     def read(value):
@@ -40,6 +57,14 @@ class Integer(object):
     @staticmethod
     def write(value):
         return str(value)
+
+    @staticmethod
+    def read_widget(widget):
+        return int(widget.get_value())
+
+    @staticmethod
+    def write_widget(widget, value):
+        widget.set_value(value)
 
 class Boolean(object):
     @staticmethod
@@ -52,3 +77,11 @@ class Boolean(object):
             return "true"
         else:
             return "false"
+
+    @staticmethod
+    def read_widget(widget):
+        return widget.get_active()
+
+    @staticmethod
+    def write_widget(widget, value):
+        widget.set_active(value)
