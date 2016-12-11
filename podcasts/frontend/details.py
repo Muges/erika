@@ -26,6 +26,8 @@
 Widget displaying the details of a podcast or episode.
 """
 
+import webbrowser
+
 from gi.repository import Gtk
 from gi.repository import WebKit
 from gi.repository import GObject
@@ -55,6 +57,8 @@ class Details(Gtk.ScrolledWindow):
 
         self.style = DetailsStyle()
         GObject.idle_add(self._set_style)
+
+        self.view.connect('navigation-policy-decision-requested', self._on_link_clicked)
 
     def _set_style(self):
         """
@@ -100,3 +104,8 @@ class Details(Gtk.ScrolledWindow):
             podcast=podcast
         )
         self.view.load_html_string(html, "")
+
+    def _on_link_clicked(self, view, frame, request, action, decision):
+        webbrowser.open(request.get_uri())
+        decision.ignore()
+        return True
