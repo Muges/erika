@@ -29,6 +29,7 @@ Object representing an episode in the library
 import requests
 
 from podcasts.library.row import Row
+from podcasts.util import format_duration
 
 
 class Episode(Row):
@@ -127,3 +128,7 @@ class Episode(Row):
 
         # Fallback to podcast image
         return self.podcast.image_data
+
+    @property
+    def duration_str(self):
+        return format_duration(self.duration)
