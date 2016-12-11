@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<style>
+	  html {{
+            background-color: {style.background};
+            foreground-color: {style.foreground};
+          }}
+          .header {{
+            display: -webkit-flex;
+            display: flex;
+            flex-align: center;
+          }}
+          .header > *, .description {{
+            margin: 10px;
+          }}
+
+          .logo {{
+            max-width: 96px;
+            max-height: 96px;
+          }}
+          h3 {{
+            margin-top: 0;
+            margin-bottom: 0;
+          }}
+          p {{
+            margin-top: 10px 0;
+          }}
+          p:first-of-type {{
+            margin-top: 0;
+          }}
+          p:last-of-type {{
+            margin-bottom: 0;
+          }}
+        </style>
+  </head>
+  <body>
+        <div class="header">
+          <img class="logo" src="{episode.image_url}" />
+	  <div>
+		<h3>{episode.title}</h3>
+		<p>of <em>{episode.podcast.title}</em></p>
+		<p>
+		  Released on {episode.pubdate:%d/%m/%Y}<br />
+		  {episode.duration}
+		</p>
+	  </div>
+	</div>
+
+	<div class="description">
+	  {episode.summary}
+	</div>
+  </body>
+</html>

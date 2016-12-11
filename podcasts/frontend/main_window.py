@@ -33,7 +33,8 @@ from podcasts.frontend.podcast_list import PodcastList
 from podcasts.frontend.episode_list import EpisodeList
 from podcasts.frontend.player import Player
 from podcasts.frontend.player_widgets import PlayerWidgets
-from podcasts.frontend.widgets import StatusBox, NetworkButton
+from podcasts.frontend.details import Details
+from podcasts.frontend.widgets import StatusBox, NetworkButton, Paned
 from podcasts.library import Library
 from podcasts.util import cb
 
@@ -70,14 +71,18 @@ class MainWindow(Gtk.ApplicationWindow):
         self.player.connect('state-changed', cb(self.player_widgets.set_state))
 
         # Views
+        self.details = Details()
+
         self.podcast_list = PodcastList()
-        self.podcast_list.connect('podcast-selected',
-                                  self._on_podcast_selected)
+        self.podcast_list.connect('podcast-selected', self._on_podcast_selected)
+        self.podcast_list.connect('podcast-selected', cb(self.details.show_podcast))
 
         self.episode_list = EpisodeList(self.player)
         self.episode_list.connect('episodes-changed',
                                   self._on_episodes_changed)
         self.episode_list.connect('download', self._on_episode_download)
+        self.episode_list.connect('episode-selected', cb(self.details.show_episode))
+        self.episode_list.connect('podcast-selected', cb(self.details.show_podcast))
 
         self.player.connect('progress-changed', cb(self.episode_list.set_player_progress))
         self.player.connect('state-changed', cb(self.episode_list.set_player_state))
@@ -104,12 +109,18 @@ class MainWindow(Gtk.ApplicationWindow):
         headerbar.pack_end(self.downloads_button)
         vbox.pack_start(headerbar, False, False, 0)
 
+        right_paned = Paned()
+        right_paned.set_limit_width(700)
+        right_paned.set_position(800)
+        right_paned.add1(self.episode_list)
+        right_paned.add2(self.details)
+
         paned = Gtk.Paned()
         paned.set_position(300)
         vbox.pack_start(paned, True, True, 0)
 
         paned.add1(self.podcast_list)
-        paned.add2(self.episode_list)
+        paned.add2(right_paned)
 
         status_bar = Gtk.HBox()
         status_bar.set_margin_top(5)

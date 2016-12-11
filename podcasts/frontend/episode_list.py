@@ -66,6 +66,10 @@ class EpisodeList(Gtk.VBox):
             (GObject.SIGNAL_RUN_FIRST, None, ()),
         'download':
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+        'episode-selected':
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+        'podcast-selected':
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
     }
 
     def __init__(self, player):
@@ -86,14 +90,13 @@ class EpisodeList(Gtk.VBox):
         self.list.set_sort_func(self.sort_func)
         self.list.set_filter_func(self.filter_func)
         self.list.connect("popup-menu", self._on_popup_menu)
+        self.list.connect("selected-rows-changed", self._on_selected_rows_changed)
 
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.add_with_viewport(self.list)
-        self.pack_start(scrolled_window, True, True, 0)
 
         # Filter and sort buttons
         self.action_bar = Gtk.ActionBar()
-        self.pack_start(self.action_bar, False, False, 0)
 
         filter_new = FilterButton("starred-symbolic")
         filter_new.connect("toggled", self._filter_toggled, "new")
@@ -111,6 +114,10 @@ class EpisodeList(Gtk.VBox):
         sort = SortButton()
         sort.connect("clicked", self._sort_toggled)
         self.action_bar.pack_end(sort)
+
+        # Layout
+        self.pack_start(self.action_bar, False, False, 0)
+        self.pack_start(scrolled_window, True, True, 0)
 
     def select(self, podcast):
         """
@@ -319,7 +326,7 @@ class EpisodeList(Gtk.VBox):
         Parameters
         ----------
         menu_item : Gtk.MenuItem
-            The menu item that was emitted the signal
+            The menu item that emitted the signal
         rows : List[EpisodeRow]
             The selected rows
         """
@@ -365,7 +372,7 @@ class EpisodeList(Gtk.VBox):
         Parameters
         ----------
         menu_item : Gtk.MenuItem
-            The menu item that was emitted the signal
+            The menu item that emitted the signal
         rows : List[EpisodeRow]
             The selected rows
         """
@@ -401,7 +408,7 @@ class EpisodeList(Gtk.VBox):
         Parameters
         ----------
         menu_item : Gtk.MenuItem
-            The menu item that was emitted the signal
+            The menu item that emitted the signal
         rows : List[EpisodeRow]
             The selected rows
         """
@@ -500,6 +507,14 @@ class EpisodeList(Gtk.VBox):
 
         for row in self.list.rows.values():
             row.set_offline(offline)
+
+    def _on_selected_rows_changed(self, list):
+        rows = self.list.get_selected_rows()
+        if len(rows) == 1:
+            self.emit("episode-selected", rows[0].episode)
+        else:
+            self.emit("podcast-selected", self.current_podcast)
+
 
 class EpisodeRow(Gtk.ListBoxRow):
     """

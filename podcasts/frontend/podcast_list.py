@@ -74,11 +74,9 @@ class PodcastList(Gtk.VBox):
 
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.add_with_viewport(self.list)
-        self.pack_start(scrolled_window, True, True, 0)
 
         # Action bar
         self.action_bar = Gtk.ActionBar()
-        self.pack_start(self.action_bar, False, False, 0)
 
         self.add_podcast = Gtk.Button.new_from_icon_name(
             "feed-add-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
@@ -99,6 +97,10 @@ class PodcastList(Gtk.VBox):
             "document-save-as-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
         export_opml.set_action_name("app.export-opml")
         self.action_bar.pack_end(export_opml)
+
+        # Layout
+        self.pack_start(scrolled_window, True, True, 0)
+        self.pack_start(self.action_bar, False, False, 0)
 
     def update(self):
         """

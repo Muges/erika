@@ -23,15 +23,28 @@
 # SOFTWARE.
 
 """
-Some simple widgets.
+An horizontal Gtk.Paned which becomes vertical if there is not enough width.
 """
 
-from podcasts.frontend.widgets.filter_button import FilterButton
-from podcasts.frontend.widgets.indexed_listbox import IndexedListBox
-from podcasts.frontend.widgets.label import Label
-from podcasts.frontend.widgets.listbox import ListBox
-from podcasts.frontend.widgets.network_button import NetworkButton
-from podcasts.frontend.widgets.paned import Paned
-from podcasts.frontend.widgets.scrolled_window import ScrolledWindow
-from podcasts.frontend.widgets.sort_button import SortButton
-from podcasts.frontend.widgets.status_box import StatusBox
+from gi.repository import Gtk
+
+
+class Paned(Gtk.Paned):
+    """
+    An horizontal Gtk.Paned which becomes vertical if there is not enough width.
+    """
+    def __init__(self):
+        super().__init__()
+
+        self.limit_width = 0
+
+        self.connect('size_allocate', Paned._on_size_allocate)
+
+    def set_limit_width(self, width):
+        self.limit_width = width
+
+    def _on_size_allocate(self, allocation):
+        if allocation.width < self.limit_width:
+            self.set_orientation(Gtk.Orientation.VERTICAL)
+        else:
+            self.set_orientation(Gtk.Orientation.HORIZONTAL)

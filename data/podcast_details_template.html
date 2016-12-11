@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<style>
+	  html {{
+            background-color: {style.background};
+            foreground-color: {style.foreground};
+          }}
+          .header {{
+            display: -webkit-flex;
+            display: flex;
+            flex-align: center;
+          }}
+          .header > *, .description {{
+            margin: 10px;
+          }}
+
+          .logo {{
+            max-width: 96px;
+            max-height: 96px;
+          }}
+          h3 {{
+            margin-top: 0;
+            margin-bottom: 0;
+          }}
+          p {{
+            margin-top: 10px 0;
+          }}
+          p:first-of-type {{
+            margin-top: 0;
+          }}
+          p:last-of-type {{
+            margin-bottom: 0;
+          }}
+        </style>
+  </head>
+  <body>
+        <div class="header">
+          <img class="logo" src="{podcast.image_url}" />
+	  <div>
+		<h3>{podcast.title}</h3>
+		<p>{podcast.episodes_count} episodes</p>
+	  </div>
+	</div>
+
+	<div class="description">
+	  {podcast.summary}
+	</div>
+  </body>
+</html>
