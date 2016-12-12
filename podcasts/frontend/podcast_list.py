@@ -268,25 +268,13 @@ class PodcastRow(Gtk.ListBoxRow):
         """
         Update the widget
         """
-        if self.podcast.summary:
-            self.grid.set_tooltip_markup((
-                "<b>{title}</b>\n"
-                "{total} episodes\n\n"
-
-                "{summary}"
-            ).format(
-                title=self.podcast.title or "",
-                total=self.podcast.episodes_count,
-                summary=htmltopango.convert(self.podcast.summary)
-            ))
-        else:
-            self.grid.set_tooltip_markup((
-                "<b>{title}</b>\n"
-                "{total} episodes\n\n"
-            ).format(
-                title=self.podcast.title or "",
-                total=self.podcast.episodes_count
-            ))
+        self.grid.set_tooltip_markup((
+            "<b>{title}</b>\n"
+            "{episodes} episodes"
+        ).format(
+            title=GLib.markup_escape_text(self.podcast.display_title),
+            episodes=self.podcast.episodes_count
+        ))
 
         # Podcast Image
         if self.podcast.image_data:
@@ -296,16 +284,12 @@ class PodcastRow(Gtk.ListBoxRow):
             self.icon.hide()
 
         # Podcast title
-        if self.podcast.title:
-            self.title.set_markup("<b>{}</b>".format(
-                GLib.markup_escape_text(self.podcast.title)))
-        else:
-            self.title.set_text(self.podcast.url)
+        self.title.set_markup("<b>{}</b>".format(
+            GLib.markup_escape_text(self.podcast.display_title)))
 
         # Unplayed and new counts
-        unplayed = self.podcast.episodes_count - self.podcast.played_count
-        if unplayed > 0:
-            unplayed = str(unplayed)
+        if self.podcast.unplayed_count > 0:
+            unplayed = str(self.podcast.unplayed_count)
         else:
             unplayed = ""
 
@@ -320,4 +304,4 @@ class PodcastRow(Gtk.ListBoxRow):
             self.counts.set_markup(unplayed + " " + new)
 
         # Podcast subtitle
-        self.subtitle.set_text(self.podcast.subtitle or self.podcast.summary or "")
+        self.subtitle.set_text(self.podcast.display_subtitle)

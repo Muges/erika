@@ -80,3 +80,19 @@ class Podcast(Row):
     @property
     def image(self):
         return Image(self.image_data)
+
+    @property
+    def display_subtitle(self):
+        return self.subtitle or self.summary or ""
+
+    @property
+    def display_summary(self):
+        return self.summary or self.subtitle or ""
+
+    @property
+    def display_title(self):
+        return self.title or self.url or ""
+
+    @property
+    def unplayed_count(self):
+        return self.episodes_count - self.played_count
