@@ -27,6 +27,7 @@ Widget displaying the details of a podcast or episode.
 """
 
 import webbrowser
+import threading
 
 from gi.repository import Gtk
 from gi.repository import WebKit
@@ -79,7 +80,7 @@ class Details(Gtk.ScrolledWindow):
         if success:
             self.style.foreground = foreground.to_string()
 
-    def show_episode(self, episode):
+    def show_episode(self, episode, get_image=True):
         """
         Show the details of an episode.
         """
@@ -91,6 +92,17 @@ class Details(Gtk.ScrolledWindow):
             episode=episode
         )
         self.view.load_html_string(html, "")
+
+        if get_image and not episode.image_downloaded():
+            def _end():
+                self.show_episode(episode, get_image=False)
+
+            def _thread():
+                episode.get_image()
+                GObject.idle_add(_end)
+
+            thread = threading.Thread(target=_thread)
+            thread.start()
 
     def show_podcast(self, podcast):
         """

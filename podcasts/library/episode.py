@@ -30,6 +30,7 @@ import requests
 
 from podcasts.library.row import Row
 from podcasts.util import format_duration
+from podcasts.image import Image
 
 
 class Episode(Row):
@@ -116,6 +117,11 @@ class Episode(Row):
         bytes
             The image's data.
         """
+        try:
+            return self.image_data
+        except AttributeError:
+            pass
+
         if self.image_url:
             # Download image
             try:
@@ -124,7 +130,8 @@ class Episode(Row):
             except requests.exceptions.RequestException:
                 self.logger.exception("Unable to download image.")
             else:
-                return response.content
+                self.image_data = response.content
+                return self.image_data
 
         # Fallback to podcast image
         return self.podcast.image_data
@@ -132,3 +139,17 @@ class Episode(Row):
     @property
     def duration_str(self):
         return format_duration(self.duration)
+
+    @property
+    def image(self):
+        try:
+            return Image(self.image_data)
+        except AttributeError:
+            return self.podcast.image
+
+    def image_downloaded(self):
+        try:
+            self.image_data
+            return True
+        except AttributeError:
+            return False
