@@ -2,37 +2,36 @@
 <html>
   <head>
 	<style>
-	  html {{
-        background-color: {style.background};
-        foreground-color: {style.foreground};
-      }}
-      .logo, .informations, .description {{
-        margin: 10px;
-      }}
-      .logo {{
-        width: 96px;
-        max-height: 96px;
-	    float: left;
-      }}
-	  .informations {{
-	    margin-left: 126px;
-	  }}
-	  .description {{
-	    clear: left;
-	  }}
-      h3 {{
-        margin-top: 0;
-        margin-bottom: 0;
-      }}
-      p {{
-        margin: 10px 0;
-      }}
-      p:first-of-type {{
-        margin-top: 0;
-      }}
-      p:last-of-type {{
-        margin-bottom: 0;
-      }}
+       html {{
+         background-color: {style.background};
+         foreground-color: {style.foreground};
+       }}
+       .header {{
+         display: flex;
+         display: -webkit-flex;
+         flex-wrap: wrap;
+         -webkit-flex-wrap: wrap;
+       }}
+       .header > *, .description {{
+         margin: 10px;
+       }}
+       .logo {{
+         max-width: 96px;
+         max-height: 96px;
+       }}
+       h3 {{
+         margin-top: 0;
+         margin-bottom: 0;
+       }}
+       p {{
+         margin-top: 10px 0;
+       }}
+       p:first-of-type {{
+         margin-top: 0;
+       }}
+       p:last-of-type {{
+         margin-bottom: 0;
+       }}
     </style>
   </head>
   <body>
