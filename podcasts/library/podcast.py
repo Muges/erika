@@ -27,7 +27,7 @@ Object representing a podcast in the library
 """
 
 from podcasts.library.row import Row
-
+from podcasts.image import Image
 
 class Podcast(Row):
     """
@@ -76,3 +76,7 @@ class Podcast(Row):
     ATTRS = [
         "new_count", "played_count", "episodes_count"
     ]
+
+    @property
+    def image(self):
+        return Image(self.image_data)

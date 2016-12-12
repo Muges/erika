@@ -291,7 +291,7 @@ class PodcastRow(Gtk.ListBoxRow):
         # Podcast Image
         if self.podcast.image_data:
             self.icon.show()
-            self.icon.set_from_pixbuf(self.get_pixbuf())
+            self.icon.set_from_pixbuf(self.podcast.image.as_pixbuf(IMAGE_SIZE))
         else:
             self.icon.hide()
 
@@ -321,15 +321,3 @@ class PodcastRow(Gtk.ListBoxRow):
 
         # Podcast subtitle
         self.subtitle.set_text(self.podcast.subtitle or self.podcast.summary or "")
-
-    def get_pixbuf(self):
-        """
-        Return the image of the podcast as a scaled pixbuf
-        """
-        loader = GdkPixbuf.PixbufLoader.new()
-        loader.write(self.podcast.image_data)
-        pixbuf = loader.get_pixbuf()
-        loader.close()
-
-        return pixbuf.scale_simple(IMAGE_SIZE, IMAGE_SIZE,
-                                   GdkPixbuf.InterpType.BILINEAR)
