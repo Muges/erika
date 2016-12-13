@@ -34,6 +34,8 @@ from gi.repository import WebKit
 from gi.repository import GObject
 from gi.repository import Pango
 
+from podcasts.library import Podcast
+
 
 class DetailsStyle(object):
     def __init__(self):
@@ -47,6 +49,10 @@ class Details(Gtk.ScrolledWindow):
     """
     def __init__(self):
         super().__init__()
+
+        self.current = None
+        self.style = None
+
         self.view = WebKit.WebView()
         self.add(self.view)
 
@@ -56,7 +62,6 @@ class Details(Gtk.ScrolledWindow):
         settings.set_property('enable-scripts', False)
         settings.set_property('enable-default-context-menu', False)
 
-        self.style = DetailsStyle()
         GObject.idle_add(self._set_style)
 
         self.view.connect('navigation-policy-decision-requested', self._on_link_clicked)
@@ -72,6 +77,8 @@ class Details(Gtk.ScrolledWindow):
         #settings.set_property('default-font-size', font.get_size() // Pango.SCALE)
         settings.set_property('default-font-family', font.get_family())
 
+        self.style = DetailsStyle()
+
         success, background = context.lookup_color('bg_color')
         if success:
             self.style.background = background.to_string()
@@ -80,10 +87,23 @@ class Details(Gtk.ScrolledWindow):
         if success:
             self.style.foreground = foreground.to_string()
 
+        if not self.current:
+            return
+
+        if isinstance(self.current, Podcast):
+            self.show_podcast(self.current)
+        else:
+            self.show_episode(self.current)
+
     def show_episode(self, episode, get_image=True):
         """
         Show the details of an episode.
         """
+        self.current = episode
+
+        if not self.style:
+            return
+
         with open("data/episode_details_template.html", 'r') as fileobj:
             template = fileobj.read()
 
@@ -95,7 +115,8 @@ class Details(Gtk.ScrolledWindow):
 
         if get_image and not episode.image_downloaded():
             def _end():
-                self.show_episode(episode, get_image=False)
+                if episode == self.current:
+                    self.show_episode(episode, get_image=False)
 
             def _thread():
                 episode.get_image()
@@ -108,6 +129,11 @@ class Details(Gtk.ScrolledWindow):
         """
         Show the details of a podcast.
         """
+        self.current = podcast
+
+        if not self.style:
+            return
+
         with open("data/podcast_details_template.html", 'r') as fileobj:
             template = fileobj.read()
 
