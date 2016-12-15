@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-	<style>
+    <style>
        html {{
          background-color: {style.background};
          color: {style.foreground};
@@ -12,7 +12,11 @@
          flex-wrap: wrap;
          -webkit-flex-wrap: wrap;
        }}
-       .header > *, .description {{
+       .header .informations {{
+         -webkit-flex-grow: 1;
+         flex-grow: 1;
+       }}
+       .logo, .informations, .links, .description {{
          margin: 10px;
        }}
        .logo {{
@@ -32,26 +36,29 @@
        p:last-of-type {{
          margin-bottom: 0;
        }}
-	   a {{
-	     color: #2679db;
-	   }}
+       a {{
+         color: #2679db;
+       }}
     </style>
   </head>
   <body>
     <div class="header">
-	  <img class="logo" src="{episode.image:96}" />
-	  <div class="informations">
-		<h3>{episode.title}</h3>
-		<p>of <em>{episode.podcast.title}</em></p>
-		<p>
-		  Released on {episode.pubdate:%d/%m/%Y}<br />
-		  {episode.duration_str}
-		</p>
-	  </div>
-	</div>
+      <img class="logo" src="{episode.image:96}" />
+      <div class="informations">
+        <h3>{episode.title}</h3>
+        <p>of <em>{episode.podcast.title}</em></p>
+        <p>
+          Released on {episode.pubdate:%d/%m/%Y}<br />
+          {episode.duration_str}
+        </p>
+      </div>
+      <div class="links">
+        <a href="{episode.link}">site</a>
+      </div>
+    </div>
 
-	<div class="description">
-	  {episode.summary}
-	</div>
+    <div class="description">
+      {episode.summary}
+    </div>
   </body>
 </html>

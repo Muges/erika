@@ -12,7 +12,11 @@
          flex-wrap: wrap;
          -webkit-flex-wrap: wrap;
        }}
-       .header > *, .description {{
+       .header .informations {{
+         -webkit-flex-grow: 1;
+         flex-grow: 1;
+       }}
+       .logo, .informations, .links, .description {{
          margin: 10px;
        }}
        .logo {{
@@ -32,22 +36,26 @@
        p:last-of-type {{
          margin-bottom: 0;
        }}
-	   a {{
-	     color: #2679db;
-	   }}
+       a {{
+         color: #2679db;
+       }}
     </style>
   </head>
   <body>
     <div class="header">
       <img class="logo" src="{podcast.image:96}" />
-	  <div class="informations">
-		<h3>{podcast.display_title}</h3>
-		<p>{podcast.episodes_count} episodes</p>
-	  </div>
-	</div>
+      <div class="informations">
+        <h3>{podcast.display_title}</h3>
+        <p>{podcast.episodes_count} episodes</p>
+      </div>
+      <div class="links">
+        <a href="{podcast.url}">feed</a> -
+        <a href="{podcast.link}">site</a>
+      </div>
+    </div>
 
-	<div class="description">
-	  {podcast.display_summary}
-	</div>
+    <div class="description">
+      {podcast.display_summary}
+    </div>
   </body>
 </html>
