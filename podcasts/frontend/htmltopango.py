@@ -41,12 +41,6 @@ from gi.repository import GLib
 BLOCKS = ["p", "br", "div", "h1", "h2", "h3", "h4", "h5", "h6"]
 BLOCK_PREFIX = {
     "p": "  ",
-    "h1": "\n",
-    "h2": "\n",
-    "h3": "\n",
-    "h4": "\n",
-    "h5": "\n",
-    "h6": "\n",
 }
 BLOCK_SUFFIX = {
 }

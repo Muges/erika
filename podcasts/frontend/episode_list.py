@@ -610,7 +610,6 @@ class EpisodeRow(Gtk.ListBoxRow):
         Update the widget
         """
         summary = htmltopango.convert(self.episode.summary)
-        self.grid.set_tooltip_markup(summary)
 
         # Episode status
         if self.episode.new:
