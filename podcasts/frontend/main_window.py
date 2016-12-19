@@ -89,8 +89,6 @@ class MainWindow(Gtk.ApplicationWindow):
 
         # Statusbar
         self.network_button = NetworkButton()
-        self.network_button.connect('clicked',
-                                    lambda b: application.set_offline(not b.get_offline()))
 
         self.counts = Gtk.Label()
         self.update_counts()
@@ -185,8 +183,3 @@ class MainWindow(Gtk.ApplicationWindow):
         """
         self.podcast_list.update_podcast(episode.podcast_id)
         self.episode_list.update_episode(episode)
-
-    def set_network_state(self, offline, error):
-        self.network_button.set_state(offline, error)
-        self.podcast_list.add_podcast.set_sensitive(not offline)
-        self.episode_list.set_offline(offline)

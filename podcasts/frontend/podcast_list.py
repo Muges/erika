@@ -39,10 +39,12 @@ from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 from gi.repository import GObject
 from gi.repository import GLib
+from gi.repository import Gio
 
 from podcasts.library import Library
 from podcasts.frontend.widgets import Label, IndexedListBox
 from podcasts.frontend import htmltopango
+from podcasts.util import cb
 
 IMAGE_SIZE = 64
 SUBTITLE_LINES = 2
@@ -101,6 +103,9 @@ class PodcastList(Gtk.VBox):
         # Layout
         self.pack_start(scrolled_window, True, True, 0)
         self.pack_start(self.action_bar, False, False, 0)
+
+        application = Gio.Application.get_default()
+        application.connect('network-state-changed', cb(self.set_network_state))
 
     def update(self):
         """
@@ -203,9 +208,7 @@ class PodcastList(Gtk.VBox):
             return
 
         # Get parent window
-        window = self
-        while window.get_parent():
-            window = window.get_parent()
+        window = self.get_toplevel()
 
         # Ask for confirmation
         dialog = Gtk.MessageDialog(window, 0, Gtk.MessageType.QUESTION,
@@ -228,6 +231,9 @@ class PodcastList(Gtk.VBox):
         # Select the first row
         first_row = self.list.get_row_at_index(0)
         self.list.select_row(first_row)
+
+    def set_network_state(self, online, error):
+        self.add_podcast.set_sensitive(online)
 
 class PodcastRow(Gtk.ListBoxRow):
     """

@@ -35,6 +35,7 @@ from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk
 from gi.repository import Gst
+from gi.repository import Gio
 
 from podcasts.library import Library, EpisodeFilterSort, EpisodeAction
 from podcasts.util import format_duration
@@ -43,6 +44,7 @@ from podcasts.frontend.widgets import (
 )
 from podcasts.frontend.player import Player
 from podcasts.frontend import htmltopango
+from podcasts.util import cb
 from podcasts import tags
 
 SUBTITLE_LINES = 4
@@ -80,8 +82,6 @@ class EpisodeList(Gtk.VBox):
 
         self.player = player
 
-        self.offline = False
-
         self.filtersort = EpisodeFilterSort()
 
         # Episode list
@@ -118,6 +118,9 @@ class EpisodeList(Gtk.VBox):
         # Layout
         self.pack_start(self.action_bar, False, False, 0)
         self.pack_start(scrolled_window, True, True, 0)
+
+        self.application = Gio.Application.get_default()
+        self.application.connect('network-state-changed', cb(self.set_network_state))
 
     def select(self, podcast):
         """
@@ -201,7 +204,7 @@ class EpisodeList(Gtk.VBox):
                     row = EpisodeRow(episode)
                     row.connect("toggle", self._toggle)
                     row.connect("download", self._download)
-                    row.set_offline(self.offline)
+                    row.set_online(self.application.get_online())
 
                     if episode == self.player.episode:
                         # The episode is currently being played
@@ -430,9 +433,7 @@ class EpisodeList(Gtk.VBox):
         library = Library()
 
         # Get parent window
-        window = self
-        while window.get_parent():
-            window = window.get_parent()
+        window = self.get_toplevel()
 
         for row in rows:
             if row.episode.local_path is None:
@@ -502,11 +503,9 @@ class EpisodeList(Gtk.VBox):
         else:
             row.set_state(state)
 
-    def set_offline(self, offline):
-        self.offline = offline
-
+    def set_network_state(self, online, error):
         for row in self.list.rows.values():
-            row.set_offline(offline)
+            row.set_online(online)
 
     def _on_selected_rows_changed(self, list):
         rows = self.list.get_selected_rows()
@@ -685,5 +684,5 @@ class EpisodeRow(Gtk.ListBoxRow):
                 Gtk.Image.new_from_icon_name("media-playback-start-symbolic",
                                              Gtk.IconSize.BUTTON))
 
-    def set_offline(self, offline):
-        self.download_button.set_sensitive(not offline)
+    def set_online(self, online):
+        self.download_button.set_sensitive(online)

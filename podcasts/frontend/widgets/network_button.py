@@ -27,6 +27,9 @@ A button used to represent network connectivity options.
 """
 
 from gi.repository import Gtk
+from gi.repository import Gio
+
+from podcasts.util import cb
 
 
 class NetworkButton(Gtk.Button):
@@ -44,31 +47,23 @@ class NetworkButton(Gtk.Button):
         self.error_image = Gtk.Image.new_from_icon_name(
             "network-error-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
 
-        self.offline = False
+        self.online = True
         self.error = False
-        self.set_online()
+        self.set_state(self.online, self.error)
 
-    def set_state(self, offline, error):
+        application = Gio.Application.get_default()
+        application.connect('network-state-changed', cb(self.set_state))
+        self.connect('clicked', lambda _: application.set_network_state(not self.online))
+
+    def set_state(self, online, error):
         """
         Change the state of the button.
         """
-        self.offline = offline
+        self.online = online
         self.error = error
-        if self.error:
-            self.set_image(self.error_image)
-        elif self.offline:
-            self.set_image(self.offline_image)
-        else:
+        if self.online:
             self.set_image(self.online_image)
-
-    def set_error(self):
-        self.set_state(True, True)
-
-    def set_online(self):
-        self.set_state(False, False)
-
-    def set_offline(self):
-        self.set_state(True, False)
-
-    def get_offline(self):
-        return self.offline
+        elif self.error:
+            self.set_image(self.error_image)
+        else:
+            self.set_image(self.offline_image)

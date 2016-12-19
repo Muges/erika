@@ -38,6 +38,17 @@ from podcasts import gpodder
 
 
 class Application(Gtk.Application):
+    """
+    Signals
+    -------
+    network-state-changed(online, error)
+        Emitted when the network state changes
+    """
+    __gsignals__ = {
+        'network-state-changed':
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_BOOLEAN, GObject.TYPE_BOOLEAN)),
+    }
+
     def __init__(self, *args, **kwargs):
         Gtk.Application.__init__(self, application_id="fr.muges.podcasts",
                                  flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
@@ -47,7 +58,7 @@ class Application(Gtk.Application):
 
         self.window = None
         self.syncing = False
-        self.offline = False
+        self.online = True
 
         self.add_main_option("offline", ord("o"), GLib.OptionFlags.NONE,
                              GLib.OptionArg.NONE, "Enable offline mode", None)
@@ -97,7 +108,7 @@ class Application(Gtk.Application):
                 self.quit()
                 return
 
-            self.set_offline(self.offline)
+            self.set_network_state(self.online)
 
             library = Library()
             interval = library.get_config("library.synchronize_interval")
@@ -112,7 +123,7 @@ class Application(Gtk.Application):
 
         if options.contains("offline"):
             self.logger.info("Started in offline mode.")
-            self.offline = True
+            self.online = False
 
         self.activate()
         return 0
@@ -141,12 +152,12 @@ class Application(Gtk.Application):
         Synchronize the podcasts library with gpodder.net.
         """
         # Prevent concurrent synchronizations
-        if self.syncing or self.offline:
+        if self.syncing or not self.online:
             return
 
         # Test connection
         if not gpodder.check_connection():
-            self.set_offline(error=True)
+            self.set_network_state(False, error=True)
             return
 
         self.syncing = True
@@ -348,17 +359,19 @@ class Application(Gtk.Application):
         if self.window:
             self.window.export_opml()
 
-    def set_offline(self, offline=True, error=False):
-        if not offline and not error:
+    def set_network_state(self, online=True, error=False):
+        if online and not error:
             error = not gpodder.check_connection()
         if error:
-            offline = True
+            online = False
 
-        self.offline = offline
+        self.online = online
 
-        self.add_podcast_action.set_enabled(not offline)
-        self.update_action.set_enabled(not offline)
-        self.sync_action.set_enabled(not offline)
+        self.add_podcast_action.set_enabled(online)
+        self.update_action.set_enabled(online)
+        self.sync_action.set_enabled(online)
 
-        if self.window:
-            self.window.set_network_state(offline, error)
+        self.emit('network-state-changed', online, error)
+
+    def get_online(self):
+        return self.online
