@@ -686,3 +686,4 @@ class EpisodeRow(Gtk.ListBoxRow):
 
     def set_online(self, online):
         self.download_button.set_sensitive(online)
+        self.toggle_button.set_sensitive(online or bool(self.episode.local_path))

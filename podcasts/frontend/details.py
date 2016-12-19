@@ -33,6 +33,7 @@ from gi.repository import Gtk
 from gi.repository import WebKit
 from gi.repository import GObject
 from gi.repository import Pango
+from gi.repository import Gio
 
 from podcasts.library import Podcast
 
@@ -52,6 +53,8 @@ class Details(Gtk.ScrolledWindow):
 
         self.current = None
         self.style = None
+
+        self.application = Gio.Application.get_default()
 
         self.view = WebKit.WebView()
         self.add(self.view)
@@ -113,7 +116,7 @@ class Details(Gtk.ScrolledWindow):
         )
         self.view.load_html_string(html, "")
 
-        if get_image and not episode.image_downloaded():
+        if get_image and not episode.image_downloaded() and self.application.get_online():
             def _end():
                 if episode == self.current:
                     self.show_episode(episode, get_image=False)
