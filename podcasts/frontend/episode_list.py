@@ -95,7 +95,7 @@ class EpisodeList(Gtk.VBox):
         # Filter and sort buttons
         self.action_bar = Gtk.ActionBar()
 
-        filter_new = FilterButton("starred-symbolic")
+        filter_new = FilterButton("feed-unread-symbolic")
         filter_new.connect("toggled", self._filter_toggled, "new")
         self.action_bar.pack_start(filter_new)
 
@@ -609,10 +609,10 @@ class EpisodeRow(Gtk.ListBoxRow):
 
         # Episode status
         if self.episode.new:
-            self.icon.set_from_icon_name("starred-symbolic",
+            self.icon.set_from_icon_name("feed-unread-symbolic",
                                          Gtk.IconSize.BUTTON)
         else:
-            self.icon.set_from_icon_name("unstarred-symbolic",
+            self.icon.set_from_icon_name("feed-read-symbolic",
                                          Gtk.IconSize.BUTTON)
 
         # Episode title
