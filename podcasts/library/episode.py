@@ -138,7 +138,10 @@ class Episode(Row):
 
     @property
     def duration_str(self):
-        return format_duration(self.duration)
+        if self.duration:
+            return format_duration(self.duration)
+        else:
+            return ""
 
     @property
     def image(self):

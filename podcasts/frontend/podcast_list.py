@@ -276,11 +276,7 @@ class PodcastRow(Gtk.ListBoxRow):
         ))
 
         # Podcast Image
-        if self.podcast.image_data:
-            self.icon.show()
-            self.icon.set_from_pixbuf(self.podcast.image.as_pixbuf(IMAGE_SIZE))
-        else:
-            self.icon.hide()
+        self.icon.set_from_pixbuf(self.podcast.image.as_pixbuf(IMAGE_SIZE))
 
         # Podcast title
         self.title.set_markup("<b>{}</b>".format(

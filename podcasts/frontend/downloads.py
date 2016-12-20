@@ -227,11 +227,7 @@ class DownloadRow(Gtk.ListBoxRow):
         """
         Update the widget to show the download is pending.
         """
-        if self.job.episode.podcast.image_data:
-            self.icon.show()
-            self.icon.set_from_pixbuf(self.get_pixbuf())
-        else:
-            self.icon.hide()
+        self.icon.set_from_pixbuf(self.job.episode.podcast.image.as_pixbuf(IMAGE_SIZE))
 
         self.title.set_markup(
             "{} - <i>{}</i>".format(
@@ -239,18 +235,6 @@ class DownloadRow(Gtk.ListBoxRow):
                 GLib.markup_escape_text(self.job.episode.podcast.title)))
 
         self.progress_label.set_text("Pending...")
-
-    def get_pixbuf(self):
-        """
-        Return the image of the podcast as a scaled pixbuf
-        """
-        loader = GdkPixbuf.PixbufLoader.new()
-        loader.write(self.job.episode.podcast.image_data)
-        pixbuf = loader.get_pixbuf()
-        loader.close()
-
-        return pixbuf.scale_simple(IMAGE_SIZE, IMAGE_SIZE,
-                                   GdkPixbuf.InterpType.BILINEAR)
 
     def _on_cancel_clicked(self, button):
         """

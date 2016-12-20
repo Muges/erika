@@ -39,8 +39,10 @@ class Image(object):
     Object representing an image.
     """
     def __init__(self, data):
-        self.data = data
-        self.image = PImage.open(BytesIO(self.data))
+        if data:
+            self.image = PImage.open(BytesIO(data))
+        else:
+            self.image = PImage.new('RGBA', (1, 1), (0, 0, 0, 0))
 
     def get_data(self, size=None):
         """
