@@ -41,6 +41,7 @@ class ListBox(Gtk.ListBox):
 
         self.last_clicked = None
         self.last_focused = None
+        self.filter_func = None
 
     def remove(self, child):
         if self.last_clicked == child:
@@ -48,6 +49,24 @@ class ListBox(Gtk.ListBox):
         if self.last_focused == child:
             self.last_focused = None
         Gtk.ListBox.remove(self, child)
+
+    def set_filter_func(self, filter_func):
+        # Keep a references to the filter function
+        self.filter_func = filter_func
+        Gtk.ListBox.set_filter_func(self, filter_func)
+
+    def invalidate_filter(self):
+        Gtk.ListBox.invalidate_filter(self)
+
+        if self.last_clicked and not self.filter_func(self.last_clicked):
+            self.last_clicked = None
+        if self.last_focused and not self.filter_func(self.last_focused):
+            self.last_focused = None
+
+        # Unselect the rows that are not visible
+        for row in self.get_selected_rows():
+            if not self.filter_func(row):
+                self.unselect_row(row)
 
     def _on_button_press_event(self, event):
         # Propagate the event if it is not a single left button click or in
@@ -101,14 +120,18 @@ class ListBox(Gtk.ListBox):
         # pressed
         index = self.last_focused.get_index()
         if event.keyval == Gdk.KEY_Up:
-            index -= 1
+            delta = 1
         elif event.keyval == Gdk.KEY_Down:
-            index += 1
+            delta = 1
 
-        # Get the row
-        row = self.get_row_at_index(index)
-        if row is None:
-            return True
+        # Get the next/previous visible row
+        while True:
+            index += delta
+            row = self.get_row_at_index(index)
+            if row is None:
+                return True
+            if self.filter_func(row):
+                break
 
         if event.state & Gdk.ModifierType.SHIFT_MASK:
             self._select_interval(row)
@@ -167,5 +190,7 @@ class ListBox(Gtk.ListBox):
             first, last = last, first
 
         for index in range(first, last+1):
-            self.select_row(self.get_row_at_index(index))
-
+            row = self.get_row_at_index(index)
+            # Select only the visible rows
+            if self.filter_func(row):
+                self.select_row(row)

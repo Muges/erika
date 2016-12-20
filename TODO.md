@@ -5,5 +5,4 @@
 - [ ] Test podcasts with no image
 - [ ] Test podcasts with non square image
 - [ ] Placeholder image
-- [ ] Fix filtered ListBox selection
 - [ ] Better error handling in frontend/application.py
