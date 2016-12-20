@@ -26,10 +26,6 @@
 Module handling the conversion of html into pango markup.
 """
 
-# TODO : more tags
-# TODO : inline css
-# TODO : titles
-
 import logging
 from io import StringIO
 import re

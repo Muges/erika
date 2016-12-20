@@ -29,7 +29,6 @@ Module used to parse podcast sources.
 from .source import Source, Podcast, Episode
 from .rss import Rss
 
-# TODO : generate this dynamically
 SOURCES = {Rss.name: Rss}
 
 

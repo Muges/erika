@@ -22,9 +22,6 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# TODO : pagination (50, 100?)
-# TODO : icons fallback
-
 """
 List of episodes
 """

@@ -1,0 +1,9 @@
+- [ ] Better syntax for templates (see quodlibet patterns?)
+- [ ] Test with other icon themes
+- [ ] Fallback to non symbolic icons if necessary
+- [ ] Better way to display episodes summary (only first paragraph, or try to make Label.set_lines work with multiple lines)
+- [ ] Test podcasts with no image
+- [ ] Test podcasts with non square image
+- [ ] Placeholder image
+- [ ] Fix filtered ListBox selection
+- [ ] Better error handling in frontend/application.py

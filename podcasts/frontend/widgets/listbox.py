@@ -34,8 +34,6 @@ class ListBox(Gtk.ListBox):
     """
     A Gtk.ListBox patched to handle multiple selection
     """
-    # TODO : test with filtering.
-    # TODO : Add Select All shortcut
     def __init__(self):
         Gtk.ListBox.__init__(self)
         self.connect("button-press-event", ListBox._on_button_press_event)

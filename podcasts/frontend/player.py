@@ -26,8 +26,6 @@
 Module handling the audio playback
 """
 
-# TODO : prevent 6-10 seconds delay at the beginning? (same problem with totem)
-
 import logging
 import os
 
@@ -289,7 +287,6 @@ class Player(GObject.Object):
             if all((oldstate == Gst.State.READY,
                     newstate == Gst.State.PAUSED,
                     self.episode.progress > 0)):
-                # TODO : try to seek earlier (before having buffered 30s...)
                 self.seek(self.episode.progress * Gst.SECOND)
 
             if newstate == Gst.State.READY:

@@ -26,8 +26,6 @@
 Module defining the base classes used by podcast sources
 """
 
-# TODO : Error handling
-
 from collections import namedtuple
 
 """

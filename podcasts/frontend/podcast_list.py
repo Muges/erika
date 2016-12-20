@@ -26,13 +26,6 @@
 List of podcasts
 """
 
-# TODO : Test with invalid images.
-# TODO : Test with non square images.
-# TODO : Check summary format (plaintext or html?) for tooltip.
-# TODO : Add placeholder image
-# TODO : Add "All podcasts" row
-# TODO : Escape markup
-
 import locale
 
 from gi.repository import Gtk
@@ -215,7 +208,7 @@ class PodcastList(Gtk.VBox):
                                    Gtk.ButtonsType.YES_NO)
         dialog.set_markup(
             "Are you sure you want to remove the podcast <b>{}</b>?".format(
-                selection.podcast.title))
+                GLib.markup_escape_text(selection.podcast.display_title)))
         response = dialog.run()
         dialog.destroy()
 

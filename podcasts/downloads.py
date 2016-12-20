@@ -26,8 +26,6 @@
 Module handling the downloading of podcast episodes
 """
 
-# TODO : user-defined filename template (see quodlibet patterns?)
-
 import logging
 import os
 from queue import Queue, Empty
