@@ -1,3 +1,6 @@
 - [ ] Better syntax for templates (see quodlibet patterns?)
 - [ ] Better way to display episodes summary (only first paragraph, or try to make Label.set_lines work with multiple lines)
 - [ ] Better error handling in frontend/application.py
+- [ ] Tooltips
+- [ ] Tests
+- [ ] Translation
