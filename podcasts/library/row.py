@@ -31,14 +31,10 @@ import logging
 
 class RowType(type):
     """
-    Metaclass used to add the ALL_ATTRS and UPDATE_QUERY to the Row subclasses.
+    Metaclass used to generate the queries for the Row subclasses.
     """
     def __new__(cls, name, bases, attrs):
         if "TABLE" in attrs and "COLUMNS" in attrs:
-            attrs['ALL_ATTRS'] = (
-                attrs['COLUMNS'] + attrs['ATTRS'] + [attrs['PRIMARY_KEY']]
-            )
-
             attrs["INSERT_QUERY"] = """
                 INSERT INTO {} ({})
                 VALUES ({})
@@ -86,24 +82,33 @@ class Row(object, metaclass=RowType):
 
     And the following ones will be automatically computed :
 
-    ALL_ATTRS : List[str]
-        List of all the attributes of the objects of the class
+    INSERT_QUERY : str
+        SQL query adding the row to the database
     UPDATE_QUERY : str
         SQL query updating all the attributes of a row
+    DELETE_QUERY : str
+        SQL query removing the row from the database
     """
 
     def __init__(self, **kwargs):
         self.logger = logging.getLogger(
             "{}.{}".format(__name__, self.__class__.__name__))
 
-        # Get the values of each column in the kaywords arguments
-        for column in self.__class__.ALL_ATTRS:
+        # Get the values of each column in the keywords arguments
+        for column in self.COLUMNS:
             try:
                 setattr(self, column, kwargs.pop(column))
             except KeyError:
                 raise TypeError((
                     "{}.__init__() missing required argument '{}'"
                 ).format(self.__class__.__name__, column))
+
+        # Get the values of the optional arguments
+        for column in self.ATTRS + [self.PRIMARY_KEY]:
+            try:
+                setattr(self, column, kwargs.pop(column))
+            except KeyError:
+                setattr(self, column, None)
 
         # Check that all the arguments corresponded to a column
         try:
@@ -125,7 +130,7 @@ class Row(object, metaclass=RowType):
             List of columns values to save in the database
         """
         return (
-            [getattr(self, column) for column in self.__class__.COLUMNS]
+            [getattr(self, column) for column in self.COLUMNS]
         )
 
     def get_update_attrs(self):
@@ -138,7 +143,7 @@ class Row(object, metaclass=RowType):
             List of columns values to save in the database
         """
         return (
-            [getattr(self, column) for column in self.__class__.COLUMNS] +
+            [getattr(self, column) for column in self.COLUMNS] +
             [self.get_primary_key()]
         )
 
@@ -154,7 +159,7 @@ class Row(object, metaclass=RowType):
         return (
             [self.get_primary_key()]
         )
-        
+
     def get_primary_key(self):
         """
         Returns
@@ -162,14 +167,13 @@ class Row(object, metaclass=RowType):
         Any
             The primary key of the row
         """
-        return getattr(self, self.__class__.PRIMARY_KEY)
-    
+        return getattr(self, self.PRIMARY_KEY)
+
     def __eq__(self, other):
         """
         Check if two rows are the same.
         """
         return (
             self.__class__ == other.__class__ and
-            getattr(self, self.__class__.PRIMARY_KEY) ==
-            getattr(other, self.__class__.PRIMARY_KEY)
+            self.get_primary_key() == other.get_primary_key()
         )
