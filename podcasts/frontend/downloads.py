@@ -71,6 +71,7 @@ class DownloadsButton(Gtk.MenuButton):
 
         self.set_image(Gtk.Image.new_from_icon_name(
             "document-save-symbolic", Gtk.IconSize.BUTTON))
+        self.set_tooltip_text("Display the progress of ongoing downloads")
 
         self.popover = Gtk.Popover()
 

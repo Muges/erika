@@ -63,7 +63,10 @@ class NetworkButton(Gtk.Button):
         self.error = error
         if self.online:
             self.set_image(self.online_image)
+            self.set_tooltip_text("Online")
         elif self.error:
             self.set_image(self.error_image)
+            self.set_tooltip_text("Unable to connect the internet")
         else:
             self.set_image(self.offline_image)
+            self.set_tooltip_text("Offline mode")

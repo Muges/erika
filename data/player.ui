@@ -11,6 +11,7 @@
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
+        <property name="tooltip_text" translatable="yes">Seek backward</property>
         <signal name="clicked" handler="_on_backward_clicked" swapped="no"/>
         <child>
           <object class="GtkImage">
@@ -31,6 +32,7 @@
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
+        <property name="tooltip_text" translatable="yes">Play the episode</property>
         <signal name="clicked" handler="_on_play_clicked" swapped="no"/>
         <child>
           <object class="GtkImage">
@@ -51,6 +53,7 @@
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
+        <property name="tooltip_text" translatable="yes">Pause the episode</property>
         <signal name="clicked" handler="_on_pause_clicked" swapped="no"/>
         <child>
           <object class="GtkImage">
@@ -71,6 +74,7 @@
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
+        <property name="tooltip_text" translatable="yes">Seek forward</property>
         <signal name="clicked" handler="_on_forward_clicked" swapped="no"/>
         <child>
           <object class="GtkImage">

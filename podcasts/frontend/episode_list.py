@@ -95,20 +95,19 @@ class EpisodeList(Gtk.VBox):
         # Filter and sort buttons
         self.action_bar = Gtk.ActionBar()
 
-        filter_new = FilterButton("feed-unread-symbolic")
+        filter_new = FilterButton("feed-unread-symbolic", "new episodes")
         filter_new.connect("toggled", self._filter_toggled, "new")
         self.action_bar.pack_start(filter_new)
 
-        filter_played = FilterButton("media-playback-start-symbolic")
+        filter_played = FilterButton("media-playback-start-symbolic", "played episodes")
         filter_played.connect("toggled", self._filter_toggled, "played")
         self.action_bar.pack_start(filter_played)
 
-        filter_downloaded = FilterButton("document-save-symbolic")
-        filter_downloaded.connect("toggled", self._filter_toggled,
-                                  "downloaded")
+        filter_downloaded = FilterButton("document-save-symbolic", "downloaded episodes")
+        filter_downloaded.connect("toggled", self._filter_toggled, "downloaded")
         self.action_bar.pack_start(filter_downloaded)
 
-        sort = SortButton()
+        sort = SortButton("publication date")
         sort.connect("clicked", self._sort_toggled)
         self.action_bar.pack_end(sort)
 
@@ -564,6 +563,7 @@ class EpisodeRow(Gtk.ListBoxRow):
         # Download button
         self.download_button = Gtk.Button.new_from_icon_name(
             "document-save-symbolic", Gtk.IconSize.BUTTON)
+        self.download_button.set_tooltip_text("Download the episode")
         self.download_button.set_relief(Gtk.ReliefStyle.NONE)
         self.download_button.connect('clicked', self._on_download_clicked)
         topgrid.attach(self.download_button, 1, 0, 1, 2)
@@ -611,9 +611,11 @@ class EpisodeRow(Gtk.ListBoxRow):
         if self.episode.new:
             self.icon.set_from_icon_name("feed-unread-symbolic",
                                          Gtk.IconSize.BUTTON)
+            self.icon.set_tooltip_text("New episode")
         else:
             self.icon.set_from_icon_name("feed-read-symbolic",
                                          Gtk.IconSize.BUTTON)
+            self.icon.set_tooltip_text("Old episode")
 
         # Episode title
         self.title.set_sensitive(not self.episode.played)
@@ -676,10 +678,12 @@ class EpisodeRow(Gtk.ListBoxRow):
             self.toggle_button.set_image(
                 Gtk.Image.new_from_icon_name("media-playback-pause-symbolic",
                                              Gtk.IconSize.BUTTON))
+            self.toggle_button.set_tooltip_text("Pause the episode")
         else:
             self.toggle_button.set_image(
                 Gtk.Image.new_from_icon_name("media-playback-start-symbolic",
                                              Gtk.IconSize.BUTTON))
+            self.toggle_button.set_tooltip_text("Play the episode")
 
     def set_online(self, online):
         self.download_button.set_sensitive(online)

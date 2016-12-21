@@ -35,10 +35,11 @@ class SortButton(Gtk.Button):
 
     The button has two states : ascending or descending.
     """
-    def __init__(self):
+    def __init__(self, sort_by):
         Gtk.Button.__init__(self)
         self.connect("clicked", SortButton._on_clicked)
 
+        self.sort_by = sort_by
         self.descending = True
 
         self.ascending_image = Gtk.Image.new_from_icon_name(
@@ -61,8 +62,10 @@ class SortButton(Gtk.Button):
 
         if descending:
             self.set_image(self.descending_image)
+            self.set_tooltip_text("Sort by ascending {}".format(self.sort_by))
         else:
             self.set_image(self.ascending_image)
+            self.set_tooltip_text("Sort by descending {}".format(self.sort_by))
 
     def get_descending(self):
         """

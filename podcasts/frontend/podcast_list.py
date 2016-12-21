@@ -75,22 +75,26 @@ class PodcastList(Gtk.VBox):
 
         self.add_podcast = Gtk.Button.new_from_icon_name(
             "feed-add-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+        self.add_podcast.set_tooltip_text("Add a podcast")
         self.add_podcast.set_action_name("app.add-podcast")
         self.action_bar.pack_start(self.add_podcast)
 
         remove_podcast = Gtk.Button.new_from_icon_name(
             "feed-remove-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+        remove_podcast.set_tooltip_text("Remove the selected podcast")
         remove_podcast.connect("clicked", self._remove_podcast)
         self.action_bar.pack_start(remove_podcast)
 
         import_opml = Gtk.Button.new_from_icon_name(
             "document-open-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
         import_opml.set_action_name("app.import-opml")
+        import_opml.set_tooltip_text("Import an opml file")
         self.action_bar.pack_end(import_opml)
 
         export_opml = Gtk.Button.new_from_icon_name(
             "document-save-as-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
         export_opml.set_action_name("app.export-opml")
+        export_opml.set_tooltip_text("Export subscriptions to an opml file")
         self.action_bar.pack_end(export_opml)
 
         # Layout
