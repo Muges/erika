@@ -23,24 +23,28 @@
 # SOFTWARE.
 
 """
-Object representing an episode in the library
+Table containing the episodes
 """
 
 import requests
+from peewee import (BooleanField, DateTimeField, IntegerField, ForeignKeyField,
+                    TextField, DeferredRelation)
 
-from podcasts.library.row import Row
-from podcasts.util import format_duration
+from podcasts.library.database import BaseModel
 from podcasts.image import Image
+from podcasts.util import format_duration
+
+DeferredPodcast = DeferredRelation()  # pylint: disable=invalid-name
 
 
-class Episode(Row):
+class Episode(BaseModel):
     """
     Object representing an episode in the library
 
     Attributes
     ----------
-    podcast_id : int
-        The id of the podcast in the database
+    podcast : Podcast
+        The podcast
     id : int
         The id of the episode in the database
     guid : Optional[str]
@@ -53,18 +57,21 @@ class Episode(Row):
         The duration of the episode in seconds
     image_url : Optional[str]
         A link to the image of the episode
-    link : Optional[str]
-        Website link
     subtitle : Optional[str]
         The subtitle of the episode
     summary : Optional[str]
         A description of the episode
-    mimetype : Optional[str]
-        Mimetype of the episode file
-    file_size : Optional[int]
-        Size of the episode file in bytes
+    link : Optional[str]
+        Website link
+    track_number : int
+        The track_number of the episode. As long as the publication dates are
+        consistent with the publication order this should be accurate.
     file_url : Optional[str]
         Url of the episode file
+    file_size : Optional[int]
+        Size of the episode file in bytes
+    mimetype : Optional[str]
+        Mimetype of the episode file
     local_path : Optional[str]
         Path of the downloaded file
     new : bool
@@ -74,40 +81,53 @@ class Episode(Row):
     progress : int
         Number of seconds of the episode that have been played (used to be able
         to resume the playback after quitting the application)
-    track_number : int
-        The track_number of the episode. As long as the publication dates are
-        consistent with the publication order this should be accurate.
-    podcast : Podcast
-        The podcast
     """
 
-    TABLE = "episodes"
-    PRIMARY_KEY = 'id'
-    COLUMNS = [
-        "podcast_id", "guid", "pubdate", "title", "duration", "image_url",
-        "link", "subtitle", "summary", "mimetype", "file_size", "file_url",
-        "local_path", "new", "played", "progress", "track_number"
-    ]
-    ATTRS = [
-        "podcast"
-    ]
+    podcast = ForeignKeyField(DeferredPodcast, related_name='episodes',
+                              on_delete='CASCADE')
+
+    guid = TextField(null=True)
+    pubdate = DateTimeField(null=True)
+    title = TextField(null=True)
+    duration = IntegerField(null=True)
+    image_url = TextField(null=True)
+    subtitle = TextField(null=True)
+    summary = TextField(null=True)
+    link = TextField(null=True)
+
+    track_number = IntegerField()
+
+    file_url = TextField(null=True)
+    file_size = IntegerField(null=True)
+    mimetype = TextField(null=True)
+    local_path = TextField(null=True)
+
+    new = BooleanField(default=True)
+    played = BooleanField(default=False)
+    progress = IntegerField(default=0)
+
+    class Meta:  # pylint: disable=too-few-public-methods, missing-docstring
+        indexes = (
+            (('podcast', 'guid'), True),
+            (('podcast', 'title', 'pubdate'), True),
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.image_data = None
 
     def mark_as_played(self):
-        """
-        Mark the episode as played
-        """
+        """Mark the episode as played"""
         self.played = True
         self.new = False
 
     def mark_as_unplayed(self):
-        """
-        Mark the episode as unplayed
-        """
+        """Mark the episode as unplayed"""
         self.played = False
 
     def get_image(self):
-        """
-        Get the episode's image.
+        """Get the episode's image
 
         This method downloads the episode's image if image_url is not None, and
         falls back to the podcast's image if it is None or in case of error.
@@ -133,26 +153,21 @@ class Episode(Row):
                 self.image_data = response.content
                 return self.image_data
 
-        # Fallback to podcast image
+        # Fallback to the podcast's image
         return self.podcast.image_data
 
     @property
-    def duration_str(self):
-        if self.duration:
-            return format_duration(self.duration)
-        else:
+    def display_duration(self):
+        """The episode's duration as a formatted string"""
+        if not self.duration:
             return ""
+
+        return format_duration(self.duration)
 
     @property
     def image(self):
-        try:
-            return Image(self.image_data)
-        except AttributeError:
+        """The episode's image as an Image object"""
+        if self.image_data is None:
             return self.podcast.image
 
-    def image_downloaded(self):
-        try:
-            self.image_data
-            return True
-        except AttributeError:
-            return False
+        return Image(self.image_data)

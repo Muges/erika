@@ -23,24 +23,25 @@
 # SOFTWARE.
 
 """
-Object representing a podcast in the library
+Table containing the podcasts
 """
 
-from podcasts.library.row import Row
+from peewee import BooleanField, BlobField, TextField
+
+from podcasts.library.database import BaseModel
+from podcasts.library.episode import DeferredPodcast
 from podcasts.image import Image
 
-class Podcast(Row):
-    """
-    Object representing a podcast in the library
+
+class Podcast(BaseModel):
+    """Object representing a podcast in the library
 
     Attributes
     ----------
-    id : int
-        The id of the podcast in the database
     source : str
         The name of the source type
     url : str
-        The url of the source
+        The url of the podcast
     title : Optional[str]
         The title of the podcast
     author : Optional[str]
@@ -57,42 +58,62 @@ class Podcast(Row):
         A description of the podcast
     link : Optional[str]
         Website link
+    new : bool
+        True if the podcast has been synced with gpodder.net
+    removed : bool
+        True if the podcast has been removed
+
     new_count : int
         Number of new episodes
     played_count : int
         Number of played episodes
     episodes_count : int
         Number of episodes
-    synced : int
-        1 if the podcast has been synced with gpodder.net, else 0
     """
+    source = TextField()
+    url = TextField()
 
-    TABLE = "podcasts"
-    PRIMARY_KEY = 'id'
-    COLUMNS = [
-        "source", "url", "title", "author", "image_url", "image_data",
-        "language", "subtitle", "summary", "link", "synced"
-    ]
-    ATTRS = [
-        "new_count", "played_count", "episodes_count"
-    ]
+    title = TextField(null=True)
+    author = TextField(null=True)
+    image_url = TextField(null=True)
+    image_data = BlobField(null=True)
+    language = TextField(null=True)
+    subtitle = TextField(null=True)
+    summary = TextField(null=True)
+    link = TextField(null=True)
+
+    new = BooleanField(default=True)
+    removed = BooleanField(default=False)
+
+    class Meta:  # pylint: disable=too-few-public-methods, missing-docstring
+        indexes = (
+            (('source', 'url'), True),
+        )
 
     @property
     def image(self):
+        """Return the podcast's image as an Image object"""
         return Image(self.image_data)
 
     @property
     def display_subtitle(self):
+        """Return the podcast's subtitle or its summary"""
         return self.subtitle or self.summary or ""
 
     @property
     def display_summary(self):
+        """Return the podcast's summary or its subtitle"""
         return self.summary or self.subtitle or ""
 
     @property
     def display_title(self):
+        """Return the podcast's title or its url"""
         return self.title or self.url or ""
 
     @property
     def unplayed_count(self):
+        """Return the number of episodes that have not been played"""
         return self.episodes_count - self.played_count
+
+
+DeferredPodcast.set_model(Podcast)

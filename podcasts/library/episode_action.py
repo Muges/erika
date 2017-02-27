@@ -23,31 +23,31 @@
 # SOFTWARE.
 
 """
-Object representing an episode action in the library
+Table containing the episode actions
 """
 
 from datetime import datetime
+from peewee import DateTimeField, IntegerField, ForeignKeyField, TextField
 
 from mygpoclient.api import EpisodeAction as GpoEpisodeAction
 from mygpoclient.util import datetime_to_iso8601
 
-from podcasts.library.row import Row
+from podcasts.library.database import BaseModel
+from podcasts.library.episode import Episode
+from podcasts.library.config import Config
 
 
-class EpisodeAction(Row):
-    """
-    Object representing an episode in the library
+class EpisodeAction(BaseModel):
+    """Object representing an episode action in the library
 
     Attributes
     ----------
-    podcast_id : int
-        The id of the podcast in the database
-    episode_id : int
-        The id of the episode in the database
+    episode : Episode
+        The episode
     action : str
         The type of the action (download, delete, play or new)
-    timestamp : str
-        A UTC timestamp of when the action took place, in ISO 8601 format
+    timestamp : Optional[datetime]
+        The UTC when the action took place
     started : Optional[int]
         The position at which the playback started (only valid if action is
         'play')
@@ -56,41 +56,30 @@ class EpisodeAction(Row):
         'play')
     total : Optional[int]
         The duration of the episode in seconds (only valid if action is 'play')
-    podcast : str
-        The url of the podcast feed
-    episode : str
-        The url of the episode file
     """
+    episode = ForeignKeyField(Episode, on_delete='CASCADE')
+    action = TextField()
+    timestamp = DateTimeField(default=datetime.utcnow)
 
-    TABLE = "episode_actions"
-    PRIMARY_KEY = 'rowid'
-    COLUMNS = [
-        "podcast_id", "episode_id", "action", "timestamp", "started", "position",
-        "total"
-    ]
-    ATTRS = [
-        "podcast", "episode", "device"
-    ]
+    started = IntegerField(null=True)
+    position = IntegerField(null=True)
+    total = IntegerField(null=True)
 
-    @staticmethod
-    def new(episode, action, started=None, position=None, total=None):
-        timestamp = datetime_to_iso8601(datetime.utcnow())
-
-        return EpisodeAction(podcast_id=episode.podcast.id, episode_id=episode.id,
-                             action=action, timestamp=timestamp, started=started,
-                             position=position, total=total, podcast=episode.podcast,
-                             episode=episode, device=None, rowid=None)
-    
     def for_gpodder(self):
         """
         Returns
         -------
         mygpoclient.api.EpisodeAction
         """
+        podcast_url = self.episode.podcast.url
+        episode_url = self.episode.file_url
+        device = Config.get_value("gpodder.device_id")
+        timestamp = datetime_to_iso8601(self.timestamp)
+
         if self.action == "play":
-            return GpoEpisodeAction(self.podcast, self.episode, self.action,
-                                    self.device, self.timestamp, self.started,
+            return GpoEpisodeAction(podcast_url, episode_url, self.action,
+                                    device, timestamp, self.started,
                                     self.position, self.total)
         else:
-            return GpoEpisodeAction(self.podcast, self.episode, self.action,
-                                    self.device, self.timestamp)
+            return GpoEpisodeAction(podcast_url, episode_url, self.action,
+                                    device, timestamp)
