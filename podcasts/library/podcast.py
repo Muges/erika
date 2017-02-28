@@ -63,7 +63,7 @@ class Podcast(BaseModel):
         Website link
     is_new : bool
         True if the podcast has been synced with gpodder.net
-    was_removed : bool
+    removed : bool
         True if the podcast has been removed
 
     new_count : int
@@ -86,7 +86,7 @@ class Podcast(BaseModel):
     link = TextField(null=True)
 
     is_new = BooleanField(default=True)
-    was_removed = BooleanField(default=False)
+    removed = BooleanField(default=False)
 
     class Meta:  # pylint: disable=too-few-public-methods, missing-docstring
         indexes = (
@@ -136,9 +136,16 @@ class Podcast(BaseModel):
                 podcast.save()
             except IntegrityError:
                 logger = logging.getLogger(".".join((__name__, cls.__name__)))
-                logger.warning("The %s podcast %s is already is the database.",
+                logger.warning("The %s podcast %s is already in the database.",
                                parser_name, url)
-                return Podcast.get(parser=parser_name, url=url)
+
+                other_podcast = Podcast.get(parser=parser_name, url=url)
+                if not other_podcast.removed:
+                    return other_podcast
+
+                # The podcast was removed: it needs to be reimported
+                other_podcast.delete_instance()
+                podcast.save()
 
             podcast.download_image()
 
@@ -158,7 +165,7 @@ class Podcast(BaseModel):
             response = requests.get(self.image_url)
             response.raise_for_status()
         except requests.exceptions.RequestException:
-            logger.exception("Unable to download image.")
+            logger.exception("Unable to download the image.")
             return
 
         self.image_data = response.content
