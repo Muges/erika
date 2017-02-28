@@ -22,15 +22,20 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""
+Podcast manager
+"""
+
 import logging
 import os
 
-from .library import Library
+from . import library
 from .config import CONFIG_DIR
-from . import frontend
+#from . import frontend
 
 
-def main():
+def run():
+    """Start the application"""
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
 
@@ -47,6 +52,6 @@ def main():
     if not os.path.isdir(CONFIG_DIR):
         os.makedirs(CONFIG_DIR)
 
-    Library.init()
+    library.initialize()
 
-    frontend.run()
+    #frontend.run()
