@@ -57,4 +57,4 @@ def parse(podcast):
     for episode in episodes:
         episode.podcast = podcast
 
-    return episodes
+    return sorted(episodes, key=lambda e: e.pubdate)

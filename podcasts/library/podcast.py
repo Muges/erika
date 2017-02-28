@@ -28,10 +28,11 @@ Table containing the podcasts
 
 import logging
 import requests
-from peewee import BooleanField, BlobField, TextField, DoesNotExist
+from peewee import (BooleanField, BlobField, TextField, DoesNotExist,
+                    IntegrityError, fn)
 
 from podcasts.library.database import BaseModel, database
-from podcasts.library.episode import DeferredPodcast
+from podcasts.library.episode import Episode, DeferredPodcast
 from podcasts.image import Image
 from podcasts import parsers
 
@@ -129,12 +130,13 @@ class Podcast(BaseModel):
         url : str
             The url of the podcast
         """
+        logger = logging.getLogger(".".join((__name__, cls.__name__)))
+        logger.warning("Adding the %s podcast %s.", parser, url)
         try:
             podcast = Podcast.get(parser=parser, url=url)
         except DoesNotExist:
             podcast = Podcast(parser=parser, url=url)
         else:
-            logger = logging.getLogger(".".join((__name__, cls.__name__)))
             logger.warning("The %s podcast %s is already in the database.",
                            parser, url)
 
@@ -153,9 +155,29 @@ class Podcast(BaseModel):
             next_track_number = 1
             for episode in episodes:
                 episode.track_number = next_track_number
-                next_track_number += episode.save()
+                episode.save()
+                next_track_number += 1
 
             return podcast
+
+    def update_episodes(self):
+        """Update the podcast"""
+        logger = logging.getLogger(
+            ".".join((__name__, self.__class__.__name__)))
+        logger.warning("Updating the podcast %s.", self.title)
+        episodes = parsers.parse(self)
+
+        next_track_number = self.get_next_track_number()
+        with database.transaction():
+            self.save(only=self.dirty_fields)
+
+            for episode in episodes:
+                episode.track_number = next_track_number
+                try:
+                    episode.save()
+                except IntegrityError:
+                    continue
+                next_track_number += 1
 
     def download_image(self):
         """Download the podcast's image"""
@@ -170,6 +192,12 @@ class Podcast(BaseModel):
             return
 
         self.image_data = response.content
+
+    def get_next_track_number(self):
+        """Get the track number of the next episode"""
+        previous = self.episodes.select(fn.Max(Episode.track_number)).get()
+        previous_number = previous.track_number or 0
+        return previous_number + 1
 
 
 DeferredPodcast.set_model(Podcast)
