@@ -33,7 +33,6 @@ from podcasts.library.config import Config
 from podcasts.library.episode import Episode
 from podcasts.library.episode_action import EpisodeAction
 from podcasts.library.podcast import Podcast
-from podcasts.library.removed_podcast import RemovedPodcast
 
 
 def initialize():
@@ -49,8 +48,7 @@ def initialize():
     logger.debug("Database initialization.")
 
     with database.transaction():
-        database.create_tables([Config, Podcast, Episode, EpisodeAction,
-                                RemovedPodcast],
+        database.create_tables([Config, Podcast, Episode, EpisodeAction],
                                safe=True)
 
         Config.set_defaults()
