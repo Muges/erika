@@ -160,6 +160,20 @@ class Podcast(BaseModel):
 
             return podcast
 
+    @staticmethod
+    def select_active():
+        """Return the podcasts that were not removed"""
+        return Podcast.select().where(Podcast.removed is False)
+
+    @classmethod
+    def update_podcasts(cls):
+        """Update all the podcasts"""
+        logger = logging.getLogger(".".join((__name__, cls.__name__)))
+        logger.info("Updating podcasts")
+
+        for podcast in Podcast.select_active():
+            podcast.update_episodes()
+
     def update_episodes(self):
         """Update the podcast"""
         logger = logging.getLogger(
