@@ -31,32 +31,23 @@ from time import mktime
 from datetime import datetime
 import feedparser
 
-from podcasts.library import Podcast, Episode
+from podcasts.library import Episode
 
 
-def parse_feed(feed):
-    """Parse the feed element
-
-    Returns
-    -------
-    Podcast
-    """
+def parse_feed(feed, podcast):
+    """Parse the feed element"""
     try:
         image = feed.image.href
     except AttributeError:
         image = None
 
-    podcast = Podcast(
-        title=feed.get("title", None),
-        author=feed.get("author", None),
-        image_url=image,
-        language=feed.get("language", None),
-        subtitle=feed.get("subtitle", None),
-        summary=feed.get("summary", None),
-        link=feed.get("link", None)
-    )
-
-    return podcast
+    podcast.title = feed.get("title", None)
+    podcast.author = feed.get("author", None)
+    podcast.image_url = image
+    podcast.language = feed.get("language", None)
+    podcast.subtitle = feed.get("subtitle", None)
+    podcast.summary = feed.get("summary", None)
+    podcast.link = feed.get("link", None)
 
 
 def parse_links(links):
@@ -143,22 +134,25 @@ def parse_entry(entry):
     )
 
 
-def parse(url):
+def parse(podcast):
     """Parse a podcast from an Atom/RSS feed
+
+    Arguments
+    ---------
+    podcast : podcasts.library.Podcast
+        The podcast to parse
 
     Returns
     -------
-    Podcast
-        The podcast
-    List[Episode]
+    List[podcasts.library.Episode]
         The list of the podcast's episodes
     """
     logger = logging.getLogger(__name__)
-    logger.debug("Parsing %s.", url)
+    logger.debug("Parsing %s.", podcast.url)
 
-    document = feedparser.parse(url)
+    document = feedparser.parse(podcast.url)
 
-    podcast = parse_feed(document.feed)
+    parse_feed(document.feed, podcast)
     episodes = [parse_entry(entry) for entry in document.entries]
 
-    return podcast, episodes
+    return episodes

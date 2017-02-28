@@ -29,30 +29,32 @@ Module used to parse podcasts.
 import importlib
 
 
-def parse(parser_name, url):
+def parse(podcast):
     """Parse a podcast
+
+    Arguments
+    ---------
+    podcast : podcasts.library.Podcast
+        The podcast to parse
 
     Returns
     -------
-    podcasts.library.Podcast
-        The podcast
     List[podcasts.library.Episode]
         The list of the podcast's episodes
     """
-    if "." in parser_name:
-        raise ValueError("{} is not a valid parser name.".format(parser_name))
+    if "." in podcast.parser:
+        raise ValueError(
+            "{} is not a valid parser name.".format(podcast.parser))
 
     try:
-        parser = importlib.import_module("."+parser_name, __name__)
+        parser = importlib.import_module(".".join((__name__, podcast.parser)))
     except ModuleNotFoundError:
-        raise ValueError("{} is not a valid parser name.".format(parser_name))
+        raise ValueError(
+            "{} is not a valid parser name.".format(podcast.parser))
 
-    podcast, episodes = parser.parse(url)
-
-    podcast.parser = parser_name
-    podcast.url = url
+    episodes = parser.parse(podcast)
 
     for episode in episodes:
         episode.podcast = podcast
 
-    return podcast, episodes
+    return episodes

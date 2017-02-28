@@ -28,7 +28,7 @@ Table containing the podcasts
 
 import logging
 import requests
-from peewee import BooleanField, BlobField, TextField, IntegrityError
+from peewee import BooleanField, BlobField, TextField, DoesNotExist
 
 from podcasts.library.database import BaseModel, database
 from podcasts.library.episode import DeferredPodcast
@@ -119,7 +119,7 @@ class Podcast(BaseModel):
         return self.episodes_count - self.played_count
 
     @classmethod
-    def new(cls, parser_name, url):
+    def new(cls, parser, url):
         """Create a new podcast, and add it to the database
 
         Attributes
@@ -129,25 +129,26 @@ class Podcast(BaseModel):
         url : str
             The url of the podcast
         """
+        try:
+            podcast = Podcast.get(parser=parser, url=url)
+        except DoesNotExist:
+            podcast = Podcast(parser=parser, url=url)
+        else:
+            logger = logging.getLogger(".".join((__name__, cls.__name__)))
+            logger.warning("The %s podcast %s is already in the database.",
+                           parser, url)
+
+            if not podcast.removed:
+                return podcast
+
+            # The podcast was removed : it needs to be reimported
+            podcast.removed = False
+
         with database.transaction():
-            podcast, episodes = parsers.parse(parser_name, url)
-
-            try:
-                podcast.save()
-            except IntegrityError:
-                logger = logging.getLogger(".".join((__name__, cls.__name__)))
-                logger.warning("The %s podcast %s is already in the database.",
-                               parser_name, url)
-
-                other_podcast = Podcast.get(parser=parser_name, url=url)
-                if not other_podcast.removed:
-                    return other_podcast
-
-                # The podcast was removed: it needs to be reimported
-                other_podcast.delete_instance()
-                podcast.save()
+            episodes = parsers.parse(podcast)
 
             podcast.download_image()
+            podcast.save()
 
             next_track_number = 1
             for episode in episodes:
@@ -157,7 +158,7 @@ class Podcast(BaseModel):
             return podcast
 
     def download_image(self):
-        """Download the podcast's image and store it in the database"""
+        """Download the podcast's image"""
         logger = logging.getLogger(
             ".".join((__name__, self.__class__.__name__)))
         logger.debug("Downloading image for the podcast %s.", self.title)
@@ -169,7 +170,6 @@ class Podcast(BaseModel):
             return
 
         self.image_data = response.content
-        self.save(only=[Podcast.image_data])
 
 
 DeferredPodcast.set_model(Podcast)
