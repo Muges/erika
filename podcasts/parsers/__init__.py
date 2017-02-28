@@ -23,17 +23,23 @@
 # SOFTWARE.
 
 """
-Module used to parse podcast sources.
+Module used to parse podcasts.
 """
 
-from .source import Source, Podcast, Episode
-from .rss import Rss
+from podcasts.library import Podcast, Episode
+from . import rss
 
-SOURCES = {Rss.name: Rss}
+PARSERS = {rss.NAME: rss.parse}
 
 
-def get(source_name, url):
+def parse(parser_name, url):
+    """Parse a podcast
+
+    Returns
+    -------
+    podcasts.library.Podcast
+        The podcast
+    List[podcasts.library.Episode]
+        The list of the podcast's episodes
     """
-    Return the source object corresponding to a url.
-    """
-    return SOURCES[source_name](url)
+    return PARSERS[parser_name](url)

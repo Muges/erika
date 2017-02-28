@@ -38,8 +38,8 @@ class Podcast(BaseModel):
 
     Attributes
     ----------
-    source : str
-        The name of the source type
+    parser : str
+        The name of the parser
     url : str
         The url of the podcast
     title : Optional[str]
@@ -70,7 +70,7 @@ class Podcast(BaseModel):
     episodes_count : int
         Number of episodes
     """
-    source = TextField()
+    parser = TextField()
     url = TextField()
 
     title = TextField(null=True)
@@ -87,7 +87,7 @@ class Podcast(BaseModel):
 
     class Meta:  # pylint: disable=too-few-public-methods, missing-docstring
         indexes = (
-            (('source', 'url'), True),
+            (('parser', 'url'), True),
         )
 
     @property

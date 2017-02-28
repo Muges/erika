@@ -45,8 +45,6 @@ class Episode(BaseModel):
     ----------
     podcast : Podcast
         The podcast
-    id : int
-        The id of the episode in the database
     guid : Optional[str]
         A unique identifier for the episode
     pubdate : Optional[datetime]
