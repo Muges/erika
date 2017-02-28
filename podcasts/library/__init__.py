@@ -26,8 +26,31 @@
 Podcast library
 """
 
-from podcasts.library.library import Library
-from podcasts.library.filtersort import EpisodeFilterSort
+import logging
+
+from podcasts.library.database import database
+from podcasts.library.config import Config
 from podcasts.library.episode import Episode
 from podcasts.library.episode_action import EpisodeAction
 from podcasts.library.podcast import Podcast
+from podcasts.library.removed_podcast import RemovedPodcast
+
+
+def initialize():
+    """Create or update the database
+
+    This function should be called once at the beginning of the
+    program. If the database file does not exists, it creates it. If
+    the database is outdated (e.g. if it was created by an old version
+    of the program, and the database format has changed), it should be
+    updated.
+    """
+    logger = logging.getLogger(__name__)
+    logger.debug("Database initialization.")
+
+    with database.transaction():
+        database.create_tables([Config, Podcast, Episode, EpisodeAction,
+                                RemovedPodcast],
+                               safe=True)
+
+        Config.set_defaults()

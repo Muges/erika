@@ -73,7 +73,7 @@ class EpisodeAction(BaseModel):
         """
         podcast_url = self.episode.podcast.url
         episode_url = self.episode.file_url
-        device = Config.get_value("gpodder.device_id")
+        device = Config.get_value("gpodder.deviceid")
         timestamp = datetime_to_iso8601(self.timestamp)
 
         if self.action == "play":

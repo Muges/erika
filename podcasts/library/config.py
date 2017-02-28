@@ -26,10 +26,12 @@
 Table containing the configuration.
 """
 
+import logging
 import json
 from peewee import TextField
 
 from podcasts.library.database import BaseModel
+from podcasts.config import CONFIG_DEFAULTS
 
 
 class JSONField(TextField):
@@ -58,4 +60,16 @@ class Config(BaseModel):
         (cls
          .insert(key=key, value=value)
          .upsert()
+         .execute())
+
+    @classmethod
+    def set_defaults(cls):
+        """Set the default values"""
+        logger = logging.getLogger(".".join((__name__, cls.__name__)))
+        logger.debug("Setting default configuration.")
+
+        (cls
+         .insert_many({"key": key, "value":  value}
+                      for key, value in CONFIG_DEFAULTS.items())
+         .on_conflict('IGNORE')
          .execute())
