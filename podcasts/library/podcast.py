@@ -26,11 +26,14 @@
 Table containing the podcasts
 """
 
-from peewee import BooleanField, BlobField, TextField
+import logging
+import requests
+from peewee import BooleanField, BlobField, TextField, IntegrityError
 
-from podcasts.library.database import BaseModel
+from podcasts.library.database import BaseModel, database
 from podcasts.library.episode import DeferredPodcast
 from podcasts.image import Image
+from podcasts import parsers
 
 
 class Podcast(BaseModel):
@@ -58,9 +61,9 @@ class Podcast(BaseModel):
         A description of the podcast
     link : Optional[str]
         Website link
-    new : bool
+    is_new : bool
         True if the podcast has been synced with gpodder.net
-    removed : bool
+    was_removed : bool
         True if the podcast has been removed
 
     new_count : int
@@ -82,8 +85,8 @@ class Podcast(BaseModel):
     summary = TextField(null=True)
     link = TextField(null=True)
 
-    new = BooleanField(default=True)
-    removed = BooleanField(default=False)
+    is_new = BooleanField(default=True)
+    was_removed = BooleanField(default=False)
 
     class Meta:  # pylint: disable=too-few-public-methods, missing-docstring
         indexes = (
@@ -114,6 +117,52 @@ class Podcast(BaseModel):
     def unplayed_count(self):
         """Return the number of episodes that have not been played"""
         return self.episodes_count - self.played_count
+
+    @classmethod
+    def new(cls, parser_name, url):
+        """Create a new podcast, and add it to the database
+
+        Attributes
+        ----------
+        parser_name : str
+            The name of a parser (a module of the podcasts.parser package)
+        url : str
+            The url of the podcast
+        """
+        with database.transaction():
+            podcast, episodes = parsers.parse(parser_name, url)
+
+            try:
+                podcast.save()
+            except IntegrityError:
+                logger = logging.getLogger(".".join((__name__, cls.__name__)))
+                logger.warning("The %s podcast %s is already is the database.",
+                               parser_name, url)
+                return Podcast.get(parser=parser_name, url=url)
+
+            podcast.download_image()
+
+            next_track_number = 1
+            for episode in episodes:
+                episode.track_number = next_track_number
+                next_track_number += episode.save()
+
+            return podcast
+
+    def download_image(self):
+        """Download the podcast's image and store it in the database"""
+        logger = logging.getLogger(
+            ".".join((__name__, self.__class__.__name__)))
+        logger.debug("Downloading image for the podcast %s.", self.title)
+        try:
+            response = requests.get(self.image_url)
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            logger.exception("Unable to download image.")
+            return
+
+        self.image_data = response.content
+        self.save(only=[Podcast.image_data])
 
 
 DeferredPodcast.set_model(Podcast)
