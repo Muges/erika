@@ -26,10 +26,7 @@
 Module used to parse podcasts.
 """
 
-from podcasts.library import Podcast, Episode
-from . import rss
-
-PARSERS = {rss.NAME: rss.parse}
+import importlib
 
 
 def parse(parser_name, url):
@@ -42,4 +39,20 @@ def parse(parser_name, url):
     List[podcasts.library.Episode]
         The list of the podcast's episodes
     """
-    return PARSERS[parser_name](url)
+    if "." in parser_name:
+        raise ValueError("{} is not a valid parser name.".format(parser_name))
+
+    try:
+        parser = importlib.import_module("."+parser_name, __name__)
+    except ModuleNotFoundError:
+        raise ValueError("{} is not a valid parser name.".format(parser_name))
+
+    podcast, episodes = parser.parse(url)
+
+    podcast.parser = parser_name
+    podcast.url = url
+
+    for episode in episodes:
+        episode.podcast = podcast
+
+    return podcast, episodes

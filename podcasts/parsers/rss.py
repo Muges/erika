@@ -33,10 +33,8 @@ import feedparser
 
 from podcasts.library import Podcast, Episode
 
-NAME = "rss"
 
-
-def parse_feed(feed, url):
+def parse_feed(feed):
     """Parse the feed element
 
     Returns
@@ -49,9 +47,6 @@ def parse_feed(feed, url):
         image = None
 
     podcast = Podcast(
-        parser=NAME,
-        url=url,
-
         title=feed.get("title", None),
         author=feed.get("author", None),
         image_url=image,
@@ -110,7 +105,7 @@ def parse_duration(string):
     return hours * 3600 + minutes * 60 + seconds
 
 
-def parse_entry(entry, podcast):
+def parse_entry(entry):
     """Parse an entry
 
     Returns
@@ -133,8 +128,6 @@ def parse_entry(entry, podcast):
     file_url, file_size, mimetype = parse_links(entry.links)
 
     return Episode(
-        podcast=podcast,
-
         guid=entry.get("id", default_guid),
         pubdate=pubdate,
         title=entry.get("title", None),
@@ -165,7 +158,7 @@ def parse(url):
 
     document = feedparser.parse(url)
 
-    podcast = parse_feed(document.feed, url)
-    episodes = [parse_entry(entry, podcast) for entry in document.entries]
+    podcast = parse_feed(document.feed)
+    episodes = [parse_entry(entry) for entry in document.entries]
 
     return podcast, episodes
