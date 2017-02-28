@@ -30,48 +30,27 @@ from os.path import expanduser, join
 import platform
 
 from .__version__ import __appname__
-from .config_types import String, Path, Integer, Boolean
 
 # Directories
 HOME = expanduser("~")
 CONFIG_DIR = join(HOME, ".{}".format(__appname__.lower()))
 
 CONFIG_DEFAULTS = {
-    "library.root" : join(HOME, "Podcasts"),
-    "library.podcast_directory_template" : "{podcast.title}",
-    "library.episode_file_template" : "{episode.pubdate:%Y.%m.%d} - {episode.title}",
-    "library.synchronize_interval" : 60,
+    "library.root": join(HOME, "Podcasts"),
+    "library.podcast_directory_template": "{podcast.title}",
+    "library.episode_file_template": "{episode.pubdate:%Y.%m.%d} - {episode.title}",
+    "library.synchronize_interval": 60,
 
-    "player.smart_mark_seconds" : 30,
+    "player.smart_mark_seconds": 30,
 
-    "downloads.workers" : 2,
+    "downloads.workers": 2,
 
-    "gpodder.synchronize" : False,
-    "gpodder.hostname" : "gpodder.net",
-    "gpodder.username" : "",
-    "gpodder.password" : "",
-    "gpodder.deviceid" : "podcasts-{}".format(platform.node()),
-    "gpodder.devicename" : "Podcasts on {}".format(platform.node()),
-    "gpodder.last_subscription_sync" : 0,
-    "gpodder.last_episodes_sync" : 0,
-}
-
-CONFIG_TYPES = {
-    "library.root" : Path,
-    "library.podcast_directory_template" : String,
-    "library.episode_file_template" : String,
-    "library.synchronize_interval" : Integer,
-
-    "player.smart_mark_seconds" : Integer,
-
-    "downloads.workers" : Integer,
-
-    "gpodder.synchronize" : Boolean,
-    "gpodder.hostname" : String,
-    "gpodder.username" : String,
-    "gpodder.password" : String,
-    "gpodder.deviceid" : String,
-    "gpodder.devicename" : String,
-    "gpodder.last_subscription_sync" : Integer,
-    "gpodder.last_episodes_sync" : Integer,
+    "gpodder.synchronize": False,
+    "gpodder.hostname": "gpodder.net",
+    "gpodder.username": "",
+    "gpodder.password": "",
+    "gpodder.deviceid": "podcasts-{}".format(platform.node()),
+    "gpodder.devicename": "Podcasts on {}".format(platform.node()),
+    "gpodder.last_subscription_sync": 0,
+    "gpodder.last_episodes_sync": 0,
 }
