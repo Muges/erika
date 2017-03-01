@@ -32,7 +32,8 @@ from peewee import (BooleanField, BlobField, TextField, DoesNotExist,
                     IntegrityError, fn)
 
 from podcasts.library.database import BaseModel, database
-from podcasts.library.episode import Episode, DeferredPodcast
+from podcasts.library.episode import Episode
+from podcasts.library.episode import Podcast as PodcastProxy
 from podcasts.image import Image
 from podcasts import parsers
 
@@ -214,4 +215,4 @@ class Podcast(BaseModel):
         return previous_number + 1
 
 
-DeferredPodcast.set_model(Podcast)
+PodcastProxy.initialize(Podcast)

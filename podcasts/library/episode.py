@@ -28,13 +28,13 @@ Table containing the episodes
 
 import requests
 from peewee import (BooleanField, DateTimeField, IntegerField, ForeignKeyField,
-                    TextField, DeferredRelation)
+                    TextField, Proxy)
 
 from podcasts.library.database import BaseModel
 from podcasts.image import Image
 from podcasts.util import format_duration
 
-DeferredPodcast = DeferredRelation()  # pylint: disable=invalid-name
+Podcast = Proxy()  # pylint: disable=invalid-name
 
 
 class Episode(BaseModel):
@@ -81,7 +81,7 @@ class Episode(BaseModel):
         to resume the playback after quitting the application)
     """
 
-    podcast = ForeignKeyField(DeferredPodcast, related_name='episodes',
+    podcast = ForeignKeyField(Podcast, related_name='episodes',
                               on_delete='CASCADE')
 
     guid = TextField(null=True)
@@ -114,6 +114,22 @@ class Episode(BaseModel):
         super().__init__(*args, **kwargs)
 
         self.image_data = None
+
+    @property
+    def display_duration(self):
+        """The episode's duration as a formatted string"""
+        if not self.duration:
+            return ""
+
+        return format_duration(self.duration)
+
+    @property
+    def image(self):
+        """The episode's image as an Image object"""
+        if self.image_data is None:
+            return self.podcast.image
+
+        return Image(self.image_data)
 
     def mark_as_played(self):
         """Mark the episode as played"""
@@ -153,19 +169,3 @@ class Episode(BaseModel):
 
         # Fallback to the podcast's image
         return self.podcast.image_data
-
-    @property
-    def display_duration(self):
-        """The episode's duration as a formatted string"""
-        if not self.duration:
-            return ""
-
-        return format_duration(self.duration)
-
-    @property
-    def image(self):
-        """The episode's image as an Image object"""
-        if self.image_data is None:
-            return self.podcast.image
-
-        return Image(self.image_data)
