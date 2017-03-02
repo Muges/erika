@@ -46,8 +46,8 @@ class EpisodeAction(BaseModel):
         The episode
     action : str
         The type of the action (download, delete, play or new)
-    timestamp : Optional[datetime]
-        The UTC when the action took place
+    time : Optional[datetime]
+        The UTC time when the action took place as a datetime
     started : Optional[int]
         The position at which the playback started (only valid if action is
         'play')
@@ -59,7 +59,7 @@ class EpisodeAction(BaseModel):
     """
     episode = ForeignKeyField(Episode, on_delete='CASCADE')
     action = TextField()
-    timestamp = DateTimeField(default=datetime.utcnow)
+    time = DateTimeField(default=datetime.utcnow)
 
     started = IntegerField(null=True)
     position = IntegerField(null=True)
@@ -71,15 +71,27 @@ class EpisodeAction(BaseModel):
         -------
         mygpoclient.api.EpisodeAction
         """
-        podcast_url = self.episode.podcast.url
-        episode_url = self.episode.file_url
         device = Config.get_value("gpodder.deviceid")
-        timestamp = datetime_to_iso8601(self.timestamp)
 
         if self.action == "play":
-            return GpoEpisodeAction(podcast_url, episode_url, self.action,
-                                    device, timestamp, self.started,
-                                    self.position, self.total)
+            return GpoEpisodeAction(self.podcast_url, self.episode_url,
+                                    self.action, device, self.timestamp,
+                                    self.started, self.position, self.total)
         else:
-            return GpoEpisodeAction(podcast_url, episode_url, self.action,
-                                    device, timestamp)
+            return GpoEpisodeAction(self.podcast_url, self.episode_url,
+                                    self.action, device, self.timestamp)
+
+    @property
+    def podcast_url(self):
+        """The url of the episode's podcast"""
+        return self.episode.podcast.url
+
+    @property
+    def episode_url(self):
+        """The url of the episode"""
+        return self.episode.file_url
+
+    @property
+    def timestamp(self):
+        """The UTC time when the action took place as an ISO8601 timestamp"""
+        return datetime_to_iso8601(self.time)
