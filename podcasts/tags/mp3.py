@@ -65,8 +65,8 @@ def set_tags(audio, episode):
     # Links
     if episode.link:
         audio.tags["WOAF"] = WOAF(episode.link)
-    if episode.podcast.url:
-        audio.tags["WFED"] = WFED(episode.podcast.url)
+    if episode.podcast.file_url:
+        audio.tags["WFED"] = WFED(episode.podcast.file_url)
     if episode.podcast.link:
         audio.tags["WORS"] = WORS(episode.podcast.link)
     if episode.guid:
