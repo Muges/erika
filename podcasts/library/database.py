@@ -27,12 +27,14 @@ Module defining the database
 """
 
 import os.path
-from peewee import SqliteDatabase, Model
+import string
+from playhouse.sqlite_ext import SqliteExtDatabase
+from peewee import Model
 
 from podcasts.config import CONFIG_DIR
 
 DATABASE_PATH = os.path.join(CONFIG_DIR, "library.test")
-database = SqliteDatabase(DATABASE_PATH)  # pylint: disable=invalid-name
+database = SqliteExtDatabase(DATABASE_PATH)  # pylint: disable=invalid-name
 
 
 class BaseModel(Model):
@@ -41,3 +43,13 @@ class BaseModel(Model):
     """
     class Meta:  # pylint: disable=too-few-public-methods, missing-docstring
         database = database
+
+
+@database.func()
+def slugify(name):
+    """Remove non alphanumeric characters from a string and convert it to
+    lowercase"""
+    return ''.join(
+        char for char in name.lower()
+        if char in string.ascii_lowercase + string.digits
+    )

@@ -186,17 +186,6 @@ def sanitize_filename(filename):
     return filename
 
 
-def slugify(name):
-    """
-    Remove non alphanumeric characters from a string and convert it to
-    lowercase.
-    """
-    name = name.lower()
-    return ''.join([
-        char for char in name
-        if char in string.ascii_lowercase + string.digits
-    ])
-
 def cb(function, n=1):
     """
     Returns a function whose first n arguments are ignored, and which returns
