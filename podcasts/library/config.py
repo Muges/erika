@@ -26,6 +26,7 @@
 Table containing the configuration.
 """
 
+from collections import namedtuple
 import logging
 import json
 from peewee import TextField
@@ -73,3 +74,46 @@ class Config(BaseModel):
                       for key, value in CONFIG_DEFAULTS.items())
          .on_conflict('IGNORE')
          .execute())
+
+    @staticmethod
+    def get_group(group):
+        """Return the configurations values whose keys start with the prefix
+        'group.'.
+
+        Examples
+        --------
+        Assuming the config table contains the following data:
+
+         key                 | value
+        ---------------------+------------------
+         downloads.workers   | 2
+         gpodder.synchronize | False
+         gpodder.hostname    | 'gpodder.net'
+
+        >>>Config.get_group("downloads")
+        configuration(workers=2)
+        >>>Config.get_group("gpodder")
+        configuration(synchronize=False, hostname='gpodder.net')
+        >>>Config.get_group("nothing")
+        configuration()
+
+        Parameters
+        ----------
+        group : str
+           The name of the group
+
+        Returns
+        -------
+        namedtuple
+            A namedtuple containing the values
+        """
+        prefix = group + "."
+        lprefix = len(prefix)
+        values = {}
+
+        configs = Config.select().where(Config.key.startswith(prefix))
+        for config in configs:
+            values[config.key[lprefix:]] = config.value
+
+        type_ = namedtuple("configuration", values.keys())
+        return type_(**values)
