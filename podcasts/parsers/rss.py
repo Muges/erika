@@ -137,8 +137,8 @@ def parse_entry(entry):
 def parse(podcast):
     """Parse a podcast from an Atom/RSS feed
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     podcast : podcasts.library.Podcast
         The podcast to parse
 

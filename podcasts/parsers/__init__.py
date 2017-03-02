@@ -32,8 +32,8 @@ import importlib
 def parse(podcast):
     """Parse a podcast
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     podcast : podcasts.library.Podcast
         The podcast to parse
 
