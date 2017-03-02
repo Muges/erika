@@ -27,6 +27,7 @@ Podcast library
 """
 
 import logging
+import os
 
 from podcasts.library.database import database
 from podcasts.library.config import Config
@@ -52,3 +53,49 @@ def initialize():
                                safe=True)
 
         Config.set_defaults()
+
+
+def scan():
+    """Scan the library directory to add the local episode files"""
+    logger = logging.getLogger(__name__)
+    logger.info("Scanning the library")
+
+    with database.transaction():
+        # Check that the files that are in the database still exist
+        # and update the `paths` list so that it contains all the
+        # files that are already the database
+        paths = []
+        episodes = Episode.select().where(Episode.local_path.is_null(False))
+        for episode in episodes:
+            if os.path.isfile(episode.local_path):
+                paths.append(episode.local_path)
+            else:
+                episode.local_path = None
+                episode.save()
+
+        # Look for new local files
+        library_root = Config.get_value("library.root")
+        for dirpath, _, filenames in os.walk(library_root):
+            for filename in filenames:
+                path = os.path.join(dirpath, filename)
+                if path in paths:
+                    # The file is already in the library
+                    continue
+
+                if path.endswith(".part"):
+                    # The file is incomplete
+                    continue
+
+                episode = Episode.get_matching(path)
+                if not episode:
+                    # No match was found
+                    continue
+
+                # Set the path of the episode in the database
+                episode.local_path = path
+                episode.save()
+
+                # Add an action indicating that the episode has been
+                # downloaded on this device
+                action = EpisodeAction(episode=episode, action="download")
+                action.save()

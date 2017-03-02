@@ -26,13 +26,17 @@
 Table containing the episodes
 """
 
+import logging
+import os.path
 import requests
 from peewee import (BooleanField, DateTimeField, IntegerField, ForeignKeyField,
-                    TextField, Proxy)
+                    TextField, Proxy, DoesNotExist)
 
 from podcasts.library.database import BaseModel
+from podcasts.library.config import Config
 from podcasts.image import Image
-from podcasts.util import format_duration
+from podcasts.util import format_duration, sanitize_filename
+from podcasts import tags
 
 Podcast = Proxy()  # pylint: disable=invalid-name
 
@@ -130,6 +134,85 @@ class Episode(BaseModel):
             return self.podcast.image
 
         return Image(self.image_data)
+
+    @classmethod
+    def get_matching(cls, path):
+        """Get the episode matching a file and move the file to the right
+        location
+
+        Parameters
+        ----------
+        path : str
+            The path of the file.
+
+        Returns
+        -------
+        Optional[Episode]
+            The episode, or None if there was no match
+        """
+        logger = logging.getLogger(".".join((__name__, cls.__name__)))
+        logger.debug("Searching for an episode matching the file '%s'", path)
+
+        # Read the file's audio metadata
+        audiotags = tags.get_tags(path)
+        if not audiotags:
+            return None
+
+        podcast_title = audiotags['podcast']
+
+        # Try to find the podcast
+        try:
+            podcast = Podcast.get(Podcast.title == podcast_title)
+        except DoesNotExist:
+            logger.warning("No podcast with title %s.", podcast_title)
+            return None
+
+        # Find the episode matching the metadata stricty
+        episode = podcast.get_episode_from_tags_strict(audiotags)
+        if episode:
+            return episode
+
+        # Try to find an episode matching the metadata loosely
+        filename = os.path.splitext(os.path.basename(path))[0]
+        episode = podcast.get_episode_from_tags_loose(audiotags, filename)
+        if episode:
+            episode.import_file(path)
+            return episode
+
+        logger.warning("No match found.")
+
+    def import_file(self, path):
+        """Import the episode's audio file in the library
+
+        Moves the file and sets its tag."""
+        extension = os.path.splitext(path)[1]
+        new_path = self.get_default_filename(extension)
+
+        os.rename(path, new_path)
+        tags.set_tags(new_path, self)
+
+        return new_path
+
+    def get_default_filename(self, extension):
+        """Return the default filename for the audio file of an episode given
+        its extension
+
+        Parameters
+        ----------
+        extension : str
+
+        Returns
+        -------
+        str
+            The default filename for the episode
+        """
+        dirname = self.podcast.get_directory()
+        template = Config.get_value("library.episode_file_template")
+        filename = os.path.join(
+            dirname,
+            sanitize_filename(template.format(episode=self))
+        )
+        return filename + extension
 
     def mark_as_played(self):
         """Mark the episode as played"""

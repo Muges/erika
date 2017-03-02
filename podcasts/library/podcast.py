@@ -27,15 +27,18 @@ Table containing the podcasts
 """
 
 import logging
+import os.path
 import requests
 from peewee import (BooleanField, BlobField, TextField, DoesNotExist,
                     IntegrityError, fn)
 
-from podcasts.library.database import BaseModel, database
+from podcasts.library.database import BaseModel, database, slugify
+from podcasts.library.config import Config
 from podcasts.library.episode import Episode
 from podcasts.library.episode import Podcast as PodcastProxy
 from podcasts.image import Image
 from podcasts import parsers
+from podcasts.util import sanitize_filename
 
 
 class Podcast(BaseModel):
@@ -213,6 +216,110 @@ class Podcast(BaseModel):
         previous = self.episodes.select(fn.Max(Episode.track_number)).get()
         previous_number = previous.track_number or 0
         return previous_number + 1
+
+    def get_directory(self):
+        """Return the path of the directory containing a podcast's audio files
+
+        Returns
+        -------
+        str
+            The path of the directory.
+        """
+        template = Config.get_value("library.podcast_directory_template")
+        return os.path.join(
+            Config.get_value("library.root"),
+            sanitize_filename(template.format(podcast=self))
+        )
+
+    def get_episode_from_tags_strict(self, audiotags):
+        """Get the podcast's episode matching a file strictly
+
+        Returns the episode having the same guid, or the same title
+        and publication date if there is one (meaning it was probably
+        tagged by this application).
+
+        Parameters
+        ----------
+        audiotags : dict
+            Dictionnary containing the audio file's metadata
+
+        Returns
+        -------
+        Optional[Episode]
+            The episode, or None if there was no match
+
+        """
+        logger = logging.getLogger(
+            ".".join((__name__, self.__class__.__name__)))
+
+        guid = audiotags['guid']
+        pubdate = audiotags['pubdate']
+        title = audiotags['title']
+
+        try:
+            episode = self.episodes.where(
+                Episode.local_path.is_null(),
+                (Episode.guid == guid) |
+                ((Episode.pubdate == pubdate) & (Episode.title == title))
+            ).first()
+        except DoesNotExist:
+            logger.debug("No strict match.")
+            return None
+
+        return episode
+
+    def get_episode_from_tags_loose(self, audiotags, filename):
+        """Get the podcast's episode matching a file loosely
+
+        Returns the episode having a title similar to the title or
+        filename of the audio file. If there is more than one such
+        match, None is returned as there is no way to find which
+        episode is the right one.
+
+        Parameters
+        ----------
+        audiotags : dict
+            Dictionnary containing the audio file's metadata
+        filename : str
+            The name of the audio file (without extensions or directory)
+
+        Returns
+        -------
+        Optional[Episode]
+            The episode, or None if there was no match
+
+        """
+        logger = logging.getLogger(
+            ".".join((__name__, self.__class__.__name__)))
+
+        title = audiotags['title']
+
+        # Try to find a single episode with the same title
+        episodes = self.episodes.where(
+            Episode.local_path.is_null(),
+            Episode.title == title).first(2)
+        if episodes is not None:
+            if len(episodes) > 1:
+                logger.warning("Too many episodes with title %s.", title)
+                return None
+
+            return episodes[0]
+
+        # Try to find a single episode with a title or filename similar to the
+        # title
+        filename = slugify(filename)
+        title = slugify(title or "")
+
+        episodes = self.episodes.where(
+            Episode.local_path.is_null(),
+            slugify(Episode.title) << [title, filename]).first(2)
+        if episodes is not None:
+            if len(episodes) > 1:
+                logger.warning("Too many episodes with title similar to '%s' "
+                               "or '%s'.", title, filename)
+                return None
+
+            return episodes[0]
 
 
 PodcastProxy.initialize(Podcast)
