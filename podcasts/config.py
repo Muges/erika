@@ -51,6 +51,7 @@ CONFIG_DEFAULTS = {
     "gpodder.password": "",
     "gpodder.deviceid": "podcasts-{}".format(platform.node()),
     "gpodder.devicename": "Podcasts on {}".format(platform.node()),
+    "gpodder.devicename_changed": False,
     "gpodder.last_subscription_sync": 0,
     "gpodder.last_episodes_sync": 0,
 }

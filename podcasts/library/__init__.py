@@ -34,6 +34,7 @@ from podcasts.library.config import Config
 from podcasts.library.episode import Episode
 from podcasts.library.episode_action import EpisodeAction
 from podcasts.library.podcast import Podcast
+from podcasts.library.gpodder import GPodderClient
 
 
 def initialize():
