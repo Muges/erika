@@ -29,13 +29,13 @@ Table containing the podcasts
 import logging
 import os.path
 import requests
-from peewee import (BooleanField, BlobField, TextField, DoesNotExist,
-                    IntegrityError, fn)
+from peewee import BlobField, TextField, DoesNotExist, IntegrityError, fn
 
 from podcasts.library.database import BaseModel, database, slugify
 from podcasts.library.config import Config
 from podcasts.library.episode import Episode
 from podcasts.library.episode import Podcast as PodcastProxy
+from podcasts.library.podcast_action import PodcastAction
 from podcasts.image import Image
 from podcasts import parsers
 from podcasts.util import sanitize_filename
@@ -66,10 +66,6 @@ class Podcast(BaseModel):
         A description of the podcast
     link : Optional[str]
         Website link
-    is_new : bool
-        True if the podcast has been synced with gpodder.net
-    removed : bool
-        True if the podcast has been removed
 
     new_count : int
         Number of new episodes
@@ -89,9 +85,6 @@ class Podcast(BaseModel):
     subtitle = TextField(null=True)
     summary = TextField(null=True)
     link = TextField(null=True)
-
-    is_new = BooleanField(default=True)
-    removed = BooleanField(default=False)
 
     class Meta:  # pylint: disable=too-few-public-methods, missing-docstring
         indexes = (
@@ -140,34 +133,15 @@ class Podcast(BaseModel):
             podcast = Podcast.get(parser=parser, url=url)
         except DoesNotExist:
             podcast = Podcast(parser=parser, url=url)
+            podcast.save()
+
+            if podcast.parser == 'rss':
+                PodcastAction.new(podcast_url=podcast.url, action="add")
         else:
             logger.warning("The %s podcast %s is already in the database.",
                            parser, url)
 
-            if not podcast.removed:
-                return podcast
-
-            # The podcast was removed : it needs to be reimported
-            podcast.removed = False
-
-        with database.transaction():
-            episodes = parsers.parse(podcast)
-
-            podcast.download_image()
-            podcast.save()
-
-            next_track_number = 1
-            for episode in episodes:
-                episode.track_number = next_track_number
-                episode.save()
-                next_track_number += 1
-
-            return podcast
-
-    @staticmethod
-    def select_active():
-        """Return the podcasts that were not removed"""
-        return Podcast.select().where(Podcast.removed is False)
+        return podcast
 
     @classmethod
     def update_podcasts(cls):
@@ -175,19 +149,32 @@ class Podcast(BaseModel):
         logger = logging.getLogger(".".join((__name__, cls.__name__)))
         logger.info("Updating podcasts")
 
-        for podcast in Podcast.select_active():
-            podcast.update_episodes()
+        for podcast in Podcast.select():
+            podcast.update_podcast()
 
-    def update_episodes(self):
+    def delete_instance(self, *args, **kwargs):
+        # pylint: disable=arguments-differ
+        PodcastAction.new(podcast_url=self.url, action="remove")
+        super().delete_instance(*args, **kwargs)
+
+    def update_podcast(self):
         """Update the podcast"""
         logger = logging.getLogger(
             ".".join((__name__, self.__class__.__name__)))
         logger.warning("Updating the podcast %s.", self.title)
+
+        # Parse the podcast
+        # TODO : handle errors
         episodes = parsers.parse(self)
+
+        # Download the podcast's image if its url changed
+        if Podcast.image_url in self.dirty_fields:
+            self.download_image()
 
         next_track_number = self.get_next_track_number()
         with database.transaction():
-            self.save(only=self.dirty_fields)
+
+            self.save()
 
             for episode in episodes:
                 episode.track_number = next_track_number

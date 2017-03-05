@@ -34,6 +34,7 @@ from podcasts.library.config import Config
 from podcasts.library.episode import Episode
 from podcasts.library.episode_action import EpisodeAction
 from podcasts.library.podcast import Podcast
+from podcasts.library.podcast_action import PodcastAction
 from podcasts.library.gpodder import GPodderClient
 
 
@@ -50,8 +51,9 @@ def initialize():
     logger.debug("Database initialization.")
 
     with database.transaction():
-        database.create_tables([Config, Podcast, Episode, EpisodeAction],
-                               safe=True)
+        database.create_tables(
+            [Config, Podcast, Episode, EpisodeAction, PodcastAction],
+            safe=True)
 
         Config.set_defaults()
 
