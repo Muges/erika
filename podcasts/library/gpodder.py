@@ -31,10 +31,7 @@ from mygpoclient.api import MygPodderClient
 from mygpoclient.simple import MissingCredentials
 from mygpoclient.http import Unauthorized
 
-from .config import Config
-from .database import database
-from .podcast import Podcast
-from .podcast_action import PodcastAction
+from .models import database, Config, Podcast, PodcastAction
 
 
 class GPodderUnauthorized(Exception):

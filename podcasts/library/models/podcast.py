@@ -31,14 +31,14 @@ import os.path
 import requests
 from peewee import BlobField, TextField, DoesNotExist, IntegrityError, fn
 
-from podcasts.library.database import BaseModel, database, slugify
-from podcasts.library.config import Config
-from podcasts.library.episode import Episode
-from podcasts.library.episode import Podcast as PodcastProxy
-from podcasts.library.podcast_action import PodcastAction
 from podcasts.image import Image
 from podcasts import parsers
 from podcasts.util import sanitize_filename
+from .database import BaseModel, database, slugify
+from .config import Config
+from .episode import Episode
+from .episode import Podcast as PodcastProxy
+from .podcast_action import PodcastAction
 
 
 class Podcast(BaseModel):

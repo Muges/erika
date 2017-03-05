@@ -32,9 +32,9 @@ from peewee import DateTimeField, IntegerField, ForeignKeyField, TextField
 from mygpoclient.api import EpisodeAction as GpoEpisodeAction
 from mygpoclient.util import datetime_to_iso8601
 
-from podcasts.library.database import BaseModel
-from podcasts.library.episode import Episode
-from podcasts.library.config import Config
+from .database import BaseModel
+from .episode import Episode
+from .config import Config
 
 
 class EpisodeAction(BaseModel):

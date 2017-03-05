@@ -32,11 +32,11 @@ import requests
 from peewee import (BooleanField, DateTimeField, IntegerField, ForeignKeyField,
                     TextField, Proxy, DoesNotExist)
 
-from podcasts.library.database import BaseModel
-from podcasts.library.config import Config
 from podcasts.image import Image
 from podcasts.util import format_duration, sanitize_filename
 from podcasts import tags
+from .database import BaseModel
+from .config import Config
 
 Podcast = Proxy()  # pylint: disable=invalid-name
 

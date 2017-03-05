@@ -29,13 +29,8 @@ Podcast library
 import logging
 import os
 
-from podcasts.library.database import database
-from podcasts.library.config import Config
-from podcasts.library.episode import Episode
-from podcasts.library.episode_action import EpisodeAction
-from podcasts.library.podcast import Podcast
-from podcasts.library.podcast_action import PodcastAction
-from podcasts.library.gpodder import GPodderClient
+from .models import (database, Config, Episode, EpisodeAction, Podcast,
+                     PodcastAction)
 
 
 def initialize():

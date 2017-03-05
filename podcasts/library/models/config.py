@@ -31,8 +31,8 @@ import logging
 import json
 from peewee import TextField
 
-from podcasts.library.database import BaseModel
 from podcasts.config import CONFIG_DEFAULTS
+from .database import BaseModel
 
 
 class JSONField(TextField):

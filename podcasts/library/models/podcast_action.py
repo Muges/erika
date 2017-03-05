@@ -28,7 +28,7 @@ Table containing the episode actions
 
 from peewee import TextField
 
-from podcasts.library.database import BaseModel
+from .database import BaseModel
 
 
 class PodcastAction(BaseModel):
