@@ -43,7 +43,7 @@ def initialize():
     updated.
     """
     logger = logging.getLogger(__name__)
-    logger.debug("Database initialization.")
+    logger.debug("Initializing the database")
 
     with database.transaction():
         database.create_tables(
@@ -51,6 +51,16 @@ def initialize():
             safe=True)
 
         Config.set_defaults()
+
+
+def update_podcasts():
+    """Update the library"""
+    # TODO : multi-threaded update
+    logger = logging.getLogger(__name__)
+    logger.info("Updating the library")
+
+    for podcast in Podcast.select():
+        podcast.update_podcast()
 
 
 def scan():

@@ -143,15 +143,6 @@ class Podcast(BaseModel):
 
         return podcast
 
-    @classmethod
-    def update_podcasts(cls):
-        """Update all the podcasts"""
-        logger = logging.getLogger(".".join((__name__, cls.__name__)))
-        logger.info("Updating podcasts")
-
-        for podcast in Podcast.select():
-            podcast.update_podcast()
-
     def delete_instance(self, *args, **kwargs):
         # pylint: disable=arguments-differ
         PodcastAction.new(podcast_url=self.url, action="remove")
