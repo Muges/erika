@@ -32,6 +32,9 @@ from mygpoclient.simple import MissingCredentials
 from mygpoclient.http import Unauthorized
 
 from .config import Config
+from .database import database
+from .podcast import Podcast
+from .podcast_action import PodcastAction
 
 
 class GPodderUnauthorized(Exception):
@@ -123,3 +126,98 @@ class GPodderClient(object):
                 if device.device_id == self.configuration.deviceid:
                     Config.set_value("gpodder.devicename", device.caption)
                     break
+
+        self.configuration = Config.get_group("gpodder")
+
+    def pull_subscriptions(self):
+        """Pull the subscriptions changes from gpodder.net and process them"""
+        if not self.enabled():
+            return
+
+        self.logger.debug("Pulling subscription changes.")
+
+        try:
+            changes = self.client.pull_subscriptions(
+                self.configuration.deviceid,
+                self.configuration.last_subscription_sync)
+        except Exception:  # pylint: disable=broad-except
+            self.logger.exception("Unable to pull subscriptions from "
+                                  "gpodder.net.")
+            return
+
+        with database.transaction():
+            # Apply the changes
+            for url in changes.remove:
+                Podcast.delete().where(Podcast.url == url)
+
+            for url in changes.add:
+                Podcast.new("rss", url)
+
+            Config.set_value("gpodder.last_subscription_sync", changes.since)
+
+    def push_subscriptions(self):
+        """Push the local subscriptions changes to gpodder.net
+
+        Returns
+        -------
+        Optional[datetime]
+            The time at which the subscriptions were synchronized
+        """
+        if not self.enabled():
+            return
+
+        self.logger.debug("Pushing subscription changes.")
+
+        # Get the podcasts that were added or removed since the last
+        # synchronization
+        add = PodcastAction().select().where(
+            PodcastAction.action == 'add'
+        )
+        added_urls = [action.podcast_url for action in add]
+
+        remove = PodcastAction().select().where(
+            PodcastAction.action == 'remove'
+        )
+        removed_urls = [action.podcast_url for action in remove]
+
+        # Send them to gpodder.net
+        if added_urls or removed_urls:
+            try:
+                result = self.client.update_subscriptions(
+                    self.configuration.deviceid, added_urls, removed_urls)
+            except Exception:  # pylint: disable=broad-except
+                self.logger.exception("Unable to push subscriptions to "
+                                      "gpodder.net.")
+                return
+
+            with database.transaction():
+                # Update the podcasts urls
+                for old_url, new_url in result.update_urls:
+                    if new_url:
+                        self.logger.debug("Updating url '%s' to '%s'.",
+                                          old_url, new_url)
+                        (Podcast
+                         .update(url=new_url)
+                         .where(Podcast.url == old_url)
+                         .on_conflict("REPLACE"))
+
+                # Remove the actions
+                for action in add:
+                    action.delete_instance()
+                for action in remove:
+                    action.delete_instance()
+
+            return result.since
+
+        return None
+
+    def synchronize_subscriptions(self):
+        """Synchronize the subscriptions changes with gpodder.net"""
+        if not self.enabled():
+            return
+
+        self.pull_subscriptions()
+        since = self.push_subscriptions()
+
+        if since is not None:
+            Config.set_value("gpodder.last_subscription_sync", since)
