@@ -168,7 +168,8 @@ class Podcast(BaseModel):
         episodes = parsers.parse(self)
 
         # Download the podcast's image if its url changed
-        if Podcast.image_url in self.dirty_fields:
+        dirty_fields = [field.name for field in self.dirty_fields]
+        if 'image_url' in dirty_fields:
             self.download_image()
 
         next_track_number = self.get_next_track_number()

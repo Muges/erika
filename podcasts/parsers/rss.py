@@ -30,6 +30,7 @@ import logging
 from time import mktime
 from datetime import datetime
 import feedparser
+import requests
 
 from podcasts.library import Episode
 
@@ -41,9 +42,13 @@ def parse_feed(feed, podcast):
     except AttributeError:
         image = None
 
+    if image != podcast.image_url:
+        # Only update the podcast image if it changed, to avoid
+        # setting the field as dirty
+        podcast.image_url = image
+
     podcast.title = feed.get("title", None)
     podcast.author = feed.get("author", None)
-    podcast.image_url = image
     podcast.language = feed.get("language", None)
     podcast.subtitle = feed.get("subtitle", None)
     podcast.summary = feed.get("summary", None)
