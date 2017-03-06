@@ -30,8 +30,10 @@ import logging
 from mygpoclient.api import MygPodderClient
 from mygpoclient.simple import MissingCredentials
 from mygpoclient.http import Unauthorized
+from mygpoclient.util import iso8601_to_datetime
 
-from .models import database, Config, Podcast, PodcastAction
+from .models import (database, Config, Episode, EpisodeAction, Podcast,
+                     PodcastAction)
 
 
 class GPodderUnauthorized(Exception):
@@ -43,6 +45,21 @@ class GPodderUnauthorized(Exception):
                          "gpodder.net.")
 
 
+class RemoteEpisodeAction(object):  # pylint: disable=too-few-public-methods
+    """Object representing a remote episode action
+
+    It has the same attributes as the EpisodeAction model.
+    """
+    def __init__(self, action):
+        self.podcast_url = action.podcast
+        self.episode_url = action.episode,
+        self.action = action.action
+        self.time = iso8601_to_datetime(action.timestamp)
+        self.started = action.started
+        self.position = action.position
+        self.total = action.total
+
+
 class GPodderClient(object):
     """Client handling the synchronization of the database with gpodder.net"""
     def __init__(self):
@@ -50,6 +67,7 @@ class GPodderClient(object):
             ".".join((__name__, self.__class__.__name__)))
 
         self.configuration = Config.get_group("gpodder")
+        self.smart_mark_seconds = Config.get_value("player.smart_mark_seconds")
 
         self.client = None
 
@@ -218,3 +236,93 @@ class GPodderClient(object):
 
         if since is not None:
             Config.set_value("gpodder.last_subscription_sync", since)
+
+    def process_episode_actions(self, actions):
+        """Process the episodes actions
+
+        Parameters
+        ----------
+        actions : List[Union[EpisodeAction, RemoteEpisodeAction]]
+            A list of all local and remote episode actions
+        """
+        actions.sort(key=lambda a: a.time)
+
+        with database.transaction():
+            for action in actions:
+                self.process_episode_action(action)
+
+    def process_episode_action(self, action):
+        """Process an episode action"""
+        if action.action == "play":
+            if action.position + self.smart_mark_seconds >= action.total:
+                (Episode
+                 .update(played=True, progress=0)
+                 .where(Episode.file_url == action.episode_url)
+                 .execute())
+            else:
+                (Episode
+                 .update(progress=action.position)
+                 .where(Episode.file_url == action.episode_url)
+                 .execute())
+        elif action.action == "new":
+            (Episode
+             .update(played=False)
+             .where(Episode.file_url == action.episode_url)
+             .execute())
+
+    def pull_episode_actions(self):
+        """Pull episode actions from gpodder.net"""
+        if not self.enabled():
+            return
+
+        self.logger.debug("Pulling episode actions.")
+
+        try:
+            changes = self.client.download_episode_actions(
+                self.configuration.last_episodes_sync)
+        except Exception:  # pylint: disable=broad-except
+            self.logger.exception("Unable to pull episode actions from "
+                                  "gpodder.net.")
+            return
+
+        local_actions = [action for action in EpisodeAction.select()]
+        remote_actions = [RemoteEpisodeAction(action)
+                          for action in changes.actions]
+        self.process_episode_actions(local_actions + remote_actions)
+
+        Config.set_value("gpodder.last_episodes_sync", changes.since)
+
+    def push_episode_actions(self):
+        """Push episode actions to gpodder.net"""
+        if not self.enabled():
+            return
+
+        self.logger.debug("Pushing episode actions.")
+
+        actions = [action for action in EpisodeAction.select()]
+
+        try:
+            since = self.client.upload_episode_actions(
+                [action.for_gpodder() for action in actions])
+        except Exception:  # pylint: disable=broad-except
+            self.logger.exception("Unable to push episode actions to "
+                                  "gpodder.net.")
+            return
+
+        # Remove actions
+        with database.transaction():
+            for action in actions:
+                action.delete_instance()
+
+        return since
+
+    def synchronize_episode_actions(self):
+        """Synchronize episode actions with gpodder.net"""
+        if not self.enabled():
+            return
+
+        self.pull_episode_actions()
+        since = self.push_episode_actions()
+
+        if since is not None:
+            Config.set_value("gpodder.last_episodes_sync", since)

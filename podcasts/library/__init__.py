@@ -50,7 +50,11 @@ def initialize():
             [Config, Podcast, Episode, EpisodeAction, PodcastAction],
             safe=True)
 
+        # Set default configuration values
         Config.set_defaults()
+
+        # Set all the episodes as non-new
+        Episode.update(new=False)
 
 
 def update_podcasts():

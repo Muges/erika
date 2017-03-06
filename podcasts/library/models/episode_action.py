@@ -65,22 +65,6 @@ class EpisodeAction(BaseModel):
     position = IntegerField(null=True)
     total = IntegerField(null=True)
 
-    def for_gpodder(self):
-        """
-        Returns
-        -------
-        mygpoclient.api.EpisodeAction
-        """
-        device = Config.get_value("gpodder.deviceid")
-
-        if self.action == "play":
-            return GpoEpisodeAction(self.podcast_url, self.episode_url,
-                                    self.action, device, self.timestamp,
-                                    self.started, self.position, self.total)
-        else:
-            return GpoEpisodeAction(self.podcast_url, self.episode_url,
-                                    self.action, device, self.timestamp)
-
     @property
     def podcast_url(self):
         """The url of the episode's podcast"""
@@ -95,3 +79,15 @@ class EpisodeAction(BaseModel):
     def timestamp(self):
         """The UTC time when the action took place as an ISO8601 timestamp"""
         return datetime_to_iso8601(self.time)
+
+    def for_gpodder(self):
+        """Converts an EpisodeAction into a mygpoclient.api.EpisodeAction"""
+        device = Config.get_value("gpodder.deviceid")
+
+        if self.action == "play":
+            return GpoEpisodeAction(self.podcast_url, self.episode_url,
+                                    self.action, device, self.timestamp,
+                                    self.started, self.position, self.total)
+        else:
+            return GpoEpisodeAction(self.podcast_url, self.episode_url,
+                                    self.action, device, self.timestamp)
