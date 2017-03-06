@@ -163,9 +163,14 @@ class GPodderClient(object):
         with database.transaction():
             # Apply the changes
             for url in changes.remove:
-                Podcast.delete().where(Podcast.url == url)
+                self.logger.debug("Removing podcast %s.", url)
+                (Podcast
+                 .delete()
+                 .where(Podcast.url == url)
+                 .execute())
 
             for url in changes.add:
+                self.logger.debug("Adding podcast %s.", url)
                 Podcast.new("rss", url)
 
             Config.set_value("gpodder.last_subscription_sync", changes.since)
@@ -214,7 +219,8 @@ class GPodderClient(object):
                         (Podcast
                          .update(url=new_url)
                          .where(Podcast.url == old_url)
-                         .on_conflict("REPLACE"))
+                         .on_conflict("REPLACE")
+                         .execute())
 
                 # Remove the actions
                 for action in add:

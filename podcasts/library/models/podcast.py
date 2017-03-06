@@ -128,7 +128,7 @@ class Podcast(BaseModel):
             The url of the podcast
         """
         logger = logging.getLogger(".".join((__name__, cls.__name__)))
-        logger.warning("Adding the %s podcast %s.", parser, url)
+        logger.info("Adding the %s podcast %s.", parser, url)
         try:
             podcast = Podcast.get(parser=parser, url=url)
         except DoesNotExist:
@@ -152,7 +152,7 @@ class Podcast(BaseModel):
         """Update the podcast"""
         logger = logging.getLogger(
             ".".join((__name__, self.__class__.__name__)))
-        logger.warning("Updating the podcast %s.", self.display_title)
+        logger.info("Updating the podcast %s.", self.display_title)
 
         # Parse the podcast
         # TODO : handle errors
