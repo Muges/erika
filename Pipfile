@@ -1,0 +1,18 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+
+[packages]
+feedparser = "*"
+mutagen = "*"
+peewee = "*"
+requests = "*"
+Pillow = "*"
+"vext.gi" = "*"
+lxml = "*"
+
+[dev-packages]
+pytest = "*"
+
+[packages.mygpoclient]
+git = "https://github.com/gpodder/mygpoclient.git"
