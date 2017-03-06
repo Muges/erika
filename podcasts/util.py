@@ -27,9 +27,8 @@ Utility functions
 """
 
 from itertools import chain
-import os.path
+import mimetypes
 import re
-import string
 
 EXTENSIONS = {
     "audio/mpeg": ".mp3",
@@ -116,8 +115,12 @@ def format_fulltext_duration(seconds):
 
 
 def format_size(size):
-    """
-    Return a human readable size.
+    """Convert a size in bytes into a human readable string
+
+    Example
+    -------
+    >>>format_size(2.25*1024)
+    '2.25 kB'
 
     Parameters
     ----------
@@ -128,15 +131,12 @@ def format_size(size):
     -------
     str
     """
-    unit = 'bytes'
-
-    for u in ['kB', 'MB', 'GB']:
+    for unit in ['bytes', 'kB', 'MB']:
         if size < 1024:
-            break
-
-        unit = u
+            return "{:.2f} {}".format(size, unit)
         size /= 1024
-    return "{:.2f} {}".format(size, unit)
+
+    return "{:.2f} {}".format(size, 'GB')
 
 
 def guess_extension(mimetype):
@@ -186,11 +186,12 @@ def sanitize_filename(filename):
     return filename
 
 
-def cb(function, n=1):
-    """
+def cb(function, n=1):  # pylint: disable=invalid-name
+    """Create a callback whose first n argument are ignored
+
     Returns a function whose first n arguments are ignored, and which returns
     the result of the function passed in parameters :
     cb(f)(ignored, *args) == f(*args)
     cb(f, 2)(i1, i2, *args) == f(*args)
     """
-    return lambda *args: function(*args[1:])
+    return lambda *args: function(*args[n:])
