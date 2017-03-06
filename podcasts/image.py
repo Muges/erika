@@ -27,9 +27,8 @@ Object representing an image.
 """
 
 import base64
-import imghdr
-from PIL import Image as PImage
 from io import BytesIO
+from PIL import Image as PImage
 
 from gi.repository import GdkPixbuf
 

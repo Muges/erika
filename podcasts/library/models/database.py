@@ -26,14 +26,12 @@
 Module defining the database
 """
 
-import os.path
 import string
 from playhouse.sqlite_ext import SqliteExtDatabase
 from peewee import Model
 
-from podcasts.config import CONFIG_DIR
+from podcasts.config import DATABASE_PATH
 
-DATABASE_PATH = os.path.join(CONFIG_DIR, "library")
 database = SqliteExtDatabase(DATABASE_PATH)  # pylint: disable=invalid-name
 
 

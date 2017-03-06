@@ -31,9 +31,12 @@ import platform
 
 from .__version__ import __appname__
 
+
 # Directories
 HOME = expanduser("~")
 CONFIG_DIR = join(HOME, ".{}".format(__appname__.lower()))
+
+DATABASE_PATH = join(CONFIG_DIR, "library")
 
 CONFIG_DEFAULTS = {
     "library.root": join(HOME, "Podcasts"),
