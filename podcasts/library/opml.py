@@ -29,7 +29,7 @@ Module handling opml import and export.
 from email.utils import formatdate
 from lxml import etree
 
-from podcasts.library import Library
+from .models import Podcast
 
 
 def import_opml(filename):
@@ -41,12 +41,10 @@ def import_opml(filename):
     filename : str
         The opml file.
     """
-    library = Library()
-
     document = etree.parse(filename)
 
     for outline in document.xpath("/opml/body/outline"):
-        library.add_source(outline.get("type", "rss"), outline.get("xmlUrl"))
+        Podcast.new(outline.get("type", "rss"), outline.get("xmlUrl"))
 
 
 def export_opml(filename):
@@ -58,8 +56,6 @@ def export_opml(filename):
     filename : str
         The opml file.
     """
-    library = Library()
-
     root = etree.Element('opml')
     document = etree.ElementTree(root)
 
@@ -75,13 +71,13 @@ def export_opml(filename):
     # Body
     body = etree.SubElement(root, 'body')
 
-    for podcast in library.get_podcasts():
-        outline = etree.SubElement(body, 'outline',
-                                   text=podcast.title,
-                                   title=podcast.title,
-                                   type=podcast.source,
-                                   xmlUrl=podcast.url,
-                                   htmlUrl=podcast.link)
+    for podcast in Podcast.select():
+        etree.SubElement(body, 'outline',
+                         text=podcast.title,
+                         title=podcast.title,
+                         type=podcast.parser,
+                         xmlUrl=podcast.url,
+                         htmlUrl=podcast.link)
 
     document.write(filename, xml_declaration=True, encoding='utf-8',
                    pretty_print=True)
