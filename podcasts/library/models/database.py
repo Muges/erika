@@ -33,7 +33,7 @@ from peewee import Model
 
 from podcasts.config import CONFIG_DIR
 
-DATABASE_PATH = os.path.join(CONFIG_DIR, "library.test")
+DATABASE_PATH = os.path.join(CONFIG_DIR, "library")
 database = SqliteExtDatabase(DATABASE_PATH)  # pylint: disable=invalid-name
 
 

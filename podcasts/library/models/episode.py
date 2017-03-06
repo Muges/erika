@@ -99,7 +99,7 @@ class Episode(BaseModel):
 
     track_number = IntegerField()
 
-    file_url = TextField(null=True)
+    file_url = TextField(null=True, index=True)
     file_size = IntegerField(null=True)
     mimetype = TextField(null=True)
     local_path = TextField(null=True)

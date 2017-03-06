@@ -57,7 +57,7 @@ def initialize():
         Episode.update(new=False)
 
 
-def update_podcasts():
+def update():
     """Update the library"""
     # TODO : multi-threaded update
     logger = logging.getLogger(__name__)

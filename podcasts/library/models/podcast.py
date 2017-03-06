@@ -152,7 +152,7 @@ class Podcast(BaseModel):
         """Update the podcast"""
         logger = logging.getLogger(
             ".".join((__name__, self.__class__.__name__)))
-        logger.warning("Updating the podcast %s.", self.title)
+        logger.warning("Updating the podcast %s.", self.display_title)
 
         # Parse the podcast
         # TODO : handle errors
