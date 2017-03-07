@@ -194,6 +194,7 @@ class Episode(BaseModel):
         int
             The total number of episodes
         """
+        # pylint: disable=singleton-comparison
         new = Episode.select().where(Episode.new == True).count()
         played = Episode.select().where(Episode.played == True).count()
         total = Episode.select().count()

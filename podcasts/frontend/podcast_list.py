@@ -29,18 +29,42 @@ List of podcasts
 import locale
 
 from gi.repository import Gtk
-from gi.repository import GdkPixbuf
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gio
 
-from podcasts.library import Library
+from podcasts.library.models import Podcast
 from podcasts.frontend.widgets import Label, IndexedListBox
-from podcasts.frontend import htmltopango
 from podcasts.util import cb
 
 IMAGE_SIZE = 64
 SUBTITLE_LINES = 2
+
+
+def sort_func(row1, row2):
+    """Compare two rows to determine which should be first. Sort them
+    alphabetically by podcast title.
+
+    Parameters
+    ----------
+    row1 : Gtk.ListBoxRow
+        The first row
+    row2 : Gtk.ListBoxRow
+        The second row
+
+    Returns
+    -------
+    int
+        -1 if row1 should be before row2,
+        0 if they are equal,
+        1 otherwise
+    """
+    if row1.podcast.title is None:
+        return 1
+    elif row2.podcast.title is None:
+        return -1
+    else:
+        return locale.strcoll(row1.podcast.title, row2.podcast.title)
 
 
 class PodcastList(Gtk.VBox):
@@ -64,7 +88,7 @@ class PodcastList(Gtk.VBox):
         # Podcast list
         self.list = IndexedListBox()
         self.list.set_selection_mode(Gtk.SelectionMode.BROWSE)
-        self.list.set_sort_func(self.sort_func)
+        self.list.set_sort_func(sort_func)
         self.list.connect("row-selected", self._on_row_selected)
 
         scrolled_window = Gtk.ScrolledWindow()
@@ -82,7 +106,7 @@ class PodcastList(Gtk.VBox):
         remove_podcast = Gtk.Button.new_from_icon_name(
             "feed-remove-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
         remove_podcast.set_tooltip_text("Remove the selected podcast")
-        remove_podcast.connect("clicked", self._remove_podcast)
+        remove_podcast.connect("clicked", self._on_remove_podcast)
         self.action_bar.pack_start(remove_podcast)
 
         import_opml = Gtk.Button.new_from_icon_name(
@@ -102,17 +126,15 @@ class PodcastList(Gtk.VBox):
         self.pack_start(self.action_bar, False, False, 0)
 
         application = Gio.Application.get_default()
-        application.connect('network-state-changed', cb(self.set_network_state))
+        application.connect('network-state-changed',
+                            cb(self.set_network_state))
 
     def update(self):
-        """
-        Update the list of podcasts
-        """
+        """Update the list of podcasts"""
         # Set of ids that should be removed
         remove_ids = self.list.get_ids()
 
-        library = Library()
-        for podcast in library.get_podcasts():
+        for podcast in Podcast.select():
             try:
                 row = self.list.get_row(podcast.id)
             except ValueError:
@@ -135,8 +157,7 @@ class PodcastList(Gtk.VBox):
         self.list.invalidate_sort()
 
     def update_podcast(self, podcast_id):
-        """
-        Update a podcast
+        """Update a podcast
 
         Parameters
         ----------
@@ -148,60 +169,27 @@ class PodcastList(Gtk.VBox):
         except ValueError:
             pass
         else:
-            library = Library()
-            library.update_counts(row.podcast)
             row.update()
 
     def update_current(self):
-        """
-        Update the selected row
-        """
+        """Update the selected row"""
         row = self.list.get_selected_row()
 
         if row:
-            library = Library()
-            library.update_counts(row.podcast)
             row.update()
 
-    def _on_row_selected(self, list, row):
-        """
-        Called when a row is selected.
+    def _on_row_selected(self, listbox, row):
+        """Called when a row is selected.
 
         Emit the podcast-selected signal.
         """
         if row:
             self.emit('podcast-selected', row.podcast)
 
-    def sort_func(self, row1, row2):
-        """
-        Compare two rows to determine which should be first. Sort them
-        alphabetically by podcast title.
-
-        Parameters
-        ----------
-        row1 : Gtk.ListBoxRow
-            The first row
-        row2 : Gtk.ListBoxRow
-            The second row
-
-        Returns
-        -------
-        int
-            -1 if row1 should be before row2,
-            0 if they are equal,
-            1 otherwise
-        """
-        if row1.podcast.title == None:
-            return 1
-        elif row2.podcast.title == None:
-            return -1
-        else:
-            return locale.strcoll(row1.podcast.title, row2.podcast.title)
-
-    def _remove_podcast(self, button):
+    def _on_remove_podcast(self, button):
         selection = self.list.get_selected_row()
 
-        if selection == None:
+        if selection is None:
             return
 
         # Get parent window
@@ -220,22 +208,20 @@ class PodcastList(Gtk.VBox):
             return
 
         # Delete the podcast
-        library = Library()
-        library.remove(selection.podcast)
-
+        selection.podcast.delete_instance()
         selection.destroy()
 
         # Select the first row
         first_row = self.list.get_row_at_index(0)
         self.list.select_row(first_row)
 
-    def set_network_state(self, online, error):
+    def set_network_state(self, online, _):
+        """Called when the network state is changed"""
         self.add_podcast.set_sensitive(online)
 
+
 class PodcastRow(Gtk.ListBoxRow):
-    """
-    Row in the list of podcasts
-    """
+    """Row in the list of podcasts"""
     def __init__(self, podcast):
         Gtk.ListBoxRow.__init__(self)
 
@@ -268,9 +254,7 @@ class PodcastRow(Gtk.ListBoxRow):
         self.update()
 
     def update(self):
-        """
-        Update the widget
-        """
+        """Update the widget"""
         self.grid.set_tooltip_markup((
             "<b>{title}</b>\n"
             "{episodes} episodes"

@@ -148,7 +148,7 @@ allow-global-unused-variables=yes
 
 # List of strings which can identify a callback function by name. A callback
 # name must start or end with one of those strings.
-callbacks=cb_,_cb
+callbacks=cb_,_cb,_on_
 
 # A regular expression matching the name of dummy variables (i.e. expectedly
 # not used).

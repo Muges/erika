@@ -112,6 +112,23 @@ class Podcast(BaseModel):
         return self.title or self.url or ""
 
     @property
+    def episodes_count(self):
+        """Return the number of episodes of the podcast"""
+        return self.episodes.count()
+
+    @property
+    def played_count(self):
+        """Return the number of episodes that have already been played"""
+        # pylint: disable=singleton-comparison
+        return self.episodes.where(Episode.played == True).count()
+
+    @property
+    def new_count(self):
+        """Return the number of new episodes"""
+        # pylint: disable=singleton-comparison
+        return self.episodes.where(Episode.new == True).count()
+
+    @property
     def unplayed_count(self):
         """Return the number of episodes that have not been played"""
         return self.episodes_count - self.played_count

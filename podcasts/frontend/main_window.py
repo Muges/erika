@@ -29,7 +29,7 @@ from gi.repository import Gtk
 
 from podcasts.__version__ import __appname__
 #from podcasts.frontend.downloads import DownloadsButton
-#from podcasts.frontend.podcast_list import PodcastList
+from podcasts.frontend.podcast_list import PodcastList
 #from podcasts.frontend.episode_list import EpisodeList
 #from podcasts.frontend.player import Player
 #from podcasts.frontend.player_widgets import PlayerWidgets
@@ -73,7 +73,7 @@ class MainWindow(Gtk.ApplicationWindow):
         # Views
         #self.details = Details()
 
-        #self.podcast_list = PodcastList()
+        self.podcast_list = PodcastList()
         #self.podcast_list.connect('podcast-selected', self._on_podcast_selected)
         #self.podcast_list.connect('podcast-selected', cb(self.details.show_podcast))
 
@@ -117,7 +117,7 @@ class MainWindow(Gtk.ApplicationWindow):
         paned.set_position(300)
         vbox.pack_start(paned, True, True, 0)
 
-        #paned.add1(self.podcast_list)
+        paned.add1(self.podcast_list)
         paned.add2(right_paned)
 
         status_bar = Gtk.HBox()
@@ -131,7 +131,7 @@ class MainWindow(Gtk.ApplicationWindow):
         status_bar.pack_start(self.counts, False, False, 0)
         status_bar.pack_end(self.statusbox, False, False, 0)
 
-        #self.podcast_list.update()
+        self.podcast_list.update()
 
     def update_counts(self):
         """

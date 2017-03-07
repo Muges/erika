@@ -152,7 +152,7 @@ class Application(Gtk.Application):
         """Called at the end of the synchronization"""
         self.window.statusbox.remove(message_id)
 
-        #self.window.podcast_list.update()
+        self.window.podcast_list.update()
         #self.window.episode_list.update()
         self.window.update_counts()
 
