@@ -2,3 +2,4 @@ __pycache__
 .eggs
 Podcasts.egg-info
 .cache
+flycheck_*
