@@ -23,8 +23,10 @@
 # SOFTWARE.
 
 """
-Widget allowing to easily display loading messages in a status bar.
+Widget allowing to easily display loading messages in a status bar
 """
+
+# pylint: disable=arguments-differ
 
 from collections import OrderedDict
 
@@ -32,8 +34,7 @@ from gi.repository import Gtk
 
 
 class StatusBox(Gtk.HBox):
-    """
-    Widget allowing to easily display loading messages in a status bar.
+    """Widget allowing to easily display loading messages in a status bar
 
     The add method adds a new message to the StatusBox. The messages are
     displayed in the order they where added. As long as at least one message
@@ -55,30 +56,28 @@ class StatusBox(Gtk.HBox):
         self.pack_start(self.spinner, False, False, 0)
 
     def _get_message_index(self, message_id):
-        """
-        Get the position of the message.
-        """
+        """Get the position of a message given its id"""
         for index, key in enumerate(self.messages.keys()):
             if key == message_id:
                 return index
 
-    def add(self, message):
-        """
-        Add a new message.
+    def get_next_message_id(self):
+        """Return the id of the next message"""
+        message_id = self.next_id
+        self.next_id += 1
+        return message_id
+
+    def add(self, message, message_id):
+        """Add a new message
 
         Parameters
         ----------
         message : str
             The message that will be displayed.
-
-        Returns
-        -------
-        int
-            A unique message id.
+        message_id : int
+            The id of the message (this should be the value returned by
+            self.get_next_message_id())
         """
-        message_id = self.next_id
-        self.next_id += 1
-
         # Add a separator between this message and the previous one if needed
         if self.messages:
             separator = Gtk.Separator.new(Gtk.Orientation.VERTICAL)
@@ -95,8 +94,6 @@ class StatusBox(Gtk.HBox):
         # Start the spinner
         self.spinner.start()
 
-        return message_id
-
     def edit(self, message_id, message):
         """
         Edit a message.
@@ -106,15 +103,12 @@ class StatusBox(Gtk.HBox):
         message_id : int
             The id of the message.
         """
-        index = self._get_message_index(message_id)
-
         # Edit the label
         label = self.messages[message_id]
         label.set_text(message)
 
     def remove(self, message_id):
-        """
-        Remove a message.
+        """Remove a message.
 
         Parameters
         ----------
@@ -125,7 +119,7 @@ class StatusBox(Gtk.HBox):
 
         # Remove the label
         label = self.messages.pop(message_id)
-        label.destroy()
+        label.destroy()  # pylint: disable=no-member
 
         # Remove the separator
         try:
@@ -138,4 +132,3 @@ class StatusBox(Gtk.HBox):
         # Stop the spinner if no message is being displayed
         if not self.messages:
             self.spinner.stop()
-

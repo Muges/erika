@@ -31,6 +31,7 @@ from gi.repository import Gtk
 
 from podcasts.frontend.main_window import MainWindow
 #from podcasts.frontend import preferences
+from podcasts import library
 from podcasts.library import Config
 from podcasts.library.opml import import_opml, export_opml
 from podcasts.library.gpodder import GPodderClient
@@ -57,18 +58,18 @@ class Application(Gtk.Application):
             "{}.{}".format(__name__, self.__class__.__name__))
 
         self.window = None
-        self.syncing = False
         self.online = True
+        self.synchronization_lock = threading.Lock()
 
         self.add_main_option("offline", ord("o"), GLib.OptionFlags.NONE,
                              GLib.OptionArg.NONE, "Enable offline mode", None)
 
-        self.connect("startup", cb(self.on_startup))
-        self.connect("activate", cb(self.on_activate))
-        self.connect("command-line", cb(self.on_command_line))
-        #self.connect("shutdown", cb(self.on_shutdown))
+        self.connect("startup", cb(self._on_startup))
+        self.connect("activate", cb(self._on_activate))
+        self.connect("command-line", cb(self._on_command_line))
+        #self.connect("shutdown", cb(self._on_shutdown))
 
-    def on_startup(self):
+    def _on_startup(self):
         """Called when the first instance of the application is launched"""
         # pylint: disable=attribute-defined-outside-init
 
@@ -116,19 +117,20 @@ class Application(Gtk.Application):
             self.quit()
             return
 
-    def on_activate(self):
+    def _on_activate(self):
         """Called when the application is launched"""
         self.set_network_state(self.online)
 
-        #interval = Config.get_value("library.synchronize_interval")
+        interval = Config.get_value("library.synchronize_interval")
 
-        #self.synchronize_library(scan=True)
-        #GObject.timeout_add_seconds(interval*60, self.synchronize_library)
+        self.synchronize_library(scan=True)
+        GObject.timeout_add_seconds(interval*60, self.synchronize_library)
 
         self.window.show_all()
         self.window.present()
 
-    def on_command_line(self, command_line):
+    def _on_command_line(self, command_line):
+        """Called when the application is launched from the command line"""
         options = command_line.get_options_dict()
 
         if options.contains("offline"):
@@ -138,86 +140,80 @@ class Application(Gtk.Application):
         self.activate()
         return 0
 
-    def on_shutdown(self):
+    def _on_shutdown(self):
+        """Called when the application is closed"""
         self.window.close()
 
-        #self.synchronize_library(update=False)
+        self.synchronize_library(update=False)
 
         Gtk.Application.do_shutdown(self)
 
+    def _synchronization_end(self, message_id):
+        """Called at the end of the synchronization"""
+        self.window.statusbox.remove(message_id)
+
+        #self.window.podcast_list.update()
+        #self.window.episode_list.update()
+        #self.window.update_counts()
+
+    def _synchronization_thread(self, message_id, update=True, scan=False):
+        acquired = self.synchronization_lock.acquire(blocking=False)
+        if not acquired:
+            # There is already another synchronization thread running : abort
+            return
+
+        try:
+            client = GPodderClient()
+
+            # Check internet connection
+            if not self.online:
+                return
+            if not client.check_connection():
+                self.set_network_state(False, error=True)
+                return
+
+            GObject.idle_add(self.window.statusbox.add,
+                             "Synchronizing subscriptions...", message_id)
+            client.connect()
+            client.synchronize_subscriptions()
+
+            if update:
+                GObject.idle_add(self.window.statusbox.edit,
+                                 message_id, "Updating library...")
+                library.update()
+
+            if update and scan:
+                GObject.idle_add(self.window.statusbox.edit,
+                                 message_id, "Scanning library...")
+                library.scan()
+
+            GObject.idle_add(self.window.statusbox.edit,
+                             message_id, "Synchronizing episode actions...")
+            if update:
+                client.synchronize_episode_actions()
+            else:
+                client.push_episode_actions()
+        finally:
+            GObject.idle_add(self._synchronization_end, message_id)
+            self.synchronization_lock.release()
+
+    def synchronize_library(self, update=True, scan=False):
+        """Synchronize the podcasts library with gpodder.net"""
+        message_id = self.window.statusbox.get_next_message_id()
+
+        thread = threading.Thread(target=self._synchronization_thread,
+                                  args=(message_id, update, scan))
+        thread.start()
+
+        return True
+
     def force_synchronization(self):
-        """
-        Synchronize the podcasts library with gpodder.net, taking into account
-        every episode action and every subscriptions changes.
-        """
+        """Synchronize the podcasts library with gpodder.net, taking into
+        account every episode action and every subscriptions changes"""
         Config.set_value("gpodder.last_subscription_sync", "0")
         Config.set_value("gpodder.last_episodes_sync", "0")
 
         self.synchronize_library()
-
-    def synchronize_library(self, update=True, scan=False):
-        """
-        Synchronize the podcasts library with gpodder.net.
-        """
-        # Prevent concurrent synchronizations
-        if self.syncing or not self.online:
-            return
-
-        # Test connection
-        if not gpodder.check_connection():
-            self.set_network_state(False, error=True)
-            return
-
-        self.syncing = True
-
-        if self.window:
-            message_id = self.window.statusbox.add("Synchronizing subscriptions...")
-        else:
-            message_id = None
-
-        def _update():
-            if self.window and message_id:
-                self.window.statusbox.edit(message_id, "Updating library...")
-
-        def _synchronize():
-            if self.window and message_id:
-                self.window.statusbox.edit(message_id, "Synchronizing episode actions...")
-
-        def _end():
-            if self.window:
-                if message_id:
-                    self.window.statusbox.remove(message_id)
-
-                self.window.podcast_list.update()
-                self.window.episode_list.update()
-                self.window.update_counts()
-
-            self.syncing = False
-
-        def _thread():
-            # TODO : handle errors
-            if update:
-                gpodder.synchronize_subscriptions()
-
-                GObject.idle_add(_update)
-                library.update()
-                if scan:
-                    library.scan()
-
-                GObject.idle_add(_synchronize)
-                gpodder.synchronize_episode_actions()
-            else:
-                gpodder.synchronize_subscriptions()
-
-                GObject.idle_add(_synchronize)
-                gpodder.push_episode_actions()
-
-            GObject.idle_add(_end)
-
-        thread = threading.Thread(target=_thread)
-        thread.start()
-
-        return True
 
     def add_podcast(self):
         """
