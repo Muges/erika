@@ -154,7 +154,7 @@ class Application(Gtk.Application):
 
         #self.window.podcast_list.update()
         #self.window.episode_list.update()
-        #self.window.update_counts()
+        self.window.update_counts()
 
     def _synchronization_thread(self, message_id, update=True, scan=False):
         acquired = self.synchronization_lock.acquire(blocking=False)

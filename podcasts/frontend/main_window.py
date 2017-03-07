@@ -35,7 +35,7 @@ from podcasts.__version__ import __appname__
 #from podcasts.frontend.player_widgets import PlayerWidgets
 #from podcasts.frontend.details import Details
 from podcasts.frontend.widgets import StatusBox, NetworkButton, Paned
-#from podcasts.library import Library
+from podcasts.library.models import Episode
 from podcasts.util import cb
 
 
@@ -91,7 +91,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.network_button = NetworkButton()
 
         self.counts = Gtk.Label()
-        #self.update_counts()
+        self.update_counts()
 
         self.statusbox = StatusBox()
 
@@ -137,8 +137,7 @@ class MainWindow(Gtk.ApplicationWindow):
         """
         Update counts label
         """
-        library = Library()
-        new, played, total = library.get_counts()
+        new, played, total = Episode.get_counts()
         unplayed = total - played
         self.counts.set_text("{} new episodes, {} unplayed".format(
             new,

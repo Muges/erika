@@ -181,6 +181,24 @@ class Episode(BaseModel):
 
         logger.warning("No match found.")
 
+    @staticmethod
+    def get_counts():
+        """Get the episodes counts
+
+        Returns
+        -------
+        int
+            The number of new episodes
+        int
+            The number of played episodes
+        int
+            The total number of episodes
+        """
+        new = Episode.select().where(Episode.new == True).count()
+        played = Episode.select().where(Episode.played == True).count()
+        total = Episode.select().count()
+        return new, played, total
+
     def import_file(self, path):
         """Import the episode's audio file in the library
 
