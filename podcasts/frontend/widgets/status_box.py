@@ -116,6 +116,9 @@ class StatusBox(Gtk.HBox):
             The id of the message.
         """
         index = self._get_message_index(message_id)
+        if index is None:
+            # The message does not exist
+            return
 
         # Remove the label
         label = self.messages.pop(message_id)
