@@ -105,7 +105,7 @@ class MainWindow(Gtk.ApplicationWindow):
         headerbar.pack_start(self.menu_button)
         #headerbar.pack_start(self.player_widgets.controls)
         #headerbar.pack_end(self.downloads_button)
-        vbox.pack_start(headerbar, False, False, 0)
+        self.set_titlebar(headerbar)
 
         right_paned = Paned()
         right_paned.set_limit_width(700)
