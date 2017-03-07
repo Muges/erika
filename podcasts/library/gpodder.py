@@ -27,6 +27,7 @@ Synchronization with gpodder.net
 """
 
 import logging
+import socket
 from mygpoclient.api import MygPodderClient
 from mygpoclient.simple import MissingCredentials
 from mygpoclient.http import Unauthorized
@@ -86,6 +87,18 @@ class GPodderClient(object):
                     self.configuration.password,
                     self.configuration.hostname,
                     self.client or connecting))
+
+    def check_connection(self, timeout=2):
+        """Check that there is a network connection"""
+        hostname = self.configuration.hostname or "gpodder.net"
+        try:
+            # Resolve the hostname
+            host = socket.gethostbyname(hostname)
+            # Connect to the server
+            socket.create_connection((host, 80), timeout)
+            return True
+        except Exception:  # pylint: disable=broad-except
+            return False
 
     def connect(self, raise_exception=False):
         """Connect to gpodder.net
