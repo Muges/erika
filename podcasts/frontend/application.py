@@ -23,7 +23,6 @@
 # SOFTWARE.
 
 import logging
-
 import threading
 from gi.repository import Gio
 from gi.repository import GLib
@@ -31,10 +30,11 @@ from gi.repository import GObject
 from gi.repository import Gtk
 
 from podcasts.frontend.main_window import MainWindow
-from podcasts.frontend import preferences
-from podcasts.library import Library
-from podcasts.opml import import_opml, export_opml
-from podcasts import gpodder
+#from podcasts.frontend import preferences
+from podcasts.library import Config
+from podcasts.library.opml import import_opml, export_opml
+from podcasts.library.gpodder import GPodderClient
+from podcasts.util import cb
 
 
 class Application(Gtk.Application):
@@ -49,7 +49,7 @@ class Application(Gtk.Application):
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_BOOLEAN, GObject.TYPE_BOOLEAN)),
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         Gtk.Application.__init__(self, application_id="fr.muges.podcasts",
                                  flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
 
@@ -63,62 +63,72 @@ class Application(Gtk.Application):
         self.add_main_option("offline", ord("o"), GLib.OptionFlags.NONE,
                              GLib.OptionArg.NONE, "Enable offline mode", None)
 
-    def do_startup(self):
+        self.connect("startup", cb(self.on_startup))
+        self.connect("activate", cb(self.on_activate))
+        self.connect("command-line", cb(self.on_command_line))
+        #self.connect("shutdown", cb(self.on_shutdown))
+
+    def on_startup(self):
+        """Called when the first instance of the application is launched"""
+        # pylint: disable=attribute-defined-outside-init
+
         Gtk.Application.do_startup(self)
 
+        # Creates the actions
         self.add_podcast_action = Gio.SimpleAction.new("add-podcast", None)
         self.add_podcast_action.connect("activate", lambda a, p: self.add_podcast())
         self.add_action(self.add_podcast_action)
 
         action = Gio.SimpleAction.new("import-opml", None)
-        action.connect("activate", lambda a, p: self.import_opml())
+        action.connect("activate", cb(self.import_opml, 2))
         self.add_action(action)
 
         action = Gio.SimpleAction.new("export-opml", None)
-        action.connect("activate", lambda a, p: self.export_opml())
+        action.connect("activate", cb(self.export_opml, 2))
         self.add_action(action)
 
         self.update_action = Gio.SimpleAction.new("update", None)
-        self.update_action.connect("activate", lambda a, p: self.synchronize_library())
+        self.update_action.connect("activate", cb(self.synchronize_library, 2))
         self.add_action(self.update_action)
 
         self.sync_action = Gio.SimpleAction.new("force-synchronization", None)
-        self.sync_action.connect("activate", lambda a, p: self.force_synchronization())
+        self.sync_action.connect("activate", cb(self.force_synchronization, 2))
         self.add_action(self.sync_action)
 
         action = Gio.SimpleAction.new("preferences", None)
-        action.connect("activate", lambda a, p: preferences.run(self.window))
+        #action.connect("activate", cb(preferences.run, 2), self.window)
         self.add_action(action)
 
         action = Gio.SimpleAction.new("quit", None)
-        action.connect("activate", lambda a, p: self.quit())
+        action.connect("activate", cb(self.quit, 2))
         self.add_action(action)
         self.add_accelerator("<Primary>q", "app.quit", None)
 
         if self.prefers_app_menu():
+            # Create the menu
             builder = Gtk.Builder.new_from_file("data/menu.ui")
             self.set_app_menu(builder.get_object("app-menu"))
 
-    def do_activate(self):
-        if not self.window:
-            try:
-                self.window = MainWindow(self)
-            except BaseException:
-                self.logger.exception("Unable to create main window.")
-                self.quit()
-                return
+        try:
+            self.window = MainWindow(self)
+        except BaseException:
+            self.logger.exception("Unable to create main window.")
+            self.quit()
+            return
 
-            self.set_network_state(self.online)
+    def on_activate(self):
+        """Called when the application is launched"""
+        self.set_network_state(self.online)
 
-            library = Library()
-            interval = library.get_config("library.synchronize_interval")
+        #interval = Config.get_value("library.synchronize_interval")
 
-            self.synchronize_library(scan=True)
-            GObject.timeout_add_seconds(interval*60, self.synchronize_library)
+        #self.synchronize_library(scan=True)
+        #GObject.timeout_add_seconds(interval*60, self.synchronize_library)
 
+        self.window.show_all()
         self.window.present()
 
-    def do_command_line(self, command_line):
+    def on_command_line(self, command_line):
         options = command_line.get_options_dict()
 
         if options.contains("offline"):
@@ -128,11 +138,10 @@ class Application(Gtk.Application):
         self.activate()
         return 0
 
-    def do_shutdown(self):
-        if self.window:
-            self.window.close()
+    def on_shutdown(self):
+        self.window.close()
 
-        self.synchronize_library(update=False)
+        #self.synchronize_library(update=False)
 
         Gtk.Application.do_shutdown(self)
 
@@ -141,9 +150,8 @@ class Application(Gtk.Application):
         Synchronize the podcasts library with gpodder.net, taking into account
         every episode action and every subscriptions changes.
         """
-        library = Library()
-        library.set_config("gpodder.last_subscription_sync", "0")
-        library.set_config("gpodder.last_episodes_sync", "0")
+        Config.set_value("gpodder.last_subscription_sync", "0")
+        Config.set_value("gpodder.last_episodes_sync", "0")
 
         self.synchronize_library()
 
@@ -192,18 +200,17 @@ class Application(Gtk.Application):
                 gpodder.synchronize_subscriptions()
 
                 GObject.idle_add(_update)
-                library = Library()
-                library.update_podcasts()
+                library.update()
                 if scan:
                     library.scan()
 
                 GObject.idle_add(_synchronize)
                 gpodder.synchronize_episode_actions()
             else:
-                gpodder.upload_subscriptions()
+                gpodder.synchronize_subscriptions()
 
                 GObject.idle_add(_synchronize)
-                gpodder.upload_episode_actions()
+                gpodder.push_episode_actions()
 
             GObject.idle_add(_end)
 
@@ -351,17 +358,10 @@ class Application(Gtk.Application):
         thread = threading.Thread(target=_export, args=(filename,))
         thread.start()
 
-    def _on_import_opml(self, action, param):
-        if self.window:
-            self.window.import_opml()
-
-    def _on_export_opml(self, action, param):
-        if self.window:
-            self.window.export_opml()
-
     def set_network_state(self, online=True, error=False):
         if online and not error:
-            error = not gpodder.check_connection()
+            client = GPodderClient()
+            error = not client.check_connection()
         if error:
             online = False
 
@@ -374,4 +374,5 @@ class Application(Gtk.Application):
         self.emit('network-state-changed', online, error)
 
     def get_online(self):
+        """Return True if the application is connected to the internet"""
         return self.online

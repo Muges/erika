@@ -29,15 +29,17 @@ Podcast manager
 import logging
 import os
 
+from . import frontend
 from . import library
 from .config import CONFIG_DIR
-#from . import frontend
+from .__version__ import __appname__, __version__
 
 
 def run():
     """Start the application"""
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
+    logger.propagate = False
 
     # Display logs on stdout
     handler = logging.StreamHandler()
@@ -54,4 +56,4 @@ def run():
 
     library.initialize()
 
-    #frontend.run()
+    frontend.run()

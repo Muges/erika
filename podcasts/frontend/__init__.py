@@ -28,7 +28,6 @@ GTK frontend
 
 import sys
 
-from gi.repository import Gtk
 from gi.repository import Gst
 from gi.repository import GObject
 
