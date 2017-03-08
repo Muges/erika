@@ -31,6 +31,7 @@ import os.path
 import requests
 from peewee import (BooleanField, DateTimeField, IntegerField, ForeignKeyField,
                     TextField, Proxy, DoesNotExist)
+from playhouse.hybrid import hybrid_property
 
 from podcasts.image import Image
 from podcasts.util import format_duration, sanitize_filename
@@ -134,6 +135,16 @@ class Episode(BaseModel):
             return self.podcast.image
 
         return Image(self.image_data)
+
+    @hybrid_property
+    def downloaded(self):
+        """True if the episode has been downloaded"""
+        return self.local_path != None
+
+    @downloaded.expression
+    def downloaded(self):
+        """True if the episode has been downloaded"""
+        return self.local_path.is_null(False)
 
     @classmethod
     def get_matching(cls, path):

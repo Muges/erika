@@ -39,11 +39,12 @@ class FilterButton(Gtk.ToggleButton):
      - filter true (e.g. show new episodes);
      - filter false (e.g. show non new episodes).
     """
-    def __init__(self, icon_name, filter_name):
+    def __init__(self, icon_name, name, key):
         Gtk.ToggleButton.__init__(self)
         self.connect("button-press-event", FilterButton._on_button_press_event)
 
-        self.filter_name = filter_name
+        self.name = name
+        self.key = key
         self.state = None
 
         self.inactive_image = Gtk.Image.new_from_icon_name(
@@ -69,10 +70,10 @@ class FilterButton(Gtk.ToggleButton):
 
         if self.state is None:
             self.set_image(self.inactive_image)
-            self.set_tooltip_text("Show only {}".format(self.filter_name))
+            self.set_tooltip_text("Show only {}".format(self.name))
         elif self.state:
             self.set_image(self.filter_true_image)
-            self.set_tooltip_text("Hide {}".format(self.filter_name))
+            self.set_tooltip_text("Hide {}".format(self.name))
         else:
             self.set_image(self.filter_false_image)
             self.set_tooltip_text("Show all")

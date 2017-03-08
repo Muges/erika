@@ -79,7 +79,7 @@ class EpisodeList(Gtk.VBox):
         self.list = IndexedListBox()
         self.list.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
         self.list.set_sort_func(self.sort_func)
-        #self.list.set_filter_func(self.filter_func)
+        self.list.set_filter_func(self.filter_func)
         self.list.connect("popup-menu", self._on_popup_menu)
         self.list.connect("selected-rows-changed",
                           self._on_selected_rows_changed)
@@ -90,17 +90,24 @@ class EpisodeList(Gtk.VBox):
         # Filter and sort buttons
         self.action_bar = Gtk.ActionBar()
 
-        filter_new = FilterButton("feed-unread-symbolic", "new episodes")
-        filter_new.connect("toggled", self._filter_toggled, "new")
+        filter_new = FilterButton("feed-unread-symbolic", "new episodes",
+                                  lambda episode: episode.new)
+        filter_new.connect("toggled", cb(self.list.invalidate_filter))
         self.action_bar.pack_start(filter_new)
 
-        filter_played = FilterButton("media-playback-start-symbolic", "played episodes")
-        filter_played.connect("toggled", self._filter_toggled, "played")
+        filter_played = FilterButton("media-playback-start-symbolic",
+                                     "played episodes",
+                                     lambda episode: episode.played)
+        filter_played.connect("toggled", cb(self.list.invalidate_filter))
         self.action_bar.pack_start(filter_played)
 
-        filter_downloaded = FilterButton("document-save-symbolic", "downloaded episodes")
-        filter_downloaded.connect("toggled", self._filter_toggled, "downloaded")
+        filter_downloaded = FilterButton("document-save-symbolic",
+                                         "downloaded episodes",
+                                         lambda episode: episode.downloaded)
+        filter_downloaded.connect("toggled", cb(self.list.invalidate_filter))
         self.action_bar.pack_start(filter_downloaded)
+
+        self.filters = [filter_new, filter_played, filter_downloaded]
 
         self.sort = SortButton("publication date")
         self.sort.connect("clicked", cb(self.list.invalidate_sort))
@@ -140,10 +147,25 @@ class EpisodeList(Gtk.VBox):
 
             episodes = self.current_podcast.episodes
 
+            order_clauses = []
+
+            # Put the results that are not shown at the end (so that
+            # they can be shown if the user changes the filter, but do
+            # not delay the display of the ones that are currently
+            # visible)
+            for filter_button in self.filters:
+                if filter_button.get_state() is True:
+                    order_clauses.append(filter_button.key(Episode).desc())
+                elif filter_button.get_state() is False:
+                    order_clauses.append(filter_button.key(Episode).asc())
+
+            # Sort by date
             if self.sort.get_descending():
-                episodes = episodes.order_by(Episode.pubdate.desc())
+                order_clauses.append(Episode.pubdate.desc())
             else:
-                episodes = episodes.order_by(Episode.pubdate.asc())
+                order_clauses.append(Episode.pubdate.asc())
+
+            episodes = episodes.order_by(*order_clauses)
 
             self._load_by_chunks(iter(episodes), self.list.get_ids())
 
@@ -258,18 +280,10 @@ class EpisodeList(Gtk.VBox):
         bool
             True if the row should be visible.
         """
-        new = self.filtersort.get_filter("new")
-        if new is not None and row.episode.new != new:
-            return False
-
-        played = self.filtersort.get_filter("played")
-        if played is not None and row.episode.played != played:
-            return False
-
-        downloaded = self.filtersort.get_filter("downloaded")
-        episode_downloaded = row.episode.local_path is not None
-        if downloaded is not None and episode_downloaded != downloaded:
-            return False
+        for filter_button in self.filters:
+            state = filter_button.get_state()
+            if state is not None and filter_button.key(row.episode) != state:
+                return False
 
         return True
 
@@ -446,20 +460,6 @@ class EpisodeList(Gtk.VBox):
                     action = EpisodeAction.new(row.episode, "download")
                     library.commit([row.episode, action])
                     row.update()
-
-    def _filter_toggled(self, button, field):
-        """
-        Called when a filter button is clicked.
-
-        Parameters
-        ----------
-        button : FilterButton
-            The button that was clicked
-        field : str
-            The field that should be modified in the FilterSort object.
-        """
-        self.filtersort.filter(field, button.get_state())
-        self.list.invalidate_filter()
 
     def set_player_progress(self, position, duration):
         """
