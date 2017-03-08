@@ -31,9 +31,7 @@ from gi.repository import Gdk
 
 
 class ListBox(Gtk.ListBox):
-    """
-    A Gtk.ListBox patched to handle multiple selection
-    """
+    """A Gtk.ListBox patched to handle multiple selection"""
     def __init__(self):
         Gtk.ListBox.__init__(self)
         self.connect("button-press-event", ListBox._on_button_press_event)
@@ -43,19 +41,20 @@ class ListBox(Gtk.ListBox):
         self.last_focused = None
         self.filter_func = None
 
-    def remove(self, child):
+    def remove(self, child):  # pylint: disable=arguments-differ
+        """Remove a child element"""
         if self.last_clicked == child:
             self.last_clicked = None
         if self.last_focused == child:
             self.last_focused = None
         Gtk.ListBox.remove(self, child)
 
-    def set_filter_func(self, filter_func):
+    def set_filter_func(self, filter_func):  # pylint: disable=arguments-differ
         # Keep a references to the filter function
         self.filter_func = filter_func
         Gtk.ListBox.set_filter_func(self, filter_func)
 
-    def invalidate_filter(self):
+    def invalidate_filter(self):  # pylint: disable=arguments-differ
         Gtk.ListBox.invalidate_filter(self)
 
         if self.last_clicked and not self.filter_func(self.last_clicked):
@@ -141,8 +140,7 @@ class ListBox(Gtk.ListBox):
         return True
 
     def _add_to_selection(self, row):
-        """
-        Add the row to the current selection
+        """Add the row to the current selection
 
         Parameters
         ----------
@@ -155,8 +153,7 @@ class ListBox(Gtk.ListBox):
         row.grab_focus()
 
     def _select_single(self, row):
-        """
-        Add the row to the current selection
+        """Add the row to the current selection
 
         Parameters
         ----------
@@ -171,9 +168,8 @@ class ListBox(Gtk.ListBox):
         row.grab_focus()
 
     def _select_interval(self, row):
-        """
-        Select the all the rows between the one that was clicked last and the
-        one in the parameters.
+        """Select the all the rows between the one that was clicked last and
+        the one in the parameters
 
         Parameters
         ----------

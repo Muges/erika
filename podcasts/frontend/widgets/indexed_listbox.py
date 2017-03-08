@@ -23,17 +23,16 @@
 # SOFTWARE.
 
 """
-A ListBox whose rows are indexed.
+A ListBox whose rows are indexed
 """
 
 import logging
 
 from podcasts.frontend.widgets.listbox import ListBox
 
+
 class IndexedListBox(ListBox):
-    """
-    A ListBox whose rows are indexed.
-    """
+    """A ListBox whose rows are indexed"""
     def __init__(self):
         super().__init__()
         self.logger = logging.getLogger(
@@ -42,8 +41,7 @@ class IndexedListBox(ListBox):
         self.rows = {}
 
     def get_ids(self):
-        """
-        Return the ids of all the rows.
+        """Return the ids of all the rows
 
         Returns
         -------
@@ -52,8 +50,7 @@ class IndexedListBox(ListBox):
         return set(self.rows.keys())
 
     def get_row(self, row_id):
-        """
-        Return the row certain id
+        """Return a row given its id
 
         Parameters
         ----------
@@ -75,8 +72,7 @@ class IndexedListBox(ListBox):
         return self.rows[row_id]
 
     def add_with_id(self, row, row_id):
-        """
-        Add a row certain id
+        """Add a row with a certain id
 
         Parameters
         ----------
@@ -97,8 +93,7 @@ class IndexedListBox(ListBox):
         self.add(row)
 
     def remove_id(self, row_id):
-        """
-        Remove a row with a certain id
+        """Remove a row given its id
 
         Parameters
         ----------
@@ -118,9 +113,7 @@ class IndexedListBox(ListBox):
         self.remove(row)
 
     def clear(self):
-        """
-        Remove all the rows.
-        """
+        """Remove all the rows"""
         for child in self.get_children():
             child.destroy()
 
