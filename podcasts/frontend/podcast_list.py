@@ -156,7 +156,7 @@ class PodcastList(Gtk.VBox):
 
         self.list.invalidate_sort()
 
-    def update_podcast(self, podcast_id):
+    def update_podcast(self, podcast):
         """Update a podcast
 
         Parameters
@@ -165,7 +165,7 @@ class PodcastList(Gtk.VBox):
             The id of the podcast
         """
         try:
-            row = self.list.get_row(podcast_id)
+            row = self.list.get_row(podcast.id)
         except ValueError:
             pass
         else:

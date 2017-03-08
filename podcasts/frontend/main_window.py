@@ -171,5 +171,5 @@ class MainWindow(Gtk.ApplicationWindow):
         """
         Called when an episode is updated by a widget
         """
-        self.podcast_list.update_podcast(episode.podcast_id)
+        self.podcast_list.update_podcast(episode.podcast)
         self.episode_list.update_episode(episode)
