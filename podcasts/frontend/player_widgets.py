@@ -32,7 +32,7 @@ from gi.repository import Gtk
 from gi.repository import GLib
 
 from podcasts.__version__ import __appname__
-from podcasts.util import format_duration
+from podcasts.util import cb, format_duration
 from podcasts.frontend.player import Player
 
 
@@ -116,62 +116,59 @@ class PlayerTitle(GObject.Object):
 
         self.set_progress(position, duration)
 
-class PlayerControls(GObject.Object):
+
+class PlayerControls(Gtk.Box):
+    """Widget containing buttons to control the player"""
     def __init__(self, player):
+        super().__init__()
+        self.set_orientation(Gtk.Orientation.HORIZONTAL)
+        self.set_no_show_all(True)
+
         self.player = player
 
-        builder = Gtk.Builder()
-        builder.add_from_file("data/player_controls.ui")
-        builder.connect_signals(self)
+        backward = Gtk.Button.new_from_icon_name(
+            "media-seek-backward-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+        backward.connect("clicked", cb(self.player.seek_relative),
+                         -30 * Gst.SECOND)
+        backward.show()
 
-        self.controls = builder.get_object("controls")
+        self.play = Gtk.Button.new_from_icon_name(
+            "media-playback-start-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+        self.play.connect("clicked", cb(self.player.play))
 
-        self.play = builder.get_object("play")
-        self.pause = builder.get_object("pause")
+        self.pause = Gtk.Button.new_from_icon_name(
+            "media-playback-pause-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+        self.pause.connect("clicked", cb(self.player.pause))
 
-        self.set_state(None, Player.STOPPED)
+        forward = Gtk.Button.new_from_icon_name(
+            "media-seek-forward-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+        forward.connect("clicked", cb(self.player.seek_relative),
+                        30 * Gst.SECOND)
+        forward.show()
 
-    def set_state(self, episode, state):
-        """
-        Set the current state (called by the player)
+        self.pack_start(backward, False, True, 0)
+        self.pack_start(self.play, False, True, 0)
+        self.pack_start(self.pause, False, True, 0)
+        self.pack_start(forward, False, True, 0)
+
+        self.set_state(Player.STOPPED)
+
+    def set_player_state(self, state):
+        """Called when the state of the player changes
 
         Parameters
         ----------
-        episode : Episode
-            The episode currently being played.
         state : int
+            The state of the player (Player.BUFFERING, Player.STOPPED,
+            Player.PAUSED, or Player.PLAYING)
         """
         if state in [Player.PLAYING, Player.PAUSED]:
             self.pause.set_visible(state == Player.PLAYING)
             self.play.set_visible(state == Player.PAUSED)
-            self.controls.show()
+            self.show()
         elif state == Player.BUFFERING:
-            self.controls.hide()
+            self.hide()
         elif state == Player.STOPPED:
-            self.controls.hide()
+            self.hide()
         else:
             raise ValueError("Invalid player state : {}.".format(state))
-
-    def _on_play_clicked(self, button):
-        """
-        Called when the play button is clicked
-        """
-        self.player.play()
-
-    def _on_pause_clicked(self, button):
-        """
-        Called when the pause button is clicked
-        """
-        self.player.pause()
-
-    def _on_forward_clicked(self, button):
-        """
-        Called when the forward button is clicked
-        """
-        self.player.seek_relative(30 * Gst.SECOND)
-
-    def _on_backward_clicked(self, button):
-        """
-        Called when the backward button is clicked
-        """
-        self.player.seek_relative(-30 * Gst.SECOND)
