@@ -67,7 +67,7 @@ class Application(Gtk.Application):
         self.connect("startup", cb(self._on_startup))
         self.connect("activate", cb(self._on_activate))
         self.connect("command-line", cb(self._on_command_line))
-        #self.connect("shutdown", cb(self._on_shutdown))
+        self.connect("shutdown", cb(self._on_shutdown))
 
     def _on_startup(self):
         """Called when the first instance of the application is launched"""
@@ -114,11 +114,13 @@ class Application(Gtk.Application):
             self.window = MainWindow(self)
         except BaseException:
             self.logger.exception("Unable to create main window.")
-            self.quit()
-            return
 
     def _on_activate(self):
         """Called when the application is launched"""
+        if self.window is None:
+            self.quit()
+            return
+
         self.set_network_state(self.online)
 
         interval = Config.get_value("library.synchronize_interval")
@@ -142,6 +144,9 @@ class Application(Gtk.Application):
 
     def _on_shutdown(self):
         """Called when the application is closed"""
+        if self.window is None:
+            return
+
         self.window.close()
 
         self.synchronize_library(update=False)

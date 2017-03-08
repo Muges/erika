@@ -36,24 +36,16 @@ from podcasts.util import format_duration
 from podcasts.frontend.player import Player
 
 
-class PlayerWidgets(GObject.Object):
-    """
-    Object handling the playback interface
-    """
+class PlayerTitle(GObject.Object):
     def __init__(self, player):
         self.player = player
-        self.state = None
         self.seeking = False
 
         builder = Gtk.Builder()
-        builder.add_from_file("data/player.ui")
+        builder.add_from_file("data/player_title.ui")
         builder.connect_signals(self)
 
-        self.controls = builder.get_object("controls")
         self.title = builder.get_object("title")
-
-        self.play = builder.get_object("play")
-        self.pause = builder.get_object("pause")
 
         self.playing = [
             builder.get_object("playing_1"),
@@ -66,8 +58,7 @@ class PlayerWidgets(GObject.Object):
         self.set_state(None, Player.STOPPED)
 
     def set_state(self, episode, state):
-        """
-        Set the current state (called by the player)
+        """Set the current state (called by the player)
 
         Parameters
         ----------
@@ -75,8 +66,6 @@ class PlayerWidgets(GObject.Object):
             The episode currently being played.
         state : int
         """
-        self.state = state
-
         if episode:
             for playing in self.playing:
                 playing.set_markup(
@@ -85,17 +74,11 @@ class PlayerWidgets(GObject.Object):
                         GLib.markup_escape_text(episode.podcast.title)))
 
         if state in [Player.PLAYING, Player.PAUSED]:
-            self.pause.set_visible(state == Player.PLAYING)
-            self.play.set_visible(state == Player.PAUSED)
-            self.controls.show()
-            self.title.set_visible_child_name('player')
-
             self._update_progress()
+            self.title.set_visible_child_name('player')
         elif state == Player.BUFFERING:
-            self.controls.hide()
             self.title.set_visible_child_name('loading')
         elif state == Player.STOPPED:
-            self.controls.hide()
             self.title.set_visible_child_name('title')
         else:
             raise ValueError("Invalid player state : {}.".format(state))
@@ -108,32 +91,6 @@ class PlayerWidgets(GObject.Object):
 
         self.position.set_text(format_duration(position // Gst.SECOND))
         self.duration.set_text(format_duration(duration // Gst.SECOND))
-
-    def _on_play_clicked(self, button):
-        """
-        Called when the play button is clicked
-        """
-        self.player.play()
-
-    def _on_pause_clicked(self, button):
-        """
-        Called when the pause button is clicked
-        """
-        self.player.pause()
-
-    def _on_forward_clicked(self, button):
-        """
-        Called when the forward button is clicked
-        """
-        self.player.seek_relative(30 * Gst.SECOND)
-        self._update_progress()
-
-    def _on_backward_clicked(self, button):
-        """
-        Called when the backward button is clicked
-        """
-        self.player.seek_relative(-30 * Gst.SECOND)
-        self._update_progress()
 
     def _on_seeking_start(self, scale, event):
         """
@@ -158,3 +115,63 @@ class PlayerWidgets(GObject.Object):
         duration = self.player.get_duration()
 
         self.set_progress(position, duration)
+
+class PlayerControls(GObject.Object):
+    def __init__(self, player):
+        self.player = player
+
+        builder = Gtk.Builder()
+        builder.add_from_file("data/player_controls.ui")
+        builder.connect_signals(self)
+
+        self.controls = builder.get_object("controls")
+
+        self.play = builder.get_object("play")
+        self.pause = builder.get_object("pause")
+
+        self.set_state(None, Player.STOPPED)
+
+    def set_state(self, episode, state):
+        """
+        Set the current state (called by the player)
+
+        Parameters
+        ----------
+        episode : Episode
+            The episode currently being played.
+        state : int
+        """
+        if state in [Player.PLAYING, Player.PAUSED]:
+            self.pause.set_visible(state == Player.PLAYING)
+            self.play.set_visible(state == Player.PAUSED)
+            self.controls.show()
+        elif state == Player.BUFFERING:
+            self.controls.hide()
+        elif state == Player.STOPPED:
+            self.controls.hide()
+        else:
+            raise ValueError("Invalid player state : {}.".format(state))
+
+    def _on_play_clicked(self, button):
+        """
+        Called when the play button is clicked
+        """
+        self.player.play()
+
+    def _on_pause_clicked(self, button):
+        """
+        Called when the pause button is clicked
+        """
+        self.player.pause()
+
+    def _on_forward_clicked(self, button):
+        """
+        Called when the forward button is clicked
+        """
+        self.player.seek_relative(30 * Gst.SECOND)
+
+    def _on_backward_clicked(self, button):
+        """
+        Called when the backward button is clicked
+        """
+        self.player.seek_relative(-30 * Gst.SECOND)
