@@ -62,9 +62,11 @@ class Player(GObject.Object):
         'episode-updated':
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
         'progress-changed':
-            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_LONG, GObject.TYPE_LONG)),
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_LONG,
+                                              GObject.TYPE_LONG)),
         'state-changed':
-            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT, GObject.TYPE_INT,)),
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,
+                                              GObject.TYPE_INT,)),
     }
 
     def __init__(self):
@@ -76,7 +78,6 @@ class Player(GObject.Object):
         self.episode = None
         self.state = Player.STOPPED
         self._started = 0
-        self._position = 0
         self._duration = 0
 
         self.progress_timer = None
@@ -92,8 +93,7 @@ class Player(GObject.Object):
         bus.connect("message", self._on_message)
 
     def play_episode(self, episode):
-        """
-        Start the playback of an episode
+        """Start the playback of an episode
 
         Parameters
         ----------
@@ -116,9 +116,7 @@ class Player(GObject.Object):
         self.progress_timer = GObject.timeout_add(200, self._emit_progress)
 
     def stop(self):
-        """
-        Stop the playback of an episode.
-        """
+        """Stop the playback of an episode"""
         if self.progress_timer:
             GLib.source_remove(self.progress_timer)
             self.progress_timer = None
@@ -151,13 +149,10 @@ class Player(GObject.Object):
 
         self.player.set_state(Gst.State.NULL)
         self.episode = None
-        self._position = 0
         self._duration = 0
 
     def get_duration(self):
-        """
-        Return the duration of the current episode, or 0 if it is unknown.
-        """
+        """Return the duration of the current episode, or 0 if it is unknown"""
         if not self._duration:
             success, duration = self.player.query_duration(Gst.Format.TIME)
             if success:
@@ -166,30 +161,25 @@ class Player(GObject.Object):
         return self._duration
 
     def get_position(self):
-        """
-        Return the current playback position, or 0 if it is unknown.
-        """
+        """Return the current playback position, or 0 if it is unknown"""
         success, position = self.player.query_position(Gst.Format.TIME)
         if success:
-            self._position = position
+            return position
 
-        return self._position
+        return 0
 
     def get_seconds_duration(self):
-        """
-        Return the duration of the current episode in seconds, or 0 if it is unknown.
-        """
+        """Return the duration of the current episode in seconds, or 0 if it
+        is unknown"""
         return self.get_duration() // Gst.SECOND
 
     def get_seconds_position(self):
-        """
-        Return the current playback position in seconds, or 0 if it is unknown.
-        """
+        """Return the current playback position in seconds, or 0 if it is
+        unknown"""
         return self.get_position() // Gst.SECOND
 
     def percent_to_time(self, percent):
-        """
-        Convert a time in format Gst.Format.PERCENT to Gst.Format.TIME
+        """Convert a time in format Gst.Format.PERCENT to Gst.Format.TIME
 
         Parameters
         ----------
@@ -199,9 +189,7 @@ class Player(GObject.Object):
         return percent * duration / 1000000
 
     def get_buffered(self):
-        """
-        Return the percentage of the episode that has been buffered
-        """
+        """Return the percentage of the episode that has been buffered"""
         position = self.player.query_position(Gst.Format.PERCENT)[1] or 0
 
         query = Gst.Query.new_buffering(Gst.Format.PERCENT)
@@ -210,16 +198,15 @@ class Player(GObject.Object):
             if stop >= position:
                 return self.percent_to_time(stop)
 
-            for n in range(0, query.get_n_buffering_ranges()):
-                stop = query.parse_nth_buffering_range(n)[2]
+            for range_index in range(0, query.get_n_buffering_ranges()):
+                stop = query.parse_nth_buffering_range(range_index)[2]
                 if stop >= position:
                     return self.percent_to_time(stop)
 
         return self.get_position()
 
     def seek(self, position):
-        """
-        Send a seek event to the player.
+        """Send a seek event to the player
 
         Parameters
         ----------
@@ -229,16 +216,13 @@ class Player(GObject.Object):
         if position < 0:
             position = 0
 
-        self._position = int(position)
-
         self.player.seek_simple(
             Gst.Format.TIME,
             Gst.SeekFlags.FLUSH | Gst.SeekFlags.KEY_UNIT,
             position)
 
     def seek_relative(self, offset):
-        """
-        Send a seek event relative to the current position.
+        """Send a seek event relative to the current position
 
         Parameters
         ----------
@@ -250,9 +234,7 @@ class Player(GObject.Object):
         self.seek(position)
 
     def _on_message(self, bus, message):
-        """
-        Handle gstreamer bus messages
-        """
+        """Handle gstreamer bus messages"""
         if message.type == Gst.MessageType.EOS:
             # End of stream
             self.stop()
@@ -260,7 +242,7 @@ class Player(GObject.Object):
             # The stream ended because of an error
             self.stop()
 
-            err, debug = message.parse_error()
+            err, _ = message.parse_error()
             self.logger.error(err.message)
             self.logger.error("Debugging info: %s", err.message)
         elif message.type == Gst.MessageType.DURATION_CHANGED:
@@ -269,7 +251,7 @@ class Player(GObject.Object):
             if success:
                 self._duration = duration
         elif message.type == Gst.MessageType.STATE_CHANGED:
-            oldstate, newstate, pending = message.parse_state_changed()
+            oldstate, newstate, _ = message.parse_state_changed()
             if oldstate == newstate:
                 return
 
@@ -289,9 +271,8 @@ class Player(GObject.Object):
                 self.set_state(Player.PAUSED)
 
     def _emit_progress(self):
-        """
-        Emit a progress-changed signal. Called every 200ms during playback.
-        """
+        """Emit a progress-changed signal. Called every 200ms during
+        playback"""
         position = self.get_position()
         duration = self.get_duration()
         self.emit('progress-changed', position, duration)
@@ -299,28 +280,20 @@ class Player(GObject.Object):
         return True
 
     def set_state(self, state):
-        """
-        Set the current state of the player.
-        """
+        """Set the current state of the player"""
         self.state = state
         self.emit('state-changed', self.episode, state)
 
     def play(self):
-        """
-        Start the playback.
-        """
+        """Start the playback"""
         self.player.set_state(Gst.State.PLAYING)
 
     def pause(self):
-        """
-        Pause the playback.
-        """
+        """Pause the playback"""
         self.player.set_state(Gst.State.PAUSED)
 
     def toggle(self):
-        """
-        Toggle between play and pause.
-        """
+        """Toggle between play and pause"""
         if self.state == Player.PLAYING or self.state == Player.BUFFERING:
             self.pause()
         else:
