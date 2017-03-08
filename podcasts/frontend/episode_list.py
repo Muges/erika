@@ -154,9 +154,9 @@ class EpisodeList(Gtk.VBox):
             # not delay the display of the ones that are currently
             # visible)
             for filter_button in self.filters:
-                if filter_button.get_state() is True:
+                if filter_button.state is True:
                     order_clauses.append(filter_button.key(Episode).desc())
-                elif filter_button.get_state() is False:
+                elif filter_button.state is False:
                     order_clauses.append(filter_button.key(Episode).asc())
 
             # Sort by date
@@ -281,7 +281,7 @@ class EpisodeList(Gtk.VBox):
             True if the row should be visible.
         """
         for filter_button in self.filters:
-            state = filter_button.get_state()
+            state = filter_button.state
             if state is not None and filter_button.key(row.episode) != state:
                 return False
 
