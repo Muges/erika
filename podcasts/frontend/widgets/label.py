@@ -23,34 +23,32 @@
 # SOFTWARE.
 
 """
-Label with sane defaults
+A Gtk.Label with sane defaults
 """
 
 from gi.repository import Gtk
 from gi.repository import Pango
 
 
-def Label(lines=1):
-    """
-    Return a Gtk.Label widget.
+class Label(Gtk.Label):
+    """A Gtk.Label with sane defaults
+
+    Creates a label aligned to the left, ellipsized at the end, and with
+    optional line wrapping.
 
     Parameters
     ----------
     lines : Optional[int]
         If lines is set to an integer greater than 1, enable wrapping and limit
         the number of lines that should be displayed.
-
-    Returns
-    -------
-    Gtk.Label
     """
-    label = Gtk.Label()
-    label.set_alignment(xalign=0, yalign=0.5)
-    label.set_ellipsize(Pango.EllipsizeMode.END)
+    def __init__(self, lines=1):
+        super().__init__()
 
-    if lines > 1:
-        label.set_line_wrap(True)
-        label.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
-        label.set_lines(lines)
+        self.set_alignment(xalign=0, yalign=0.5)
+        self.set_ellipsize(Pango.EllipsizeMode.END)
 
-    return label
+        if lines > 1:
+            self.set_line_wrap(True)
+            self.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
+            self.set_lines(lines)

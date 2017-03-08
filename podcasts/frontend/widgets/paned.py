@@ -23,16 +23,15 @@
 # SOFTWARE.
 
 """
-An horizontal Gtk.Paned which becomes vertical if there is not enough width.
+An horizontal Gtk.Paned which becomes vertical if there is not enough width
 """
 
 from gi.repository import Gtk
 
 
 class Paned(Gtk.Paned):
-    """
-    An horizontal Gtk.Paned which becomes vertical if there is not enough width.
-    """
+    """An horizontal Gtk.Paned which becomes vertical if there is not enough
+    width"""
     def __init__(self):
         super().__init__()
 
@@ -41,6 +40,10 @@ class Paned(Gtk.Paned):
         self.connect('size_allocate', Paned._on_size_allocate)
 
     def set_limit_width(self, width):
+        """Set the minimal width of the widget
+
+        If the available width is less than the minimal width, the
+        Paned will be reoriented vertically."""
         self.limit_width = width
 
     def _on_size_allocate(self, allocation):
