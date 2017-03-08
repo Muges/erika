@@ -37,7 +37,7 @@ from podcasts.util import format_duration
 from podcasts.frontend.widgets import (
     Label, IndexedListBox, FilterButton, SortButton
 )
-#from podcasts.frontend.player import Player
+from podcasts.frontend.player import Player
 from podcasts.frontend import htmltopango
 from podcasts.util import cb
 
@@ -217,11 +217,11 @@ class EpisodeList(Gtk.VBox):
                     row.connect("download", self._download)
                     row.set_online(self.application.get_online())
 
-                    #if episode == self.player.episode:
-                    #    # The episode is currently being played
-                    #    row.set_progress(self.player.get_seconds_position(),
-                    #                     self.player.get_seconds_duration())
-                    #    row.set_state(self.player.state)
+                    if episode == self.player.episode:
+                        # The episode is currently being played
+                        row.set_progress(self.player.get_seconds_position(),
+                                         self.player.get_seconds_duration())
+                        row.set_state(self.player.state)
 
                     self.list.add_with_id(row, episode.id)
                 else:
@@ -620,7 +620,7 @@ class EpisodeRow(Gtk.ListBoxRow):
         self.duration.set_sensitive(not self.episode.played)
 
         self.set_progress(self.episode.progress, self.episode.duration)
-        #self.set_state(Player.STOPPED)
+        self.set_state(Player.STOPPED)
 
         # Download button
         self.download_button.set_visible(not self.episode.local_path)

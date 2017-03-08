@@ -33,7 +33,7 @@ from gi.repository import GObject
 from gi.repository import Gst
 from gi.repository import GLib
 
-from podcasts.library import Library, EpisodeAction
+from podcasts.library.models import Config, EpisodeAction
 
 # For some reason this is not defined in the python gstreamer bindings.
 GST_PLAY_FLAG_DOWNLOAD = 1 << 7
@@ -128,8 +128,7 @@ class Player(GObject.Object):
 
         self.set_state(Player.STOPPED)
 
-        library = Library()
-        smart_mark_seconds = library.get_config("player.smart_mark_seconds")
+        smart_mark_seconds = Config.get_value("player.smart_mark_seconds")
 
         position = self.get_position() // Gst.SECOND
         duration = self.get_duration() // Gst.SECOND
@@ -141,9 +140,12 @@ class Player(GObject.Object):
         else:
             # Save progress
             self.episode.progress = position
+        self.episode.save()
 
-        action = EpisodeAction.new(self.episode, "play", self._started, position, duration)
-        library.commit([self.episode, action])
+        action = EpisodeAction(episode=self.episode, action="play",
+                               started=self._started, position=position,
+                               duration=duration)
+        action.save()
 
         self.emit("episode-updated", self.episode)
 
@@ -214,16 +216,6 @@ class Player(GObject.Object):
                     return self.percent_to_time(stop)
 
         return self.get_position()
-
-    def set_state(self, state):
-        """
-        Set the state of the Gstreamer player.
-
-        Parameters
-        ----------
-        state : Gst.State
-        """
-        self.player.set_state(state)
 
     def seek(self, position):
         """
