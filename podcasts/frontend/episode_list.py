@@ -26,31 +26,27 @@
 List of episodes
 """
 
-import os
-
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk
 from gi.repository import Gst
 from gi.repository import Gio
 
-from podcasts.library import Library, EpisodeFilterSort, EpisodeAction
+from podcasts.library.models import Episode, EpisodeAction
 from podcasts.util import format_duration
 from podcasts.frontend.widgets import (
     Label, IndexedListBox, FilterButton, SortButton
 )
-from podcasts.frontend.player import Player
+#from podcasts.frontend.player import Player
 from podcasts.frontend import htmltopango
 from podcasts.util import cb
-from podcasts import tags
 
 SUBTITLE_LINES = 4
 CHUNK_SIZE = 10
 
 
 class EpisodeList(Gtk.VBox):
-    """
-    List of episodes
+    """List of episodes
 
     Signals
     -------
@@ -79,15 +75,14 @@ class EpisodeList(Gtk.VBox):
 
         self.player = player
 
-        self.filtersort = EpisodeFilterSort()
-
         # Episode list
         self.list = IndexedListBox()
         self.list.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
         self.list.set_sort_func(self.sort_func)
-        self.list.set_filter_func(self.filter_func)
+        #self.list.set_filter_func(self.filter_func)
         self.list.connect("popup-menu", self._on_popup_menu)
-        self.list.connect("selected-rows-changed", self._on_selected_rows_changed)
+        self.list.connect("selected-rows-changed",
+                          self._on_selected_rows_changed)
 
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.add_with_viewport(self.list)
@@ -107,9 +102,9 @@ class EpisodeList(Gtk.VBox):
         filter_downloaded.connect("toggled", self._filter_toggled, "downloaded")
         self.action_bar.pack_start(filter_downloaded)
 
-        sort = SortButton("publication date")
-        sort.connect("clicked", self._sort_toggled)
-        self.action_bar.pack_end(sort)
+        self.sort = SortButton("publication date")
+        self.sort.connect("clicked", cb(self.list.invalidate_sort))
+        self.action_bar.pack_end(self.sort)
 
         # Layout
         self.pack_start(self.action_bar, False, False, 0)
@@ -129,16 +124,10 @@ class EpisodeList(Gtk.VBox):
         """
         self.current_podcast = podcast
 
-        # Interrupt the previous update
-        if self.update_id:
-            GLib.source_remove(self.update_id)
-
         # Remove children
         self.list.clear()
 
-        library = Library()
-        self._load_by_chunks(library.get_episodes(podcast, self.filtersort),
-                             set())
+        self.update()
 
     def update(self):
         """
@@ -149,10 +138,14 @@ class EpisodeList(Gtk.VBox):
             if self.update_id:
                 GLib.source_remove(self.update_id)
 
-            library = Library()
-            self._load_by_chunks(
-                library.get_episodes(self.current_podcast, self.filtersort),
-                self.list.get_ids())
+            episodes = self.current_podcast.episodes
+
+            if self.sort.get_descending():
+                episodes = episodes.order_by(Episode.pubdate.desc())
+            else:
+                episodes = episodes.order_by(Episode.pubdate.asc())
+
+            self._load_by_chunks(iter(episodes), self.list.get_ids())
 
     def update_episode(self, episode):
         """
@@ -202,11 +195,11 @@ class EpisodeList(Gtk.VBox):
                     row.connect("download", self._download)
                     row.set_online(self.application.get_online())
 
-                    if episode == self.player.episode:
-                        # The episode is currently being played
-                        row.set_progress(self.player.get_seconds_position(),
-                                         self.player.get_seconds_duration())
-                        row.set_state(self.player.state)
+                    #if episode == self.player.episode:
+                    #    # The episode is currently being played
+                    #    row.set_progress(self.player.get_seconds_position(),
+                    #                     self.player.get_seconds_duration())
+                    #    row.set_state(self.player.state)
 
                     self.list.add_with_id(row, episode.id)
                 else:
@@ -239,7 +232,7 @@ class EpisodeList(Gtk.VBox):
             0 if they are equal,
             1 otherwise
         """
-        if self.filtersort.sort_descending:
+        if self.sort.get_descending():
             delta = 1
         else:
             delta = -1
@@ -468,13 +461,6 @@ class EpisodeList(Gtk.VBox):
         self.filtersort.filter(field, button.get_state())
         self.list.invalidate_filter()
 
-    def _sort_toggled(self, button):
-        """
-        Called when the sort button is clicked.
-        """
-        self.filtersort.sort_descending = button.get_descending()
-        self.list.invalidate_sort()
-
     def set_player_progress(self, position, duration):
         """
         Called when the progress of the playback changes. Updates the
@@ -634,7 +620,7 @@ class EpisodeRow(Gtk.ListBoxRow):
         self.duration.set_sensitive(not self.episode.played)
 
         self.set_progress(self.episode.progress, self.episode.duration)
-        self.set_state(Player.STOPPED)
+        #self.set_state(Player.STOPPED)
 
         # Download button
         self.download_button.set_visible(not self.episode.local_path)

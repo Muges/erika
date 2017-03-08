@@ -30,7 +30,7 @@ from gi.repository import Gtk
 from podcasts.__version__ import __appname__
 #from podcasts.frontend.downloads import DownloadsButton
 from podcasts.frontend.podcast_list import PodcastList
-#from podcasts.frontend.episode_list import EpisodeList
+from podcasts.frontend.episode_list import EpisodeList
 #from podcasts.frontend.player import Player
 #from podcasts.frontend.player_widgets import PlayerWidgets
 #from podcasts.frontend.details import Details
@@ -74,10 +74,12 @@ class MainWindow(Gtk.ApplicationWindow):
         #self.details = Details()
 
         self.podcast_list = PodcastList()
-        #self.podcast_list.connect('podcast-selected', self._on_podcast_selected)
+        #self.episode_list = EpisodeList(self.player)
+        self.episode_list = EpisodeList(None)
+
+        self.podcast_list.connect('podcast-selected', cb(self.episode_list.select))
         #self.podcast_list.connect('podcast-selected', cb(self.details.show_podcast))
 
-        #self.episode_list = EpisodeList(self.player)
         #self.episode_list.connect('episodes-changed',
         #                          self._on_episodes_changed)
         #self.episode_list.connect('download', self._on_episode_download)
@@ -110,7 +112,7 @@ class MainWindow(Gtk.ApplicationWindow):
         right_paned = Paned()
         right_paned.set_limit_width(700)
         right_paned.set_position(800)
-        #right_paned.add1(self.episode_list)
+        right_paned.add1(self.episode_list)
         #right_paned.add2(self.details)
 
         paned = Gtk.Paned()
@@ -150,14 +152,6 @@ class MainWindow(Gtk.ApplicationWindow):
         """
         #self.player.stop()
         #self.downloads_button.stop()
-
-    def _on_podcast_selected(self, podcast_list, podcast):
-        """
-        Called when a podcast is selected in the podcast list.
-
-        Show the podcast's episodes in the episode list.
-        """
-        self.episode_list.select(podcast)
 
     def _on_episodes_changed(self, episodes_list):
         """
