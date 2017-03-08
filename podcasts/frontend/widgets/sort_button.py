@@ -23,15 +23,14 @@
 # SOFTWARE.
 
 """
-A button used to represent sorting options.
+A button used to represent sorting options
 """
 
 from gi.repository import Gtk
 
 
 class SortButton(Gtk.Button):
-    """
-    A button used to represent sorting options.
+    """A button used to represent sorting options
 
     The button has two states : ascending or descending.
     """
@@ -50,8 +49,7 @@ class SortButton(Gtk.Button):
         self.set_descending(True)
 
     def set_descending(self, descending):
-        """
-        Change the state of the button.
+        """Change the state of the button
 
         Parameters
         ----------
@@ -68,8 +66,7 @@ class SortButton(Gtk.Button):
             self.set_tooltip_text("Sort by descending {}".format(self.sort_by))
 
     def get_descending(self):
-        """
-        Return the state of the button.
+        """Return the state of the button
 
         Returns
         -------
@@ -79,9 +76,8 @@ class SortButton(Gtk.Button):
         return self.descending
 
     def _on_clicked(self):
-        """
-        Called when the button is clicked.
+        """Called when the button is clicked
 
-        Change the state of the button.
+        Toggle the state of the button.
         """
         self.set_descending(not self.get_descending())

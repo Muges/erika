@@ -23,7 +23,7 @@
 # SOFTWARE.
 
 """
-A button used to represent network connectivity options.
+A button used to represent network connectivity options
 """
 
 from gi.repository import Gtk
@@ -33,9 +33,7 @@ from podcasts.util import cb
 
 
 class NetworkButton(Gtk.Button):
-    """
-    A button used to represent network connectivity options.
-    """
+    """A button used to represent network connectivity options"""
     def __init__(self):
         Gtk.Button.__init__(self)
         self.set_relief(Gtk.ReliefStyle.NONE)
@@ -49,16 +47,16 @@ class NetworkButton(Gtk.Button):
 
         self.online = True
         self.error = False
-        self.set_state(self.online, self.error)
+        self.set_network_state(self.online, self.error)
 
         application = Gio.Application.get_default()
-        application.connect('network-state-changed', cb(self.set_state))
-        self.connect('clicked', lambda _: application.set_network_state(not self.online))
+        application.connect('network-state-changed', cb(self.set_network_state))
 
-    def set_state(self, online, error):
-        """
-        Change the state of the button.
-        """
+        self.connect('clicked',
+                     lambda _: application.set_network_state(not self.online))
+
+    def set_network_state(self, online, error):
+        """Change the state of the button"""
         self.online = online
         self.error = error
         if self.online:

@@ -95,8 +95,7 @@ class StatusBox(Gtk.HBox):
         self.spinner.start()
 
     def edit(self, message_id, message):
-        """
-        Edit a message.
+        """Edit a message
 
         Parameters
         ----------
@@ -108,7 +107,7 @@ class StatusBox(Gtk.HBox):
         label.set_text(message)
 
     def remove(self, message_id):
-        """Remove a message.
+        """Remove a message
 
         Parameters
         ----------
