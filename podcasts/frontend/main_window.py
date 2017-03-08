@@ -70,7 +70,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.player.connect('progress-changed', cb(self.player_title.set_progress))
         self.player.connect('state-changed',
                             cb(self.player_controls.set_player_state, 2))
-        self.player.connect('state-changed', cb(self.player_title.set_state))
+        self.player.connect('state-changed',
+                            cb(self.player_title.set_player_state))
 
         # Views
         #self.details = Details()
@@ -103,7 +104,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.add(vbox)
 
         headerbar = Gtk.HeaderBar()
-        headerbar.set_custom_title(self.player_title.title)
+        headerbar.set_custom_title(self.player_title)
         headerbar.set_show_close_button(True)
         headerbar.pack_start(self.menu_button)
         headerbar.pack_start(self.player_controls)

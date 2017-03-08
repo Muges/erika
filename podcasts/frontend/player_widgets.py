@@ -36,8 +36,11 @@ from podcasts.util import cb, format_duration
 from podcasts.frontend.player import Player
 
 
-class PlayerTitle(GObject.Object):
+class PlayerTitle(Gtk.Stack):
+    """Widget showing either the applications's name or the current
+    episode being played and a progressbar"""
     def __init__(self, player):
+        super().__init__()
         self.player = player
         self.seeking = False
 
@@ -45,7 +48,14 @@ class PlayerTitle(GObject.Object):
         builder.add_from_file("data/player_title.ui")
         builder.connect_signals(self)
 
-        self.title = builder.get_object("title")
+        player = builder.get_object("player")
+        loading = builder.get_object("loading")
+        title = Gtk.Label()
+        title.set_markup("<b>{}</b>".format(__appname__))
+
+        self.add_named(title, "title")
+        self.add_named(player, "player")
+        self.add_named(loading, "loading")
 
         self.playing = [
             builder.get_object("playing_1"),
@@ -55,16 +65,20 @@ class PlayerTitle(GObject.Object):
         self.position = builder.get_object("position")
         self.duration = builder.get_object("duration")
 
-        self.set_state(None, Player.STOPPED)
+        self.set_player_state(None, Player.STOPPED)
+        # The line above does not seem to be enough for the title to be visible
+        GObject.idle_add(self.set_player_state, None, Player.STOPPED)
 
-    def set_state(self, episode, state):
-        """Set the current state (called by the player)
+    def set_player_state(self, episode, state):
+        """Called when the state of the player changes
 
         Parameters
         ----------
         episode : Episode
             The episode currently being played.
         state : int
+            The state of the player (Player.BUFFERING, Player.STOPPED,
+            Player.PAUSED, or Player.PLAYING)
         """
         if episode:
             for playing in self.playing:
@@ -75,15 +89,16 @@ class PlayerTitle(GObject.Object):
 
         if state in [Player.PLAYING, Player.PAUSED]:
             self._update_progress()
-            self.title.set_visible_child_name('player')
+            self.set_visible_child_name('player')
         elif state == Player.BUFFERING:
-            self.title.set_visible_child_name('loading')
+            self.set_visible_child_name('loading')
         elif state == Player.STOPPED:
-            self.title.set_visible_child_name('title')
+            self.set_visible_child_name('title')
         else:
             raise ValueError("Invalid player state : {}.".format(state))
 
     def set_progress(self, position, duration):
+        """Called when the progress of the playback changes"""
         self.progress.set_range(0, duration)
         if not self.seeking:
             self.progress.set_value(position)
