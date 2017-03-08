@@ -155,6 +155,11 @@ class PlayerControls(Gtk.Box):
             "media-playback-pause-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
         self.pause.connect("clicked", cb(self.player.pause))
 
+        stop = Gtk.Button.new_from_icon_name(
+            "media-playback-stop-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+        stop.connect("clicked", cb(self.player.stop))
+        stop.show()
+
         forward = Gtk.Button.new_from_icon_name(
             "media-seek-forward-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
         forward.connect("clicked", cb(self.player.seek_relative),
@@ -164,6 +169,7 @@ class PlayerControls(Gtk.Box):
         self.pack_start(backward, False, True, 0)
         self.pack_start(self.play, False, True, 0)
         self.pack_start(self.pause, False, True, 0)
+        self.pack_start(stop, False, True, 0)
         self.pack_start(forward, False, True, 0)
 
         self.set_state(Player.STOPPED)
