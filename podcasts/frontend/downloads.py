@@ -28,13 +28,11 @@ Button displaying the list downloads and their progress
 
 import logging
 
-from gi.repository import GdkPixbuf
 from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import GLib
 
 from podcasts.downloads import DownloadsPool, download_with_average_speed
-from podcasts.library import Library
 from podcasts.util import format_fulltext_duration, format_size
 from podcasts.frontend.widgets import Label, ScrolledWindow, IndexedListBox
 
@@ -47,8 +45,7 @@ POPOVER_HEIGHT = 400
 
 
 class DownloadsButton(Gtk.MenuButton):
-    """
-    Button displaying the list of downloads.
+    """Button displaying the list of downloads
 
     Signals
     -------
@@ -75,14 +72,14 @@ class DownloadsButton(Gtk.MenuButton):
 
         self.popover = Gtk.Popover()
 
-        self.list = IndexedListBox()
-        self.list.set_selection_mode(Gtk.SelectionMode.NONE)
-        self.list.connect("add", self._on_list_changed)
-        self.list.connect("remove", self._on_list_changed)
-        self.list.show()
+        self.listbox = IndexedListBox()
+        self.listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        self.listbox.connect("add", self._on_list_changed)
+        self.listbox.connect("remove", self._on_list_changed)
+        self.listbox.show()
 
         scrolled_window = ScrolledWindow()
-        scrolled_window.add_with_viewport(self.list)
+        scrolled_window.add_with_viewport(self.listbox)
         scrolled_window.show_all()
         scrolled_window.set_vexpand(True)
         scrolled_window.set_size_request(POPOVER_WIDTH, 0)
@@ -100,10 +97,8 @@ class DownloadsButton(Gtk.MenuButton):
         self.set_sensitive(False)
 
     def download(self, episode):
-        """
-        Add an episode to the download queue.
-        """
-        if episode.id in self.list.get_ids():
+        """Add an episode to the download queue"""
+        if episode.id in self.listbox.get_ids():
             self.logger.debug("The episode is already in the download list.")
             return
 
@@ -111,25 +106,20 @@ class DownloadsButton(Gtk.MenuButton):
 
         row = DownloadRow(job)
         row.connect("episode-updated", self._on_episode_updated)
-        self.list.add_with_id(row, episode.id)
+        self.listbox.add_with_id(row, episode.id)
 
         self.pool.add(job)
 
     def stop(self):
-        """
-        Cancel all the downloads.
-        """
+        """Cancel all the downloads"""
         self.pool.stop()
 
-    def _on_list_changed(self, list, child):
-        """
-        Called when a child is added to or removed from the list.
-        """
-        self.set_sensitive(bool(self.list.get_children()))
+    def _on_list_changed(self, listbox, child):
+        """Called when a child is added to or removed from the list"""
+        self.set_sensitive(bool(listbox.get_children()))
 
     def _on_episode_updated(self, row, episode):
-        """
-        Called at the end of the download of an episode.
+        """Called at the end of the download of an episode
 
         Propagate the signal.
         """
@@ -137,8 +127,7 @@ class DownloadsButton(Gtk.MenuButton):
 
 
 class DownloadRow(Gtk.ListBoxRow):
-    """
-    Row in the download list
+    """Row in the download list
 
     Signals
     -------
@@ -189,15 +178,11 @@ class DownloadRow(Gtk.ListBoxRow):
         self.set_pending()
 
     def _on_start(self, job):
-        """
-        Update the widget to show that the download is starting.
-        """
+        """Update the widget to show that the download is starting"""
         self.progress_label.set_text("Starting...")
 
     def _on_progress(self, job, currentsize, totalsize, speed):
-        """
-        Update the widget to show the current download progress.
-        """
+        """Update the widget to show the current download progress"""
         try:
             remaining_time = int(round((totalsize-currentsize)/speed))
         except ZeroDivisionError:
@@ -218,17 +203,14 @@ class DownloadRow(Gtk.ListBoxRow):
                 ))
 
     def _on_remove(self, job):
-        """
-        Remove the download from the list.
-        """
+        """Remove the download from the list"""
         self.emit("episode-updated", self.job.episode)
         self.destroy()
 
     def set_pending(self):
-        """
-        Update the widget to show the download is pending.
-        """
-        self.icon.set_from_pixbuf(self.job.episode.podcast.image.as_pixbuf(IMAGE_SIZE))
+        """Update the widget to show the download is pending"""
+        self.icon.set_from_pixbuf(
+            self.job.episode.podcast.image.as_pixbuf(IMAGE_SIZE))
 
         self.title.set_markup(
             "{} - <i>{}</i>".format(
@@ -238,15 +220,12 @@ class DownloadRow(Gtk.ListBoxRow):
         self.progress_label.set_text("Pending...")
 
     def _on_cancel_clicked(self, button):
-        """
-        Called when the cancel button is clicked.
-        """
+        """Called when the cancel button is clicked"""
         self.job.cancel()
 
 
 class DownloadJob(GObject.Object):
-    """
-    Download job that should be added to a DownloadsPool.
+    """Download job that should be added to a DownloadsPool
 
     Signals
     -------
@@ -271,21 +250,16 @@ class DownloadJob(GObject.Object):
     def __init__(self, episode):
         GObject.Object.__init__(self)
 
-        library = Library()
         self.episode = episode
         self.canceled = False
 
     def cancel(self):
-        """
-        Cancel the download.
-        """
+        """Cancel the download"""
         self.canceled = True
         GObject.idle_add(self.emit, "remove")
 
     def start(self):
-        """
-        Start the download
-        """
+        """Start the download"""
         GObject.idle_add(self.emit, "start")
 
         generator = download_with_average_speed(self.episode)

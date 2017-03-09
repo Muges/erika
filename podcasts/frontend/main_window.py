@@ -28,7 +28,7 @@ from gi.repository import GObject
 from gi.repository import Gtk
 
 from podcasts.__version__ import __appname__
-#from podcasts.frontend.downloads import DownloadsButton
+from podcasts.frontend.downloads import DownloadsButton
 from podcasts.frontend.podcast_list import PodcastList
 from podcasts.frontend.episode_list import EpisodeList
 from podcasts.frontend.player import Player
@@ -57,9 +57,9 @@ class MainWindow(Gtk.ApplicationWindow):
         builder = Gtk.Builder.new_from_file("data/menu.ui")
         self.menu_button.set_menu_model(builder.get_object("app-menu"))
 
-        #self.downloads_button = DownloadsButton()
-        #self.downloads_button.connect("episode-updated",
-        #                              self._on_episode_updated)
+        self.downloads_button = DownloadsButton()
+        self.downloads_button.connect("episode-updated",
+                                      self._on_episode_updated)
 
         # Player
         self.player = Player()
@@ -84,7 +84,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.episode_list.connect('episodes-changed',
                                   self._on_episodes_changed)
-        #self.episode_list.connect('download', self._on_episode_download)
+        self.episode_list.connect('download', cb(self.downloads_button.download))
         self.episode_list.connect('episode-selected', cb(self.details.show_episode))
         self.episode_list.connect('podcast-selected', cb(self.details.show_podcast))
 
@@ -108,7 +108,7 @@ class MainWindow(Gtk.ApplicationWindow):
         headerbar.set_show_close_button(True)
         headerbar.pack_start(self.menu_button)
         headerbar.pack_start(self.player_controls)
-        #headerbar.pack_end(self.downloads_button)
+        headerbar.pack_end(self.downloads_button)
         self.set_titlebar(headerbar)
 
         right_paned = Paned()
@@ -153,7 +153,7 @@ class MainWindow(Gtk.ApplicationWindow):
         Called when the window is closed.
         """
         self.player.stop()
-        #self.downloads_button.stop()
+        self.downloads_button.stop()
 
     def _on_episodes_changed(self, episodes_list):
         """
@@ -164,12 +164,6 @@ class MainWindow(Gtk.ApplicationWindow):
         """
         self.podcast_list.update_current()
         self.update_counts()
-
-    def _on_episode_download(self, episode_list, episode):
-        """
-        Called when the download button of an episode is clicked
-        """
-        self.downloads_button.download(episode)
 
     def _on_episode_updated(self, widget, episode):
         """
