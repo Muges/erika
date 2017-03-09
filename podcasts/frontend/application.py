@@ -32,7 +32,7 @@ from gi.repository import Gtk
 from podcasts.frontend.main_window import MainWindow
 #from podcasts.frontend import preferences
 from podcasts import library
-from podcasts.library import Config, Episode
+from podcasts.library import Config, Episode, Podcast
 from podcasts.library.opml import import_opml, export_opml
 from podcasts.library.gpodder import GPodderClient
 from podcasts.util import cb
@@ -240,24 +240,20 @@ class Application(Gtk.Application):
         if response != Gtk.ResponseType.OK or not url:
             return
 
-        if self.window:
-            message_id = self.window.statusbox.add("Adding podcast...")
-        else:
-            message_id = None
+        message_id = self.window.statusbox.get_next_message_id()
+        self.window.statusbox.add("Adding podcast...", message_id)
 
         def _end():
-            if self.window:
-                if message_id:
-                    self.window.statusbox.remove(message_id)
+            self.window.statusbox.remove(message_id)
 
-                self.window.podcast_list.update()
-                self.window.episode_list.update()
-                self.window.update_counts()
+            self.window.podcast_list.update()
+            self.window.episode_list.update()
+            self.window.update_counts()
 
         def _add(url):
             # TODO : handle errors
-            library = Library()
-            library.add_source("rss", url)
+            podcast = Podcast.new("rss", url)
+            podcast.update_podcast()
 
             GObject.idle_add(_end)
 
@@ -300,19 +296,15 @@ class Application(Gtk.Application):
         if not filename:
             return
 
-        if self.window:
-            message_id = self.window.statusbox.add("Importing OPML...")
-        else:
-            message_id = None
+        message_id = self.window.statusbox.get_next_message_id()
+        self.window.statusbox.add("Importing OPML...", message_id)
 
         def _end():
-            if self.window:
-                if message_id:
-                    self.window.statusbox.remove(message_id)
+            self.window.statusbox.remove(message_id)
 
-                self.window.podcast_list.update()
-                self.window.episode_list.update()
-                self.window.update_counts()
+            self.window.podcast_list.update()
+            self.window.episode_list.update()
+            self.window.update_counts()
 
         def _import(filename):
             # TODO : handle errors
@@ -343,14 +335,11 @@ class Application(Gtk.Application):
         if not filename:
             return
 
-        if self.window:
-            message_id = self.window.statusbox.add("Exporting OPML...")
-        else:
-            message_id = None
+        message_id = self.window.statusbox.get_next_message_id()
+        self.window.statusbox.add("Exporting OPML...", message_id)
 
         def _end():
-            if self.window and message_id:
-                self.window.statusbox.remove(message_id)
+            self.window.statusbox.remove(message_id)
 
         def _export(filename):
             export_opml(filename)
