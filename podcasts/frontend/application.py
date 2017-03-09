@@ -23,7 +23,9 @@
 # SOFTWARE.
 
 import logging
+import os
 import threading
+from gi.repository import GdkPixbuf
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
@@ -109,6 +111,13 @@ class Application(Gtk.Application):
             # Create the menu
             builder = Gtk.Builder.new_from_file("data/menu.ui")
             self.set_app_menu(builder.get_object("app-menu"))
+
+        # Get icons
+        icons = []
+        for filename in os.listdir("data/icons"):
+            path = os.path.join("data/icons", filename)
+            icons.append(GdkPixbuf.Pixbuf.new_from_file(path))
+        Gtk.Window.set_default_icon_list(icons)
 
         try:
             self.window = MainWindow(self)
