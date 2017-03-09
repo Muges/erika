@@ -208,7 +208,7 @@ class PodcastList(Gtk.VBox):
             return
 
         # Delete the podcast
-        selection.podcast.delete_instance()
+        selection.podcast.delete_instance(recursive=True)
         selection.destroy()
 
         # Select the first row
