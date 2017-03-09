@@ -33,7 +33,7 @@ from podcasts.frontend.podcast_list import PodcastList
 from podcasts.frontend.episode_list import EpisodeList
 from podcasts.frontend.player import Player
 from podcasts.frontend.player_widgets import PlayerTitle, PlayerControls
-#from podcasts.frontend.details import Details
+from podcasts.frontend.details import Details
 from podcasts.frontend.widgets import StatusBox, NetworkButton, Paned
 from podcasts.library.models import Episode
 from podcasts.util import cb
@@ -74,19 +74,19 @@ class MainWindow(Gtk.ApplicationWindow):
                             cb(self.player_title.set_player_state))
 
         # Views
-        #self.details = Details()
+        self.details = Details()
 
         self.podcast_list = PodcastList()
         self.episode_list = EpisodeList(self.player)
 
         self.podcast_list.connect('podcast-selected', cb(self.episode_list.select))
-        #self.podcast_list.connect('podcast-selected', cb(self.details.show_podcast))
+        self.podcast_list.connect('podcast-selected', cb(self.details.show_podcast))
 
-        #self.episode_list.connect('episodes-changed',
-        #                          self._on_episodes_changed)
+        self.episode_list.connect('episodes-changed',
+                                  self._on_episodes_changed)
         #self.episode_list.connect('download', self._on_episode_download)
-        #self.episode_list.connect('episode-selected', cb(self.details.show_episode))
-        #self.episode_list.connect('podcast-selected', cb(self.details.show_podcast))
+        self.episode_list.connect('episode-selected', cb(self.details.show_episode))
+        self.episode_list.connect('podcast-selected', cb(self.details.show_podcast))
 
         self.player.connect('progress-changed', cb(self.episode_list.set_player_progress))
         self.player.connect('state-changed', cb(self.episode_list.set_player_state))
@@ -115,7 +115,7 @@ class MainWindow(Gtk.ApplicationWindow):
         right_paned.set_limit_width(700)
         right_paned.set_position(800)
         right_paned.add1(self.episode_list)
-        #right_paned.add2(self.details)
+        right_paned.add2(self.details)
 
         paned = Gtk.Paned()
         paned.set_position(300)

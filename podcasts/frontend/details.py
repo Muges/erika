@@ -23,38 +23,31 @@
 # SOFTWARE.
 
 """
-Widget displaying the details of a podcast or episode.
+Widget displaying the details of a podcast or episode
 """
 
+from collections import namedtuple
 import webbrowser
 import threading
 
 from gi.repository import Gtk
 from gi.repository import WebKit
 from gi.repository import GObject
-from gi.repository import Pango
 from gi.repository import Gio
 
-from podcasts.library import Podcast
+from podcasts.library.models import Podcast
 
 
-class DetailsStyle(object):
-    def __init__(self):
-        self.background = '#ffffff'
-        self.foreground = '#000000'
+DetailsStyle = namedtuple('Style', ['background', 'foreground'])
 
 
 class Details(Gtk.ScrolledWindow):
-    """
-    Widget displaying the details of a podcast or episode.
-    """
+    """Widget displaying the details of a podcast or episode"""
     def __init__(self):
         super().__init__()
 
-        self.current = None
+        self.current = None  # Current episode or podcast being shown
         self.style = None
-
-        self.application = Gio.Application.get_default()
 
         self.view = WebKit.WebView()
         self.add(self.view)
@@ -65,46 +58,49 @@ class Details(Gtk.ScrolledWindow):
         settings.set_property('enable-scripts', False)
         settings.set_property('enable-default-context-menu', False)
 
+        # This needs to be called from the main loop to be able to get
+        # the colors from the gtk theme
         GObject.idle_add(self._set_style)
 
-        self.view.connect('navigation-policy-decision-requested', self._on_link_clicked)
+        self.view.connect('navigation-policy-decision-requested',
+                          self._on_link_clicked)
 
     def _set_style(self):
-        """
-        Get colors and font from the GTK theme.
-        """
+        """Get colors and font from the GTK theme"""
         context = self.view.get_style_context()
         font = context.get_font(Gtk.StateFlags.NORMAL)
 
+        # Get font
         settings = self.view.get_settings()
-        #settings.set_property('default-font-size', font.get_size() // Pango.SCALE)
+        #settings.set_property('default-font-size',
+        #                      font.get_size() // Pango.SCALE)
         settings.set_property('default-font-family', font.get_family())
 
-        self.style = DetailsStyle()
-
+        # Get colors
         success, background = context.lookup_color('bg_color')
-        if success:
-            self.style.background = background.to_string()
+        background = background.to_string() if success else "#000000"
 
         success, foreground = context.lookup_color('fg_color')
-        if success:
-            self.style.foreground = foreground.to_string()
+        foreground = foreground.to_string() if success else "#ffffff"
+
+        self.style = DetailsStyle(background, foreground)
 
         if not self.current:
             return
 
+        # Update the view
         if isinstance(self.current, Podcast):
             self.show_podcast(self.current)
         else:
             self.show_episode(self.current)
 
     def show_episode(self, episode, get_image=True):
-        """
-        Show the details of an episode.
-        """
+        """Show the details of an episode"""
         self.current = episode
 
         if not self.style:
+            # Wait for the style to be set before showing anything to
+            # avoid flickering
             return
 
         with open("data/episode_details_template.html", 'r') as fileobj:
@@ -116,7 +112,12 @@ class Details(Gtk.ScrolledWindow):
         )
         self.view.load_html_string(html, "")
 
-        if get_image and not episode.image_downloaded() and self.application.get_online():
+        # If the image is not available, download it in a thread, and
+        # update the view at the end
+        application = Gio.Application.get_default()
+        if all((get_image,
+                not episode.image_downloaded,
+                application.get_online())):
             def _end():
                 if episode == self.current:
                     self.show_episode(episode, get_image=False)
@@ -129,9 +130,7 @@ class Details(Gtk.ScrolledWindow):
             thread.start()
 
     def show_podcast(self, podcast):
-        """
-        Show the details of a podcast.
-        """
+        """Show the details of a podcast"""
         self.current = podcast
 
         if not self.style:
@@ -147,6 +146,8 @@ class Details(Gtk.ScrolledWindow):
         self.view.load_html_string(html, "")
 
     def _on_link_clicked(self, view, frame, request, action, decision):
+        """Called when a link is clicked"""
+        # pylint: disable=too-many-arguments,no-self-use
         webbrowser.open(request.get_uri())
         decision.ignore()
         return True

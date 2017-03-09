@@ -136,6 +136,11 @@ class Episode(BaseModel):
 
         return Image(self.image_data)
 
+    @property
+    def image_downloaded(self):
+        """True if the episode's image has been downloaded"""
+        return self.image_data is not None
+
     @hybrid_property
     def downloaded(self):
         """True if the episode has been downloaded"""
