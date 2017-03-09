@@ -142,7 +142,7 @@ class Player(GObject.Object):
 
         action = EpisodeAction(episode=self.episode, action="play",
                                started=self._started, position=position,
-                               duration=duration)
+                               total=duration)
         action.save()
 
         self.emit("episode-updated", self.episode)

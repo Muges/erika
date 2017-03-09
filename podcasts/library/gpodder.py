@@ -60,6 +60,12 @@ class RemoteEpisodeAction(object):  # pylint: disable=too-few-public-methods
         self.position = action.position
         self.total = action.total
 
+    def __str__(self):
+        attrs = ["podcast_url", "episode_url", "action", "time", "started",
+                 "position", "total"]
+        formatted_attrs = ["{}={}".format(attr, repr(getattr(self, attr)))
+                           for attr in attrs]
+        return "RemoteEpisodeAction({})".format(", ".join(formatted_attrs))
 
 class GPodderClient(object):
     """Client handling the synchronization of the database with gpodder.net"""
@@ -263,12 +269,17 @@ class GPodderClient(object):
         ----------
         actions : List[Union[EpisodeAction, RemoteEpisodeAction]]
             A list of all local and remote episode actions
+        since : int
+            The time at which the remote actions were pulled
         """
         actions.sort(key=lambda a: a.time)
 
         with database.transaction():
             for action in actions:
-                self.process_episode_action(action)
+                try:
+                    self.process_episode_action(action)
+                except:  # pylint: disable=bare-except
+                    self.logger.exception("Unable to process action %s", action)
 
     def process_episode_action(self, action):
         """Process an episode action"""

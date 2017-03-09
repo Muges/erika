@@ -22,9 +22,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import threading
-from gi.repository import Gio
-from gi.repository import GObject
+"""
+Main window of the application
+"""
+
 from gi.repository import Gtk
 
 from podcasts.__version__ import __appname__
@@ -41,7 +42,7 @@ from podcasts.util import cb
 
 class MainWindow(Gtk.ApplicationWindow):
     """
-    Main window of the application.
+    Main window of the application
     """
     def __init__(self, application):
         Gtk.ApplicationWindow.__init__(self, application=application,
@@ -50,12 +51,12 @@ class MainWindow(Gtk.ApplicationWindow):
         self.connect("delete-event", self._on_close)
 
         # Header bar
-        self.menu_button = Gtk.MenuButton()
-        self.menu_button.set_image(Gtk.Image.new_from_icon_name(
+        menu_button = Gtk.MenuButton()
+        menu_button.set_image(Gtk.Image.new_from_icon_name(
             "open-menu-symbolic", Gtk.IconSize.BUTTON))
 
         builder = Gtk.Builder.new_from_file("data/menu.ui")
-        self.menu_button.set_menu_model(builder.get_object("app-menu"))
+        menu_button.set_menu_model(builder.get_object("app-menu"))
 
         self.downloads_button = DownloadsButton()
         self.downloads_button.connect("episode-updated",
@@ -63,15 +64,15 @@ class MainWindow(Gtk.ApplicationWindow):
 
         # Player
         self.player = Player()
-        self.player_title = PlayerTitle(self.player)
-        self.player_controls = PlayerControls(self.player)
+        player_title = PlayerTitle(self.player)
+        player_controls = PlayerControls(self.player)
 
         self.player.connect("episode-updated", self._on_episode_updated)
-        self.player.connect('progress-changed', cb(self.player_title.set_progress))
+        self.player.connect('progress-changed', cb(player_title.set_progress))
         self.player.connect('state-changed',
-                            cb(self.player_controls.set_player_state, 2))
+                            cb(player_controls.set_player_state, 2))
         self.player.connect('state-changed',
-                            cb(self.player_title.set_player_state))
+                            cb(player_title.set_player_state))
 
         # Views
         self.details = Details()
@@ -92,7 +93,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.player.connect('state-changed', cb(self.episode_list.set_player_state))
 
         # Statusbar
-        self.network_button = NetworkButton()
+        network_button = NetworkButton()
 
         self.counts = Gtk.Label()
         self.update_counts()
@@ -104,11 +105,12 @@ class MainWindow(Gtk.ApplicationWindow):
         self.add(vbox)
 
         headerbar = Gtk.HeaderBar()
-        headerbar.set_custom_title(self.player_title)
+        headerbar.set_custom_title(player_title)
         headerbar.set_show_close_button(True)
-        headerbar.pack_start(self.menu_button)
-        headerbar.pack_start(self.player_controls)
+        headerbar.pack_start(menu_button)
+        headerbar.pack_start(player_controls)
         headerbar.pack_end(self.downloads_button)
+        headerbar.props.title = __appname__
         self.set_titlebar(headerbar)
 
         right_paned = Paned()
@@ -124,6 +126,7 @@ class MainWindow(Gtk.ApplicationWindow):
         paned.add1(self.podcast_list)
         paned.add2(right_paned)
 
+        # Status bar
         status_bar = Gtk.HBox()
         status_bar.set_margin_top(5)
         status_bar.set_margin_bottom(5)
@@ -131,7 +134,7 @@ class MainWindow(Gtk.ApplicationWindow):
         status_bar.set_margin_end(5)
         vbox.pack_start(status_bar, False, False, 0)
 
-        status_bar.pack_start(self.network_button, False, False, 0)
+        status_bar.pack_start(network_button, False, False, 0)
         status_bar.pack_start(self.counts, False, False, 0)
         status_bar.pack_end(self.statusbox, False, False, 0)
 

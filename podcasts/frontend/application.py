@@ -32,7 +32,7 @@ from gi.repository import Gtk
 from podcasts.frontend.main_window import MainWindow
 #from podcasts.frontend import preferences
 from podcasts import library
-from podcasts.library import Config
+from podcasts.library import Config, Episode
 from podcasts.library.opml import import_opml, export_opml
 from podcasts.library.gpodder import GPodderClient
 from podcasts.util import cb
@@ -149,6 +149,7 @@ class Application(Gtk.Application):
 
         self.window.close()
 
+        Episode.update(new=False).execute()
         self.synchronize_library(update=False)
 
         Gtk.Application.do_shutdown(self)
