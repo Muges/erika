@@ -172,7 +172,7 @@ class PlayerControls(Gtk.Box):
         self.pack_start(stop, False, True, 0)
         self.pack_start(forward, False, True, 0)
 
-        self.set_state(Player.STOPPED)
+        self.set_player_state(Player.STOPPED)
 
     def set_player_state(self, state):
         """Called when the state of the player changes

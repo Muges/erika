@@ -32,7 +32,7 @@ from gi.repository import Gtk
 from gi.repository import Gst
 from gi.repository import Gio
 
-from podcasts.library.models import Episode, EpisodeAction
+from podcasts.library.models import database, Episode, EpisodeAction
 from podcasts.util import format_duration
 from podcasts.frontend.widgets import (
     Label, IndexedListBox, FilterButton, SortButton
@@ -76,53 +76,55 @@ class EpisodeList(Gtk.VBox):
         self.player = player
 
         # Episode list
-        self.list = IndexedListBox()
-        self.list.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
-        self.list.set_sort_func(self.sort_func)
-        self.list.set_filter_func(self.filter_func)
-        self.list.connect("popup-menu", self._on_popup_menu)
-        self.list.connect("selected-rows-changed",
-                          self._on_selected_rows_changed)
+        self.listbox = IndexedListBox()
+        self.listbox.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
+        self.listbox.set_sort_func(self.sort_func)
+        self.listbox.set_filter_func(self.filter_func)
+        self.listbox.connect("popup-menu", self._on_popup_menu)
+        self.listbox.connect("selected-rows-changed",
+                             self._on_selected_rows_changed)
 
         scrolled_window = Gtk.ScrolledWindow()
-        scrolled_window.add_with_viewport(self.list)
+        scrolled_window.add_with_viewport(self.listbox)
 
         # Filter and sort buttons
-        self.action_bar = Gtk.ActionBar()
+        action_bar = Gtk.ActionBar()
 
         filter_new = FilterButton("feed-unread-symbolic", "new episodes",
                                   lambda episode: episode.new)
-        filter_new.connect("toggled", cb(self.list.invalidate_filter))
-        self.action_bar.pack_start(filter_new)
+        filter_new.connect("toggled", cb(self.listbox.invalidate_filter))
 
         filter_played = FilterButton("media-playback-start-symbolic",
                                      "played episodes",
                                      lambda episode: episode.played)
-        filter_played.connect("toggled", cb(self.list.invalidate_filter))
-        self.action_bar.pack_start(filter_played)
+        filter_played.connect("toggled", cb(self.listbox.invalidate_filter))
 
         filter_downloaded = FilterButton("document-save-symbolic",
                                          "downloaded episodes",
                                          lambda episode: episode.downloaded)
-        filter_downloaded.connect("toggled", cb(self.list.invalidate_filter))
-        self.action_bar.pack_start(filter_downloaded)
+        filter_downloaded.connect("toggled",
+                                  cb(self.listbox.invalidate_filter))
 
         self.filters = [filter_new, filter_played, filter_downloaded]
 
         self.sort = SortButton("publication date")
-        self.sort.connect("clicked", cb(self.list.invalidate_sort))
-        self.action_bar.pack_end(self.sort)
+        self.sort.connect("clicked", cb(self.listbox.invalidate_sort))
 
         # Layout
-        self.pack_start(self.action_bar, False, False, 0)
+        action_bar.pack_start(filter_new)
+        action_bar.pack_start(filter_played)
+        action_bar.pack_start(filter_downloaded)
+        action_bar.pack_end(self.sort)
+
+        self.pack_start(action_bar, False, False, 0)
         self.pack_start(scrolled_window, True, True, 0)
 
         self.application = Gio.Application.get_default()
-        self.application.connect('network-state-changed', cb(self.set_network_state))
+        self.application.connect('network-state-changed',
+                                 cb(self.set_network_state))
 
     def select(self, podcast):
-        """
-        Display the episodes of a podcast.
+        """Display the episodes of a podcast
 
         Parameters
         ----------
@@ -132,14 +134,12 @@ class EpisodeList(Gtk.VBox):
         self.current_podcast = podcast
 
         # Remove children
-        self.list.clear()
+        self.listbox.clear()
 
         self.update()
 
     def update(self):
-        """
-        Update the list of episodes of the current podcast.
-        """
+        """Update the list of episodes of the current podcast"""
         if self.current_podcast:
             # Interrupt the previous update
             if self.update_id:
@@ -167,18 +167,17 @@ class EpisodeList(Gtk.VBox):
 
             episodes = episodes.order_by(*order_clauses)
 
-            self._load_by_chunks(iter(episodes), self.list.get_ids())
+            self._load_by_chunks(iter(episodes), self.listbox.get_ids())
 
     def update_episode(self, episode):
-        """
-        Update an episode.
+        """Update an episode
 
         Parameters
         ----------
         episode : Episode
         """
         try:
-            row = self.list.get_row(episode.id)
+            row = self.listbox.get_row(episode.id)
         except ValueError:
             pass
         else:
@@ -186,8 +185,8 @@ class EpisodeList(Gtk.VBox):
             row.update()
 
     def _load_by_chunks(self, episodes, remove_ids):
-        """
-        Load episodes by chunks of size CHUNK_SIZE to prevent rendering delay
+        """Load episodes by chunks of size CHUNK_SIZE to prevent rendering
+        delay
 
         Parameters
         ----------
@@ -196,20 +195,21 @@ class EpisodeList(Gtk.VBox):
         remove_ids : Set
             Set of ids that were in the list but have not been updated yet
             (these should be removed of the list at the end)
+
         """
-        for i in range(0, CHUNK_SIZE):
+        for _ in range(0, CHUNK_SIZE):
             try:
                 episode = next(episodes)
             except StopIteration:
                 # Remove the episodes that are not in the database anymore
                 for episode_id in remove_ids:
-                    self.list.remove_id(episode_id)
+                    self.listbox.remove_id(episode_id)
 
                 self.update_id = None
                 return
             else:
                 try:
-                    row = self.list.get_row(episode.id)
+                    row = self.listbox.get_row(episode.id)
                 except ValueError:
                     # The row does not exist, create it
                     row = EpisodeRow(episode)
@@ -221,9 +221,9 @@ class EpisodeList(Gtk.VBox):
                         # The episode is currently being played
                         row.set_progress(self.player.get_seconds_position(),
                                          self.player.get_seconds_duration())
-                        row.set_state(self.player.state)
+                        row.set_player_state(self.player.state)
 
-                    self.list.add_with_id(row, episode.id)
+                    self.listbox.add_with_id(row, episode.id)
                 else:
                     # The row already exists, update it
                     remove_ids.remove(episode.id)
@@ -236,9 +236,8 @@ class EpisodeList(Gtk.VBox):
                                        remove_ids)
 
     def sort_func(self, row1, row2):
-        """
-        Compare two rows to determine which should be first. Sort them
-        by date.
+        """Compare two rows to determine which should be first. Sort them
+        by date
 
         Parameters
         ----------
@@ -267,8 +266,7 @@ class EpisodeList(Gtk.VBox):
             return -delta
 
     def filter_func(self, row):
-        """
-        Check if a row should be visible or not.
+        """Check if a row should be visible or not
 
         Parameters
         ----------
@@ -287,11 +285,9 @@ class EpisodeList(Gtk.VBox):
 
         return True
 
-    def _on_popup_menu(self, list):
-        """
-        Display the context menu
-        """
-        selection = self.list.get_selected_rows()
+    def _on_popup_menu(self, listbox):
+        """Display the context menu"""
+        selection = self.listbox.get_selected_rows()
 
         if selection == []:
             return
@@ -300,121 +296,114 @@ class EpisodeList(Gtk.VBox):
 
         if any(not row.episode.local_path for row in selection):
             menu_item = Gtk.MenuItem("Download")
-            menu_item.connect("activate", self._download_selection, selection)
+            menu_item.connect("activate", cb(self._download_selection),
+                              selection)
             menu.append(menu_item)
 
             menu_item = Gtk.MenuItem("Import file")
-            menu_item.connect("activate", self._import_file, selection)
+            menu_item.connect("activate", cb(self._import_file),
+                              selection)
             menu.append(menu_item)
 
         if any(not row.episode.played for row in selection):
             menu_item = Gtk.MenuItem("Mark as played")
-            menu_item.connect("activate", self._mark_as_played, selection)
+            menu_item.connect("activate", cb(self._mark_as_played),
+                              selection)
             menu.append(menu_item)
 
         if any(row.episode.played for row in selection):
             menu_item = Gtk.MenuItem("Mark as unplayed")
-            menu_item.connect("activate", self._mark_as_unplayed, selection)
+            menu_item.connect("activate", cb(self._mark_as_unplayed),
+                              selection)
             menu.append(menu_item)
 
         if any(row.episode.progress > 0 for row in selection):
             menu_item = Gtk.MenuItem("Reset progress")
-            menu_item.connect("activate", self._reset_progress, selection)
+            menu_item.connect("activate", cb(self._reset_progress),
+                              selection)
             menu.append(menu_item)
 
         menu.show_all()
         menu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
 
-    def _mark_as_played(self, menu_item, rows):
-        """
-        Mark selected rows as unplayed
+    def _mark_as_played(self, rows):
+        """Mark selected rows as unplayed
 
         Parameters
         ----------
-        menu_item : Gtk.MenuItem
-            The menu item that emitted the signal
         rows : List[EpisodeRow]
             The selected rows
         """
-        for row in rows:
-            row.episode.mark_as_played()
-            row.update()
+        with database.transaction():
+            for row in rows:
+                row.episode.mark_as_played()
+                row.update()
+                row.episode.save()
 
-        library = Library()
-        episodes = [row.episode for row in rows]
-        actions = [EpisodeAction.new(episode, "play", episode.duration, episode.duration,
-                                     episode.duration)
-                   for episode in episodes]
-        library.commit(episodes + actions)
+                action = EpisodeAction(episode=row.episode, action="play",
+                                       started=row.episode.duration,
+                                       position=row.episode.duration,
+                                       total=row.episode.duration)
+                action.save()
 
         self.emit("episodes-changed")
 
-    def _mark_as_unplayed(self, menu_item, rows):
-        """
-        Mark selected rows as unplayed
+    def _mark_as_unplayed(self, rows):
+        """Mark selected rows as unplayed
 
         Parameters
         ----------
-        menu_item : Gtk.MenuItem
-            The menu item that was emitted the signal
         rows : List[EpisodeRow]
             The selected rows
         """
-        for row in rows:
-            row.episode.mark_as_unplayed()
-            row.update()
+        with database.transaction():
+            for row in rows:
+                row.episode.mark_as_unplayed()
+                row.update()
+                row.episode.save()
 
-        library = Library()
-        episodes = [row.episode for row in rows]
-        actions = [EpisodeAction.new(episode, "new")
-                   for episode in episodes]
-        library.commit(episodes + actions)
-        library.commit(row.episode for row in rows)
+                action = EpisodeAction(episode=row.episode, action="new")
+                action.save()
 
-    def _reset_progress(self, menu_item, rows):
-        """
-        Reset the progresses of the selected rows
+        self.emit("episodes-changed")
+
+    def _reset_progress(self, rows):
+        """Reset the progresses of the selected rows
 
         Parameters
         ----------
-        menu_item : Gtk.MenuItem
-            The menu item that emitted the signal
         rows : List[EpisodeRow]
             The selected rows
         """
-        for row in rows:
-            row.episode.progress = 0
-            row.update()
+        with database.transaction():
+            for row in rows:
+                row.episode.progress = 0
+                row.update()
+                row.episode.save()
 
-        library = Library()
-        episodes = [row.episode for row in rows]
-        actions = [EpisodeAction.new(episode, "play", 0, 0, episode.duration)
-                   for episode in episodes]
-        library.commit(episodes + actions)
+                action = EpisodeAction(episode=row.episode, action="play",
+                                       started=0, position=0,
+                                       total=row.episode.duration)
+                action.save()
+
+        self.emit("episodes-changed")
 
     def _toggle(self, row):
-        """
-        Called when the toggle button of an episode is clicked
-        """
+        """Called when the toggle button of an episode is clicked"""
         if self.player.episode == row.episode:
             self.player.toggle()
         else:
             self.player.play_episode(row.episode)
 
     def _download(self, row):
-        """
-        Called when the download button of an episode is clicked
-        """
+        """Called when the download button of an episode is clicked"""
         self.emit("download", row.episode)
 
-    def _download_selection(self, menu_item, rows):
-        """
-        Download the episodes of the selected rows
+    def _download_selection(self, rows):
+        """Download the episodes of the selected rows
 
         Parameters
         ----------
-        menu_item : Gtk.MenuItem
-            The menu item that emitted the signal
         rows : List[EpisodeRow]
             The selected rows
         """
@@ -422,19 +411,14 @@ class EpisodeList(Gtk.VBox):
             if row.episode.local_path is None:
                 self.emit("download", row.episode)
 
-    def _import_file(self, menu_item, rows):
-        """
-        Import files for the episodes of the selected rows
+    def _import_file(self, rows):
+        """Import files for the episodes of the selected rows
 
         Parameters
         ----------
-        menu_item : Gtk.MenuItem
-            The menu item that was emitted the signal
         rows : List[EpisodeRow]
             The selected rows
         """
-        library = Library()
-
         # Get parent window
         window = self.get_toplevel()
 
@@ -445,7 +429,7 @@ class EpisodeList(Gtk.VBox):
                     window, Gtk.FileChooserAction.OPEN,
                     (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                      Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
-                dialog.set_current_folder(library.get_podcast_directory(row.episode.podcast))
+                dialog.set_current_folder(row.episode.podcast.get_directory())
 
                 response = dialog.run()
                 if response == Gtk.ResponseType.OK:
@@ -455,51 +439,49 @@ class EpisodeList(Gtk.VBox):
                 dialog.destroy()
 
                 if path:
-                    row.episode.local_path = library.import_episode_file(row.episode, path)
-
-                    action = EpisodeAction.new(row.episode, "download")
-                    library.commit([row.episode, action])
+                    row.episode.local_path = row.episode.import_file(path)
+                    row.episode.save()
                     row.update()
 
+                    action = EpisodeAction(episode=row.episode,
+                                           action="download")
+                    action.save()
+
     def set_player_progress(self, position, duration):
-        """
-        Called when the progress of the playback changes. Updates the
-        row of the episode being played.
-        """
+        """Called when the progress of the playback changes. Updates the
+        row of the episode being played"""
         try:
-            row = self.list.get_row(self.player.episode.id)
+            row = self.listbox.get_row(self.player.episode.id)
         except ValueError:
             pass
         else:
             row.set_progress(position // Gst.SECOND, duration // Gst.SECOND)
 
     def set_player_state(self, episode, state):
-        """
-        Called when the state of the player changes. Updates the
-        row of the episode being played.
-        """
+        """Called when the state of the player changes. Updates the
+        row of the episode being played"""
         try:
-            row = self.list.get_row(episode.id)
+            row = self.listbox.get_row(episode.id)
         except ValueError:
             pass
         else:
-            row.set_state(state)
+            row.set_player_state(state)
 
-    def set_network_state(self, online, error):
-        for row in self.list.rows.values():
+    def set_network_state(self, online, _):
+        """Called when the network state changes"""
+        for row in self.listbox.rows.values():
             row.set_online(online)
 
-    def _on_selected_rows_changed(self, list):
-        rows = self.list.get_selected_rows()
+    def _on_selected_rows_changed(self, listbox):
+        rows = self.listbox.get_selected_rows()
         if len(rows) == 1:
             self.emit("episode-selected", rows[0].episode)
         else:
             self.emit("podcast-selected", self.current_podcast)
 
 
-class EpisodeRow(Gtk.ListBoxRow):
-    """
-    Row in the list of episodes
+class EpisodeRow(Gtk.ListBoxRow):  # pylint: disable=too-many-instance-attributes
+    """Row in the list of episodes
 
     Signals
     -------
@@ -519,21 +501,21 @@ class EpisodeRow(Gtk.ListBoxRow):
 
         self.episode = episode
 
-        self.grid = Gtk.Grid()
-        self.grid.set_column_spacing(5)
-        self.add(self.grid)
+        grid = Gtk.Grid()
+        grid.set_column_spacing(5)
+        self.add(grid)
 
         # Episode status
         self.icon = Gtk.Image()
         self.icon.set_margin_start(7)
         self.icon.set_margin_end(7)
-        self.grid.attach(self.icon, 0, 0, 1, 1)
+        grid.attach(self.icon, 0, 0, 1, 1)
 
         topgrid = Gtk.Grid()
-        self.grid.attach(topgrid, 1, 0, 1, 1)
+        grid.attach(topgrid, 1, 0, 1, 1)
 
         bottomgrid = Gtk.Grid()
-        self.grid.attach(bottomgrid, 1, 1, 1, 1)
+        grid.attach(bottomgrid, 1, 1, 1, 1)
 
         # Episode title
         self.title = Label()
@@ -551,13 +533,13 @@ class EpisodeRow(Gtk.ListBoxRow):
             "document-save-symbolic", Gtk.IconSize.BUTTON)
         self.download_button.set_tooltip_text("Download the episode")
         self.download_button.set_relief(Gtk.ReliefStyle.NONE)
-        self.download_button.connect('clicked', self._on_download_clicked)
+        self.download_button.connect('clicked', cb(self.emit), "download")
         topgrid.attach(self.download_button, 1, 0, 1, 2)
 
         # Play button
         self.toggle_button = Gtk.Button()
         self.toggle_button.set_relief(Gtk.ReliefStyle.NONE)
-        self.toggle_button.connect('clicked', self._on_toggle_clicked)
+        self.toggle_button.connect('clicked', cb(self.emit), "toggle")
         topgrid.attach(self.toggle_button, 2, 0, 1, 2)
 
         # Episode subtitle
@@ -581,16 +563,14 @@ class EpisodeRow(Gtk.ListBoxRow):
         # Separator
         separator = Gtk.Separator.new(Gtk.Orientation.HORIZONTAL)
         separator.set_margin_top(5)
-        self.grid.attach(separator, 0, 2, 2, 1)
+        grid.attach(separator, 0, 2, 2, 1)
 
         self.show_all()
 
         self.update()
 
     def update(self):
-        """
-        Update the widget
-        """
+        """Update the widget"""
         summary = htmltopango.convert(self.episode.summary)
 
         # Episode status
@@ -620,27 +600,13 @@ class EpisodeRow(Gtk.ListBoxRow):
         self.duration.set_sensitive(not self.episode.played)
 
         self.set_progress(self.episode.progress, self.episode.duration)
-        self.set_state(Player.STOPPED)
+        self.set_player_state(Player.STOPPED)
 
         # Download button
         self.download_button.set_visible(not self.episode.local_path)
 
-    def _on_toggle_clicked(self, button):
-        """
-        Called when the play button is clicked
-        """
-        self.emit('toggle')
-
-    def _on_download_clicked(self, button):
-        """
-        Called when the download button is clicked
-        """
-        self.emit("download")
-
     def set_progress(self, position, duration):
-        """
-        Set the progress of the playback of the episode
-        """
+        """Set the progress of the playback of the episode"""
         # Episode duration
         if duration:
             self.duration.set_text(format_duration(duration))
@@ -651,15 +617,12 @@ class EpisodeRow(Gtk.ListBoxRow):
         # Playback progress
         if duration and position > 0:
             self.progress.show()
-            self.progress.set_fraction(
-                position/duration)
+            self.progress.set_fraction(position/duration)
         else:
             self.progress.hide()
 
-    def set_state(self, state):
-        """
-        Set the state of the player for this episode
-        """
+    def set_player_state(self, state):
+        """Set the state of the player for this episode"""
         if state == Player.PLAYING or state == Player.BUFFERING:
             self.toggle_button.set_image(
                 Gtk.Image.new_from_icon_name("media-playback-pause-symbolic",
@@ -672,5 +635,6 @@ class EpisodeRow(Gtk.ListBoxRow):
             self.toggle_button.set_tooltip_text("Play the episode")
 
     def set_online(self, online):
+        """Called when the network state changes"""
         self.download_button.set_sensitive(online)
-        self.toggle_button.set_sensitive(online or bool(self.episode.local_path))
+        self.toggle_button.set_sensitive(online or self.episode.downloaded)
