@@ -168,7 +168,7 @@ class Application(Gtk.Application):
         self.window.statusbox.remove(message_id)
 
         self.window.podcast_list.update()
-        #self.window.episode_list.update()
+        self.window.episode_list.update()
         self.window.update_counts()
 
     def _synchronization_thread(self, message_id, update=True, scan=False):
@@ -239,8 +239,7 @@ class Application(Gtk.Application):
         dialog = builder.get_object("add_dialog")
         url_entry = builder.get_object("url_entry")
 
-        if self.window:
-            dialog.set_transient_for(self.window)
+        dialog.set_transient_for(self.window)
 
         response = dialog.run()
         url = url_entry.get_text()
