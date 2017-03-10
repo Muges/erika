@@ -62,7 +62,7 @@ class PreferencesDialog(Gtk.Dialog):
 
             for key in self.SPINS:
                 spinbutton = self.builder.get_object(key)
-                Config.set_value(key, spinbutton.get_value())
+                Config.set_value(key, spinbutton.get_value_as_int())
 
             for key in self.CHECKS:
                 checkbutton = self.builder.get_object(key)
