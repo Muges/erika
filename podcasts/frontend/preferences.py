@@ -22,53 +22,82 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import logging
-import platform
+"""
+Dialog used to edit the configuration
+"""
 
 from gi.repository import Gtk
-from mygpoclient.api import MygPodderClient
+from podcasts.library.models import database, Config
 
-from podcasts.library import Library
-from podcasts.config import CONFIG_TYPES
-from podcasts.config_types import String, Path, Integer, Boolean
+
+class PreferencesDialog(Gtk.Dialog):
+    """Dialog used to edit the configuration"""
+
+    ENTRIES = ['library.podcast_directory_template',
+               'library.episode_file_template', 'gpodder.deviceid',
+               'gpodder.devicename', 'gpodder.password', 'gpodder.username',
+               'gpodder.hostname']
+    SPINS = ['library.synchronize_interval', 'downloads.workers',
+             'player.smart_mark_seconds']
+    CHECKS = ['gpodder.synchronize']
+    FILES = ['library.root']
+
+    def __init__(self, parent=None):
+        Gtk.Dialog.__init__(self, "Preferences", parent, 0,
+                            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                             Gtk.STOCK_APPLY, Gtk.ResponseType.OK))
+
+        # Initialize dialog and widgets
+        self.builder = Gtk.Builder.new_from_file("data/preferences.ui")
+
+        content = self.builder.get_object("dialog-content")
+        self.get_content_area().add(content)
+
+    def save_config(self):
+        """Save the configuration in the database"""
+        with database.transaction():
+            for key in self.ENTRIES:
+                entry = self.builder.get_object(key)
+                Config.set_value(key, entry.get_text())
+
+            for key in self.SPINS:
+                spinbutton = self.builder.get_object(key)
+                Config.set_value(key, spinbutton.get_value())
+
+            for key in self.CHECKS:
+                checkbutton = self.builder.get_object(key)
+                Config.set_value(key, checkbutton.get_active())
+
+            for key in self.FILES:
+                filechooser = self.builder.get_object(key)
+                Config.set_value(key, filechooser.get_filename())
+
+    def load_config(self):
+        """Load the configuration from the database"""
+        for key in self.ENTRIES:
+            entry = self.builder.get_object(key)
+            entry.set_text(Config.get_value(key))
+
+        for key in self.SPINS:
+            spinbutton = self.builder.get_object(key)
+            spinbutton.set_value(Config.get_value(key))
+
+        for key in self.CHECKS:
+            checkbutton = self.builder.get_object(key)
+            checkbutton.set_active(Config.get_value(key))
+
+        for key in self.FILES:
+            filechooser = self.builder.get_object(key)
+            filechooser.set_filename(Config.get_value(key))
 
 
 def run(window=None):
-    logger = logging.getLogger(__name__)
-
-    # Initialize dialog and widgets
-    builder = Gtk.Builder.new_from_file("data/preferences.ui")
-
-    dialog = builder.get_object("preferences-dialog")
-    dialog.set_transient_for(window)
-
-    error_bar = builder.get_object("error-bar")
-    synchronize_checkbutton = builder.get_object("synchronize-checkbutton")
-    hostname_entry = builder.get_object("hostname-entry")
-    username_entry = builder.get_object("username-entry")
-    password_entry = builder.get_object("password-entry")
-    deviceid_entry = builder.get_object("deviceid-entry")
-    devicename_entry = builder.get_object("devicename-entry")
-
-    # Get values from library
-    library = Library()
-    config = library.get_all_config()
-
-    for key, value in config.items():
-        widget = builder.get_object(key)
-        if widget:
-            CONFIG_TYPES[key].write_widget(widget, value)
+    """Show the dialog and edit the configuration"""
+    dialog = PreferencesDialog(window)
+    dialog.load_config()
 
     response = dialog.run()
-
-    if response == Gtk.ResponseType.APPLY:
-        # Save values to library
-        for key in config:
-            widget = builder.get_object(key)
-            if widget:
-                value = CONFIG_TYPES[key].read_widget(widget)
-                config[key] = value
-
-        library.save_config(config)
+    if response == Gtk.ResponseType.OK:
+        dialog.save_config()
 
     dialog.destroy()

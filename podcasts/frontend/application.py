@@ -32,7 +32,7 @@ from gi.repository import GObject
 from gi.repository import Gtk
 
 from podcasts.frontend.main_window import MainWindow
-#from podcasts.frontend import preferences
+from podcasts.frontend import preferences
 from podcasts import library
 from podcasts.library import Config, Episode, Podcast
 from podcasts.library.opml import import_opml, export_opml
@@ -99,7 +99,7 @@ class Application(Gtk.Application):
         self.add_action(self.sync_action)
 
         action = Gio.SimpleAction.new("preferences", None)
-        #action.connect("activate", cb(preferences.run, 2), self.window)
+        action.connect("activate", cb(preferences.run, 2), self.window)
         self.add_action(action)
 
         action = Gio.SimpleAction.new("quit", None)
