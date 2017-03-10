@@ -22,17 +22,20 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""
+Module handling audio tags reading and writing for mp3 files
+"""
+
 from datetime import datetime
 import imghdr
-from mutagen.id3 import (
+from mutagen.id3 import (  # pylint: disable=no-name-in-module
     TPE1, TALB, TIT2, TSOT, TDRC, ID3TimeStamp, COMM, WOAF, WFED, WORS, TXXX,
-    UrlFrame, APIC, TRCK
+    APIC, TRCK
 )
 
 
-def set_tags(audio, episode):
-    """
-    Set the tags of the mp3 audio file of an episode.
+def set_tags(audio, episode):  # pylint: disable=too-many-branches
+    """Set the tags of the mp3 audio file of an episode
 
     Parameters
     ----------
@@ -111,9 +114,15 @@ def get_tags(audio):
     except (ValueError, AttributeError):
         date = None
 
+    try:
+        image = audio.tags["APIC:"].data
+    except KeyError:
+        image = None
+
     return {
         "podcast": get_tag(audio, "TALB"),
         "title": get_tag(audio, "TIT2"),
         "guid": get_tag(audio, "TXXX"),
-        "pubdate": date
+        "pubdate": date,
+        "image": image
     }

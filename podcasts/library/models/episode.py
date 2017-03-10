@@ -118,7 +118,8 @@ class Episode(BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.image_data = None
+        self._image_data = None
+        self._tried_image_tags = False
 
     @property
     def display_duration(self):
@@ -127,6 +128,21 @@ class Episode(BaseModel):
             return ""
 
         return format_duration(self.duration)
+
+    @property
+    def image_data(self):
+        """The episode's image as bytes"""
+        if self._image_data:
+            return self._image_data
+
+        # Try to get the image from the audio file
+        if self.local_path and not self._tried_image_tags:
+            self._tried_image_tags = True
+
+            audio_tags = tags.get_tags(self.local_path)
+            if audio_tags["image"]:
+                self._image_data = audio_tags["image"]
+                return self._image_data
 
     @property
     def image(self):
@@ -144,7 +160,7 @@ class Episode(BaseModel):
     @hybrid_property
     def downloaded(self):
         """True if the episode has been downloaded"""
-        return self.local_path != None
+        return self.local_path is not None
 
     @downloaded.expression
     def downloaded(self):
@@ -281,8 +297,8 @@ class Episode(BaseModel):
             except requests.exceptions.RequestException:
                 self.logger.exception("Unable to download image.")
             else:
-                self.image_data = response.content
-                return self.image_data
+                self._image_data = response.content
+                return self._image_data
 
         # Fallback to the podcast's image
         return self.podcast.image_data
