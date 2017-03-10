@@ -269,10 +269,9 @@ class Episode(BaseModel):
         bytes
             The image's data.
         """
-        try:
+        # Return the episode's image if it has already been downloaded
+        if self.image_data:
             return self.image_data
-        except AttributeError:
-            pass
 
         if self.image_url:
             # Download image
