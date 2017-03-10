@@ -80,30 +80,26 @@ class MainWindow(Gtk.ApplicationWindow):
         self.podcast_list = PodcastList()
         self.episode_list = EpisodeList(self.player)
 
-        self.podcast_list.connect('podcast-selected', cb(self.episode_list.select))
-        self.podcast_list.connect('podcast-selected', cb(self.details.show_podcast))
+        self.podcast_list.connect('podcast-selected',
+                                  cb(self.episode_list.select))
+        self.podcast_list.connect('podcast-selected',
+                                  cb(self.details.show_podcast))
 
         self.episode_list.connect('episodes-changed',
                                   self._on_episodes_changed)
-        self.episode_list.connect('download', cb(self.downloads_button.download))
-        self.episode_list.connect('episode-selected', cb(self.details.show_episode))
-        self.episode_list.connect('podcast-selected', cb(self.details.show_podcast))
+        self.episode_list.connect('download',
+                                  cb(self.downloads_button.download))
+        self.episode_list.connect('episode-selected',
+                                  cb(self.details.show_episode))
+        self.episode_list.connect('podcast-selected',
+                                  cb(self.details.show_podcast))
 
-        self.player.connect('progress-changed', cb(self.episode_list.set_player_progress))
-        self.player.connect('state-changed', cb(self.episode_list.set_player_state))
+        self.player.connect('progress-changed',
+                            cb(self.episode_list.set_player_progress))
+        self.player.connect('state-changed',
+                            cb(self.episode_list.set_player_state))
 
-        # Statusbar
-        network_button = NetworkButton()
-
-        self.counts = Gtk.Label()
-        self.update_counts()
-
-        self.statusbox = StatusBox()
-
-        # Layout
-        vbox = Gtk.VBox()
-        self.add(vbox)
-
+        # Header bar
         headerbar = Gtk.HeaderBar()
         headerbar.set_custom_title(player_title)
         headerbar.set_show_close_button(True)
@@ -112,6 +108,19 @@ class MainWindow(Gtk.ApplicationWindow):
         headerbar.pack_end(self.downloads_button)
         headerbar.props.title = __appname__
         self.set_titlebar(headerbar)
+
+        # Statusbar
+        self.counts = Gtk.Label()
+        self.statusbox = StatusBox()
+
+        self._build_layout()
+
+        self.update_counts()
+        self.podcast_list.update()
+
+    def _build_layout(self):
+        vbox = Gtk.VBox()
+        self.add(vbox)
 
         right_paned = Paned()
         right_paned.set_limit_width(700)
@@ -134,11 +143,9 @@ class MainWindow(Gtk.ApplicationWindow):
         status_bar.set_margin_end(5)
         vbox.pack_start(status_bar, False, False, 0)
 
-        status_bar.pack_start(network_button, False, False, 0)
+        status_bar.pack_start(NetworkButton(), False, False, 0)
         status_bar.pack_start(self.counts, False, False, 0)
         status_bar.pack_end(self.statusbox, False, False, 0)
-
-        self.podcast_list.update()
 
     def update_counts(self):
         """
