@@ -29,7 +29,7 @@ Module handling the audio tags
 import logging
 import mutagen
 
-import podcasts.tags.mp3
+from . import mp3
 
 
 def set_tags(filename, episode):
@@ -47,17 +47,15 @@ def set_tags(filename, episode):
 
     try:
         audio = mutagen.File(filename)
-    except:
-        logger.exception(
-            "Unable to set tags for '{}'.".format(filename))
+    except Exception:  # pylint: disable=broad-except
+        logger.exception("Unable to set tags for '%s'.", filename)
         return None
 
     if isinstance(audio, mutagen.mp3.MP3):
         mp3.set_tags(audio, episode)
     else:
-        logger.warning(
-            "Unable to set tags (unsupported file format) for "
-            "'{}'.".format(filename))
+        logger.warning("Unable to set tags (unsupported file format) for "
+                       "'%s'.", filename)
 
 
 def get_tags(filename):
@@ -73,15 +71,13 @@ def get_tags(filename):
 
     try:
         audio = mutagen.File(filename)
-    except:
-        logger.exception(
-            "Unable to get tags for '{}'.".format(filename))
+    except Exception:  # pylint: disable=broad-except
+        logger.exception("Unable to get tags for '%s'.", filename)
         return None
 
     if isinstance(audio, mutagen.mp3.MP3):
         return mp3.get_tags(audio)
     else:
-        logger.warning(
-            "Unable to get tags (unsupported file format) for "
-            "'{}'.".format(filename))
+        logger.warning("Unable to get tags (unsupported file format) for "
+                       "'%s'.", filename)
         return None

@@ -30,7 +30,6 @@ import logging
 from time import mktime
 from datetime import datetime
 import feedparser
-import requests
 
 from podcasts.library import Episode
 

@@ -132,15 +132,15 @@ def download_with_average_speed(episode):
 
         if now - previous_time >= TIME_DELTA:
             # Compute the average speed during current time step
-            current_speed = step_size/(now - previous_time)
+            current_speed = step_size / (now - previous_time)
 
             # Compute the smoothed average download speed
             if average_speed == 0:
                 average_speed = current_speed
             else:
                 average_speed = (
-                    SMOOTHING_FACTOR*current_speed +
-                    (1 - SMOOTHING_FACTOR)*average_speed)
+                    SMOOTHING_FACTOR * current_speed +
+                    (1 - SMOOTHING_FACTOR) * average_speed)
 
             yield (current_size, file_size, average_speed)
 

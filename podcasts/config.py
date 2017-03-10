@@ -41,7 +41,8 @@ DATABASE_PATH = join(CONFIG_DIR, "library")
 CONFIG_DEFAULTS = {
     "library.root": join(HOME, "Podcasts"),
     "library.podcast_directory_template": "{podcast.title}",
-    "library.episode_file_template": "{episode.pubdate:%Y.%m.%d} - {episode.title}",
+    "library.episode_file_template":
+        "{episode.pubdate:%Y.%m.%d} - {episode.title}",
     "library.synchronize_interval": 60,
 
     "player.smart_mark_seconds": 30,

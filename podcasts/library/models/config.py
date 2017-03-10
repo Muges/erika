@@ -70,7 +70,7 @@ class Config(BaseModel):
         logger.debug("Setting default configuration.")
 
         (cls
-         .insert_many({"key": key, "value":  value}
+         .insert_many({"key": key, "value": value}
                       for key, value in CONFIG_DEFAULTS.items())
          .on_conflict('IGNORE')
          .execute())

@@ -93,8 +93,8 @@ class EpisodeAction(BaseModel):
                                     self.action, device, self.timestamp)
 
     def __str__(self):
-        attrs = ["podcast_url", "episode_url", "action", "timestamp", "started",
-                 "position", "total"]
+        attrs = ["podcast_url", "episode_url", "action", "timestamp",
+                 "started", "position", "total"]
         formatted_attrs = ["{}={}".format(attr, repr(getattr(self, attr)))
                            for attr in attrs]
         return "EpisodeAction({})".format(", ".join(formatted_attrs))

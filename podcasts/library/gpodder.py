@@ -67,6 +67,7 @@ class RemoteEpisodeAction(object):  # pylint: disable=too-few-public-methods
                            for attr in attrs]
         return "RemoteEpisodeAction({})".format(", ".join(formatted_attrs))
 
+
 class GPodderClient(object):
     """Client handling the synchronization of the database with gpodder.net"""
     def __init__(self):
@@ -278,8 +279,9 @@ class GPodderClient(object):
             for action in actions:
                 try:
                     self.process_episode_action(action)
-                except:  # pylint: disable=bare-except
-                    self.logger.exception("Unable to process action %s", action)
+                except Exception:  # pylint: disable=broad-except
+                    self.logger.exception("Unable to process action %s",
+                                          action)
 
     def process_episode_action(self, action):
         """Process an episode action"""
