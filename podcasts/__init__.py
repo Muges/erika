@@ -28,11 +28,19 @@ Podcast manager
 
 import logging
 import os
+import gi
 
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gst', '1.0')
+gi.require_version('WebKit', '3.0')
+gi.require_version('GdkPixbuf', '2.0')
+
+# pylint: disable=wrong-import-position,import-self
 from . import frontend
 from . import library
 from .config import CONFIG_DIR
 from .__version__ import __appname__, __version__
+# pylint: enable=wrong-import-position,import-self
 
 
 def run():

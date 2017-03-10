@@ -27,12 +27,6 @@
 Podcast manager
 """
 
-import gi
-gi.require_version('Gtk', '3.0')
-gi.require_version('Gst', '1.0')
-gi.require_version('WebKit', '3.0')
-gi.require_version('GdkPixbuf', '2.0')
-
 from podcasts import run
 
 if __name__ == "__main__":
