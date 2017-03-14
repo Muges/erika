@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding : utf-8 -*-
 #
 # Copyright (c) 2016 Muges
 #
@@ -22,12 +22,23 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-"""
-Utility functions
-"""
+import os
+import glob
+import pytest
 
-from .files import guess_extension, sanitize_filename
-from .format import format_duration, format_fulltext_duration, format_size
-from .frontend import cb
-from .plaintext_to_html import plaintext_to_html
-from .html_to_plaintext import html_to_plaintext
+from podcasts.util.html_to_plaintext import html_to_plaintext
+
+DATA_DIRECTORY = "tests/util/data/html_to_plaintext"
+
+PATTERN = os.path.join(DATA_DIRECTORY, "*.txt")
+FILES = glob.glob(PATTERN)
+NAMES = [os.path.splitext(path)[0] for path in FILES]
+
+@pytest.mark.parametrize("filename", NAMES)
+def test_html_to_plaintext(filename):
+    with open(filename + ".txt") as fileobj:
+        plaintext = fileobj.read().rstrip()
+    with open(filename + ".html") as fileobj:
+        html = fileobj.read()
+
+    assert html_to_plaintext(html) == plaintext

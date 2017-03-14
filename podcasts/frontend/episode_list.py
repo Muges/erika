@@ -38,7 +38,6 @@ from podcasts.frontend.widgets import (
     Label, IndexedListBox, FilterButton, SortButton
 )
 from podcasts.frontend.player import Player
-from podcasts.frontend import htmltopango
 from podcasts.util import cb
 
 SUBTITLE_LINES = 4
@@ -480,7 +479,8 @@ class EpisodeList(Gtk.VBox):
             self.emit("podcast-selected", self.current_podcast)
 
 
-class EpisodeRow(Gtk.ListBoxRow):  # pylint: disable=too-many-instance-attributes
+class EpisodeRow(Gtk.ListBoxRow):
+    # pylint: disable=too-many-instance-attributes
     """Row in the list of episodes
 
     Signals
@@ -571,8 +571,6 @@ class EpisodeRow(Gtk.ListBoxRow):  # pylint: disable=too-many-instance-attribute
 
     def update(self):
         """Update the widget"""
-        summary = htmltopango.convert(self.episode.summary)
-
         # Episode status
         if self.episode.new:
             self.icon.set_from_icon_name("feed-unread-symbolic",
@@ -594,7 +592,7 @@ class EpisodeRow(Gtk.ListBoxRow):  # pylint: disable=too-many-instance-attribute
 
         # Episode subtitle
         self.subtitle.set_sensitive(not self.episode.played)
-        self.subtitle.set_markup(summary.split("\n")[0].strip())
+        self.subtitle.set_text(self.episode.subtitle)
 
         # Episode duration
         self.duration.set_sensitive(not self.episode.played)
@@ -617,7 +615,7 @@ class EpisodeRow(Gtk.ListBoxRow):  # pylint: disable=too-many-instance-attribute
         # Playback progress
         if duration and position > 0:
             self.progress.show()
-            self.progress.set_fraction(position/duration)
+            self.progress.set_fraction(position / duration)
         else:
             self.progress.hide()
 

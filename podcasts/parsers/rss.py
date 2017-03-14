@@ -32,7 +32,9 @@ from datetime import datetime
 import feedparser
 
 from podcasts.library import Episode
-from podcasts.util import plaintext_to_html
+from podcasts.util import plaintext_to_html, html_to_plaintext
+
+MIN_SUBTITLE_LENGTH = 25
 
 
 def parse_feed(feed, podcast):
@@ -87,6 +89,9 @@ def parse_links(links):
 
 def parse_duration(string):
     """Parse a duration of the form [hours:]minutes:seconds"""
+    if string == "":
+        return None
+
     duration = string.split(":")[:3]
 
     try:
@@ -99,6 +104,27 @@ def parse_duration(string):
     hours, minutes, seconds = [0] * (3 - len(duration)) + duration
 
     return hours * 3600 + minutes * 60 + seconds
+
+
+def summary_to_subtitle(summary):
+    """Convert a summary (in html) to a subtitle (in plaintext)"""
+    summary_lines = [
+        line.strip()
+        for line in html_to_plaintext(summary).split("\n")
+        if line.strip()
+    ]
+
+    # Get the first lines, until the total length is bigger than
+    # MIN_SUBTITLE_LENGTH
+    length = -1
+    end = 0
+    for line in summary_lines:
+        length += 1 + len(line)
+        end += 1
+        if length > MIN_SUBTITLE_LENGTH:
+            break
+
+    return " ".join(summary_lines[:end])
 
 
 def parse_entry(entry):
@@ -123,6 +149,7 @@ def parse_entry(entry):
 
     file_url, file_size, mimetype = parse_links(entry.links)
 
+    # Get summary
     try:
         if entry.summary_detail['type'] == "text/plain":
             summary = plaintext_to_html(entry["summary"])
@@ -131,13 +158,25 @@ def parse_entry(entry):
     except AttributeError:
         summary = None
 
+    # Create subtitle from summary (this usually gives better subtitles than
+    # the ones in the rss feed)
+    subtitle = summary_to_subtitle(summary)
+
+    # Subtitle fallback
+    if not subtitle:
+        subtitle = entry.get("subtitle", None)
+
+    # Summary fallback
+    if not summary:
+        summary = plaintext_to_html(subtitle)
+
     return Episode(
         guid=entry.get("id", default_guid),
         pubdate=pubdate,
         title=entry.get("title", None),
         duration=parse_duration(entry.get("itunes_duration", "")),
         image_url=image,
-        subtitle=entry.get("subtitle", None),
+        subtitle=subtitle,
         summary=summary,
         link=entry.get("link", None),
 
