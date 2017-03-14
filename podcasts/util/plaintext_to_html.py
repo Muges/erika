@@ -23,10 +23,49 @@
 # SOFTWARE.
 
 """
-Utility functions
+Module handling the conversion of plaintext into html
 """
 
-from .files import guess_extension, sanitize_filename
-from .format import format_duration, format_fulltext_duration, format_size
-from .frontend import cb
-from .plaintext_to_html import plaintext_to_html
+import html
+import re
+import string
+
+SPACES_PATTERN = re.compile(r"[ \t]+")
+NEWLINE_PATTERN = re.compile(r"[ \t]*\n[ \t]*")
+PARAGRAPH_PATTERN = re.compile(r"[ \t]*\n[ \t]*\n[ \t]*")
+URL_PATTERN = re.compile(
+    # Protocol
+    r"(http|ftp|https)://"
+    # Domain
+    r"([\w_-]+(?:(?:\.[\w_-]+)+))"
+    # Path
+    r"([\w.,@?^=%&:;/~+#-]*[\w@?^=%&/~+#-])?"
+)
+
+
+def paragraph_to_html(paragraph):
+    """Convert a paragraph to html"""
+    paragraph = paragraph.strip(string.whitespace)
+    paragraph = html.escape(paragraph)
+
+    # Line breaks
+    paragraph = NEWLINE_PATTERN.sub("<br/>\n", paragraph)
+
+    # Spaces
+    paragraph = SPACES_PATTERN.sub(" ", paragraph)
+
+    # Urls
+    paragraph = URL_PATTERN.sub(r'<a href="\g<0>">\g<0></a>', paragraph)
+
+    return "<p>{}</p>".format(paragraph)
+
+
+def plaintext_to_html(plaintext):
+    """Convert a text to html"""
+    paragraphs = PARAGRAPH_PATTERN.split(plaintext)
+
+    return "\n".join([
+        paragraph_to_html(paragraph)
+        for paragraph in paragraphs
+        if not PARAGRAPH_PATTERN.match(paragraph)
+    ])
