@@ -1,27 +1,31 @@
 # -*- coding : utf-8 -*-
 
 import string
-import pytest  #pylint: disable=unused-import
+import pytest
 
 from podcasts.library.models.database import slugify
 
 
-def test_slugify():
+@pytest.mark.parametrize("name, slug", [
     # Lowercase alphanumeric strings
-    assert slugify("") == ""
-    assert slugify("abcdef") == "abcdef"
-    assert slugify("abc123") == "abc123"
-    assert slugify("abc123") == "abc123"
-    assert slugify(string.ascii_lowercase) == string.ascii_lowercase
-    assert slugify(string.digits) == string.digits
+    ("", ""),
+    ("abcdef", "abcdef"),
+    ("abc123", "abc123"),
+    ("abc123", "abc123"),
+    (string.ascii_lowercase, string.ascii_lowercase),
+    (string.digits, string.digits),
 
     # Alphanumeric strings
-    assert slugify("aAbBcCdD1") == "aabbccdd1"
-    assert slugify(string.ascii_uppercase) == string.ascii_lowercase
+    ("aAbBcCdD1", "aabbccdd1"),
+    (string.ascii_uppercase, string.ascii_lowercase),
 
     # Non-alphanumeric strings
-    assert slugify("abc-def") == "abcdef"
-    assert slugify("Abc.D1f") == "abcd1f"
-    assert slugify("Abc D1f") == "abcd1f"
-    assert slugify(string.punctuation) == ""
-    assert slugify(string.whitespace) == ""
+    ("abc-def", "abcdef"),
+    ("Abc.D1f", "abcd1f"),
+    ("Abc D1f", "abcd1f"),
+    (string.punctuation, ""),
+    (string.whitespace, ""),
+])
+def test_slugify(name, slug):
+    """Test for slugify"""
+    assert slugify(name) == slug
