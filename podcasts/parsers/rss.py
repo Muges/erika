@@ -32,6 +32,7 @@ from datetime import datetime
 import feedparser
 
 from podcasts.library import Episode
+from podcasts.util import plaintext_to_html
 
 
 def parse_feed(feed, podcast):
@@ -122,6 +123,14 @@ def parse_entry(entry):
 
     file_url, file_size, mimetype = parse_links(entry.links)
 
+    try:
+        if entry.summary_detail['type'] == "text/plain":
+            summary = plaintext_to_html(entry["summary"])
+        else:
+            summary = entry["summary"]
+    except AttributeError:
+        summary = None
+
     return Episode(
         guid=entry.get("id", default_guid),
         pubdate=pubdate,
@@ -129,7 +138,7 @@ def parse_entry(entry):
         duration=parse_duration(entry.get("itunes_duration", "")),
         image_url=image,
         subtitle=entry.get("subtitle", None),
-        summary=entry.get("summary", None),
+        summary=summary,
         link=entry.get("link", None),
 
         file_url=file_url,

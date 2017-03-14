@@ -61,9 +61,9 @@ class Episode(BaseModel):
     image_url : Optional[str]
         A link to the image of the episode
     subtitle : Optional[str]
-        The subtitle of the episode
+        The subtitle of the episode in plaintext
     summary : Optional[str]
-        A description of the episode
+        A description of the episode in html
     link : Optional[str]
         Website link
     track_number : int
