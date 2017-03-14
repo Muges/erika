@@ -23,41 +23,8 @@
 # SOFTWARE.
 
 """
-Utility functions
+Formatting functions
 """
-
-from itertools import chain
-import mimetypes
-import re
-
-EXTENSIONS = {
-    "audio/mpeg": ".mp3",
-    "audio/x-m4a": ".m4a",
-    "video/mp4": ".mp4",
-    "video/x-m4v": ".m4v",
-    "video/quicktime": ".mov",
-    "application/pdf": ".pdf",
-    "document/x-epub": ".epub",
-}
-
-DELETE_CHARS = (
-    ''.join(map(chr, chain(range(0, 32), range(127, 160)))) +
-    '?<>|"'
-)
-
-TRANSLATION_TABLE = str.maketrans('/\\:*\n\t', '----  ', DELETE_CHARS)
-
-MAX_FILENAME_LENGTH = 255
-
-# List of filenames that are reserved on linux or windows
-FORBIDDEN_FILENAMES = [
-    ".", "..", "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4",
-    "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4",
-    "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
-]
-
-HYPHEN_PATTERN = r"(\S)(\s+-|-\s+|\s+-\s+)(\S)"
-HYPHEN_REPLACE = r"\1 - \3"
 
 
 def format_duration(seconds):
@@ -137,61 +104,3 @@ def format_size(size):
         size /= 1024
 
     return "{:.2f} {}".format(size, 'GB')
-
-
-def guess_extension(mimetype):
-    """
-    Guess a file's extension from its mimetype.
-
-    The mimetypes.guess_extension sometimes return uncommon extensions, such as
-    ".mp2" instead of ".mp3" for mimetype "audio/mpeg". This function tries
-    to return consistent extensions for common podcast formats, and falls back
-    to mimetypes.guess_extension for other formats.
-
-    Parameters
-    ----------
-    mimetype : str
-        The mimetype of a file
-
-    Returns
-    -------
-    str
-        The extension of the file, with a trailing '.'
-    """
-    try:
-        return EXTENSIONS[mimetype]
-    except KeyError:
-        return mimetypes.guess_extension(mimetype) or ''
-
-
-def sanitize_filename(filename):
-    """
-    Sanitize a string to make it a valid filename.
-
-    This should hopefully work for windows and linux.
-    """
-    # Remove or replace forbidden characters
-    filename = filename.translate(TRANSLATION_TABLE)
-
-    # Make sure hyphens are surrounded by exactly one space on each side or no
-    # spaces at all
-    filename = re.sub(HYPHEN_PATTERN, HYPHEN_REPLACE, filename)
-
-    # Truncate filenames
-    filename = filename[:MAX_FILENAME_LENGTH]
-
-    if filename in FORBIDDEN_FILENAMES:
-        filename += "-podcast"
-
-    return filename
-
-
-def cb(function, n=1):  # pylint: disable=invalid-name
-    """Create a callback whose first n argument are ignored
-
-    Returns a function whose first n arguments are ignored, and which returns
-    the result of the function passed in parameters :
-    cb(f)(ignored, *args) == f(*args)
-    cb(f, 2)(i1, i2, *args) == f(*args)
-    """
-    return lambda *args: function(*args[n:])

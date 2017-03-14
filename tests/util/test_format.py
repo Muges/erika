@@ -2,7 +2,7 @@
 
 import pytest  #pylint: disable=unused-import
 
-from podcasts.util import format_duration, format_fulltext_duration, format_size
+from podcasts.util.format import format_duration, format_fulltext_duration, format_size
 
 
 def test_format_duration():
