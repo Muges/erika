@@ -29,6 +29,7 @@ Widget displaying the details of a podcast or episode
 from collections import namedtuple
 import webbrowser
 import threading
+import pkgutil
 
 from gi.repository import Gtk
 from gi.repository import WebKit
@@ -43,6 +44,13 @@ DetailsStyle = namedtuple('Style', ['background', 'foreground'])
 
 class Details(Gtk.ScrolledWindow):
     """Widget displaying the details of a podcast or episode"""
+    EPISODE_TEMPLATE = pkgutil.get_data(
+        'podcasts.frontend', 'data/episode_details_template.html'
+    ).decode('utf-8')
+    PODCAST_TEMPLATE = pkgutil.get_data(
+        'podcasts.frontend', 'data/podcast_details_template.html'
+    ).decode('utf-8')
+
     def __init__(self):
         super().__init__()
 
@@ -103,10 +111,7 @@ class Details(Gtk.ScrolledWindow):
             # avoid flickering
             return
 
-        with open("data/episode_details_template.html", 'r') as fileobj:
-            template = fileobj.read()
-
-        html = template.format(
+        html = self.EPISODE_TEMPLATE.format(
             style=self.style,
             episode=episode
         )
@@ -136,10 +141,7 @@ class Details(Gtk.ScrolledWindow):
         if not self.style:
             return
 
-        with open("data/podcast_details_template.html", 'r') as fileobj:
-            template = fileobj.read()
-
-        html = template.format(
+        html = self.PODCAST_TEMPLATE.format(
             style=self.style,
             podcast=podcast
         )

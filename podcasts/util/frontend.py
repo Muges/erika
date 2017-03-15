@@ -26,6 +26,9 @@
 Frontend utility functions
 """
 
+import pkgutil
+from gi.repository import Gtk
+
 
 def cb(function, n=1):  # pylint: disable=invalid-name
     """Create a callback whose first n argument are ignored
@@ -36,3 +39,9 @@ def cb(function, n=1):  # pylint: disable=invalid-name
     cb(f, 2)(i1, i2, *args) == f(*args)
     """
     return lambda *args: function(*args[n:])
+
+
+def get_builder(filename):
+    """Create a Gtk.Builder from a package data file"""
+    data = pkgutil.get_data('podcasts.frontend', filename).decode('utf-8')
+    return Gtk.Builder.new_from_string(data, -1)

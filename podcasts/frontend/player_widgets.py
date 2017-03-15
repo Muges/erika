@@ -32,7 +32,7 @@ from gi.repository import Gtk
 from gi.repository import GLib
 
 from podcasts.__version__ import __appname__
-from podcasts.util import cb, format_duration
+from podcasts.util import cb, format_duration, get_builder
 from podcasts.frontend.player import Player
 
 
@@ -44,8 +44,7 @@ class PlayerTitle(Gtk.Stack):
         self.player = player
         self.seeking = False
 
-        builder = Gtk.Builder()
-        builder.add_from_file("data/player_title.ui")
+        builder = get_builder('data/player_title.glade')
         builder.connect_signals(self)
 
         player = builder.get_object("player")

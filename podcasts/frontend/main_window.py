@@ -37,7 +37,7 @@ from podcasts.frontend.player_widgets import PlayerTitle, PlayerControls
 from podcasts.frontend.details import Details
 from podcasts.frontend.widgets import StatusBox, NetworkButton, Paned
 from podcasts.library.models import Episode
-from podcasts.util import cb
+from podcasts.util import cb, get_builder
 
 
 class MainWindow(Gtk.ApplicationWindow):
@@ -55,7 +55,7 @@ class MainWindow(Gtk.ApplicationWindow):
         menu_button.set_image(Gtk.Image.new_from_icon_name(
             "open-menu-symbolic", Gtk.IconSize.BUTTON))
 
-        builder = Gtk.Builder.new_from_file("data/menu.ui")
+        builder = get_builder('data/menu.glade')
         menu_button.set_menu_model(builder.get_object("app-menu"))
 
         self.downloads_button = DownloadsButton()

@@ -74,8 +74,8 @@ class Image(object):
         """
         loader = GdkPixbuf.PixbufLoader.new_with_mime_type("image/png")
         loader.write(self.get_data(size))
-        pixbuf = loader.get_pixbuf()
         loader.close()
+        pixbuf = loader.get_pixbuf()
 
         return pixbuf
 

@@ -23,7 +23,7 @@
 # SOFTWARE.
 
 import logging
-import os
+import pkgutil
 import threading
 from gi.repository import GdkPixbuf
 from gi.repository import Gio
@@ -37,7 +37,7 @@ from podcasts import library
 from podcasts.library import Config, Episode, Podcast
 from podcasts.library.opml import import_opml, export_opml
 from podcasts.library.gpodder import GPodderClient
-from podcasts.util import cb
+from podcasts.util import cb, get_builder
 
 
 class Application(Gtk.Application):
@@ -51,6 +51,17 @@ class Application(Gtk.Application):
         'network-state-changed':
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_BOOLEAN, GObject.TYPE_BOOLEAN)),
     }
+
+    ICONS = [
+        'data/icons/podcast16.png',
+        'data/icons/podcast22.png',
+        'data/icons/podcast24.png',
+        'data/icons/podcast32.png',
+        'data/icons/podcast48.png',
+        'data/icons/podcast64.png',
+        'data/icons/podcast96.png',
+        'data/icons/podcast.svg'
+    ]
 
     def __init__(self):
         Gtk.Application.__init__(self, application_id="fr.muges.podcasts",
@@ -109,14 +120,16 @@ class Application(Gtk.Application):
 
         if self.prefers_app_menu():
             # Create the menu
-            builder = Gtk.Builder.new_from_file("data/menu.ui")
+            builder = get_builder('data/menu.glade')
             self.set_app_menu(builder.get_object("app-menu"))
 
         # Get icons
         icons = []
-        for filename in os.listdir("data/icons"):
-            path = os.path.join("data/icons", filename)
-            icons.append(GdkPixbuf.Pixbuf.new_from_file(path))
+        for filename in self.ICONS:
+            loader = GdkPixbuf.PixbufLoader.new()
+            loader.write(pkgutil.get_data('podcasts', filename))
+            loader.close()
+            icons.append(loader.get_pixbuf())
         Gtk.Window.set_default_icon_list(icons)
 
         try:
@@ -235,7 +248,7 @@ class Application(Gtk.Application):
         Add a new podcast.
         """
         # Open the "Add a podcast" dialog
-        builder = Gtk.Builder.new_from_file("data/add_podcast.ui")
+        builder = get_builder('data/add_podcast.glade')
         dialog = builder.get_object("add_dialog")
         url_entry = builder.get_object("url_entry")
 

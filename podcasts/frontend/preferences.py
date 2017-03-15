@@ -27,7 +27,9 @@ Dialog used to edit the configuration
 """
 
 from gi.repository import Gtk
+
 from podcasts.library.models import database, Config
+from podcasts.util import get_builder
 
 
 class PreferencesDialog(Gtk.Dialog):
@@ -48,8 +50,7 @@ class PreferencesDialog(Gtk.Dialog):
                              Gtk.STOCK_APPLY, Gtk.ResponseType.OK))
 
         # Initialize dialog and widgets
-        self.builder = Gtk.Builder.new_from_file("data/preferences.ui")
-
+        self.builder = get_builder('data/preferences.glade')
         content = self.builder.get_object("dialog-content")
         self.get_content_area().add(content)
 
