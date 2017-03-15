@@ -29,7 +29,7 @@
             "version": "==0.44"
         },
         "mygpoclient from git+https://github.com/gpodder/mygpoclient.git#egg=mygpoclient": {
-            "hash": "sha256:29aeba8c0ca9c98985c12f04be69edf0b489bd6fea877f66e3a004f1a12ab0ab",
+            "hash": "sha256:5ed63bbe473dc391ca9d5eafa019ef5d720972387bba3ec05e967ab6708fd46d",
             "version": "=="
         },
         "Pillow": {
@@ -48,35 +48,35 @@
             "hash": "sha256:539553d3f1ffd890c74f64b819750aef0316933d162c09798c9e7eaf334ae760",
             "version": "==1.37"
         },
+        "peewee": {
+            "hash": "sha256:5254584d8e2e131f887f25a8329443a4cef89828c8f754e8e721865859f30616",
+            "version": "==2.9.1"
+        },
         "vext": {
             "hash": "sha256:4ef5537d0176508590199c6a15da53cadd5050a0c6c1fbf6e17e37c95dee0d79",
             "version": "==0.6.8"
-        },
-        "peewee": {
-            "hash": "sha256:4572a1c9cf8ecde62a6b82f7380023435d85b838f4f1d605695d46a36e9029d1",
-            "version": "==2.8.8"
         }
     },
     "develop": {
-        "setuptools": {
-            "hash": "sha256:9349b47bcdef2e695065791260f9416b7aae8739fd30c6849f807bce5281d046",
-            "version": "==34.3.1"
+        "pytest": {
+            "hash": "sha256:66f332ae62593b874a648b10a8cb106bfdacd2c6288ed7dec3713c3a808a6017",
+            "version": "==3.0.7"
         },
-        "appdirs": {
-            "hash": "sha256:a53330b9d53b66aba1e26907dea2958982ebad92735f9faf3897b73c909a20c1",
-            "version": "==1.4.2"
+        "setuptools": {
+            "hash": "sha256:6483f8412313ec787fa71379147a4605d3b1cc303c3648d02542a9160d3db72b",
+            "version": "==34.3.2"
         },
         "packaging": {
             "hash": "sha256:99276dc6e3a7851f32027a68f1095cd3f77c148091b092ea867a351811cfe388",
             "version": "==16.8"
         },
-        "pytest": {
-            "hash": "sha256:da0ab50c7eec0683bc24f1c1137db1f4111752054ecdad63125e7ec71316b813",
-            "version": "==3.0.6"
-        },
         "py": {
             "hash": "sha256:2d4bba2e25fff58140e6bdce1e485e89bb59776adbe01d490baa6b1f37a3dd6b",
             "version": "==1.4.32"
+        },
+        "appdirs": {
+            "hash": "sha256:d8b24664561d0d34ddfaec54636d502d7cea6e29c3eaf68f3df6180863e2166e",
+            "version": "==1.4.3"
         },
         "pyparsing": {
             "hash": "sha256:fee43f17a9c4087e7ed1605bd6df994c6173c1e977d7ade7b651292fab2bd010",
