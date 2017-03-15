@@ -26,12 +26,12 @@
 Some simple widgets.
 """
 
-from podcasts.frontend.widgets.filter_button import FilterButton
-from podcasts.frontend.widgets.indexed_listbox import IndexedListBox
-from podcasts.frontend.widgets.label import Label
-from podcasts.frontend.widgets.listbox import ListBox
-from podcasts.frontend.widgets.network_button import NetworkButton
-from podcasts.frontend.widgets.paned import Paned
-from podcasts.frontend.widgets.scrolled_window import ScrolledWindow
-from podcasts.frontend.widgets.sort_button import SortButton
-from podcasts.frontend.widgets.status_box import StatusBox
+from .filter_button import FilterButton
+from .indexed_listbox import IndexedListBox
+from .label import Label
+from .listbox import ListBox
+from .network_button import NetworkButton
+from .paned import Paned
+from .scrolled_window import ScrolledWindow
+from .sort_button import SortButton
+from .status_box import StatusBox
