@@ -25,16 +25,19 @@
 
 # pylint: disable=invalid-name
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 from podcasts.__version__ import __appname__, __version__
 
+# Read description from README
 with open('README.md') as f:
     long_description = f.read()
 
 # Dependencies
 requires = [
     'feedparser',
+    'lxml',
+    'mutagen',
     'mygpoclient',
     'peewee',
     'pillow',
@@ -52,18 +55,42 @@ setup(
     version=__version__,
     description='Podcast manager',
     long_description=long_description,
+    license='MIT',
     author='Muges',
     author_email='git@muges.fr',
 
-    packages=['podcasts'],
+    packages=find_packages(),
+    package_data={
+        'podcasts': [
+            'data/icons/*.png',
+            'data/icons/*.svg'
+        ],
+        'podcasts.frontend': [
+            'data/*.glade',
+            'data/*.html'
+        ],
+    },
 
     install_requires=requires,
     setup_requires=setup_requires,
     tests_require=tests_requires,
 
+    dependency_links=[
+        "git+https://github.com/gpodder/mygpoclient.git#egg=mygpoclient"
+    ],
+
     entry_points={
         'console_scripts': [
-            'podcasts = podcasts:run',
+            'podcasts = podcasts.main:run',
         ],
-    }
+    },
+
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Environment :: X11 Applications :: GTK',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3 :: Only',
+        'Topic :: Multimedia :: Sound/Audio :: Players'
+    ]
 )

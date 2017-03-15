@@ -29,7 +29,7 @@ Podcast manager
 
 # pylint: disable=invalid-name
 
-from podcasts import run
+from podcasts.main import run
 
 if __name__ == "__main__":
     run()
