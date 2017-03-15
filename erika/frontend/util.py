@@ -23,45 +23,25 @@
 # SOFTWARE.
 
 """
-Launcher
+Frontend utility functions
 """
 
-import logging
-import os
-import gi
-
-gi.require_version('Gtk', '3.0')
-gi.require_version('Gst', '1.0')
-gi.require_version('WebKit', '3.0')
-gi.require_version('GdkPixbuf', '2.0')
-
-# pylint: disable=wrong-import-position
-from . import frontend
-from . import library
-from .config import CONFIG_DIR
-from .__version__ import __appname__, __version__
-# pylint: enable=wrong-import-position
+import pkgutil
+from gi.repository import Gtk
 
 
-def run():
-    """Start the application"""
-    logger = logging.getLogger("podcasts")
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False
+def cb(function, n=1):  # pylint: disable=invalid-name
+    """Create a callback whose first n argument are ignored
 
-    # Display logs on stdout
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.DEBUG)
+    Returns a function whose first n arguments are ignored, and which returns
+    the result of the function passed in parameters :
+    cb(f)(ignored, *args) == f(*args)
+    cb(f, 2)(i1, i2, *args) == f(*args)
+    """
+    return lambda *args: function(*args[n:])
 
-    formatter = logging.Formatter('%(levelname)-8s (%(name)s) : %(message)s')
-    handler.setFormatter(formatter)
 
-    logger.addHandler(handler)
-
-    # Create the configuration directory if it does not exists
-    if not os.path.isdir(CONFIG_DIR):
-        os.makedirs(CONFIG_DIR)
-
-    library.initialize()
-
-    frontend.run()
+def get_builder(filename):
+    """Create a Gtk.Builder from a package data file"""
+    data = pkgutil.get_data('erika.frontend', filename).decode('utf-8')
+    return Gtk.Builder.new_from_string(data, -1)

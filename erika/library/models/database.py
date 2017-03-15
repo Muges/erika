@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2016 Muges
@@ -24,12 +23,31 @@
 # SOFTWARE.
 
 """
-Podcast manager
+Module defining the database
 """
 
-# pylint: disable=invalid-name
+import string
+from playhouse.sqlite_ext import SqliteExtDatabase
+from peewee import Model
 
-from podcasts.main import run
+from erika.config import DATABASE_PATH
 
-if __name__ == "__main__":
-    run()
+database = SqliteExtDatabase(DATABASE_PATH)  # pylint: disable=invalid-name
+
+
+class BaseModel(Model):
+    """
+    Base model defining which database to use.
+    """
+    class Meta:  # pylint: disable=too-few-public-methods, missing-docstring
+        database = database
+
+
+@database.func()
+def slugify(name):
+    """Remove non alphanumeric characters from a string and convert it to
+    lowercase"""
+    return ''.join(
+        char for char in name.lower()
+        if char in string.ascii_lowercase + string.digits
+    )

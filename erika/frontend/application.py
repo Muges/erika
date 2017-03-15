@@ -31,10 +31,10 @@ from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
 
-from podcasts import library
-from podcasts.library import Config, Episode, Podcast
-from podcasts.library.opml import import_opml, export_opml
-from podcasts.library.gpodder import GPodderClient
+from erika import library
+from erika.library.models import Config, Episode, Podcast
+from erika.library.opml import import_opml, export_opml
+from erika.library.gpodder import GPodderClient
 from . import preferences
 from .main_window import MainWindow
 from .util import cb, get_builder
@@ -64,7 +64,7 @@ class Application(Gtk.Application):
     ]
 
     def __init__(self):
-        Gtk.Application.__init__(self, application_id="fr.muges.podcasts",
+        Gtk.Application.__init__(self, application_id="fr.muges.erika",
                                  flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
 
         self.logger = logging.getLogger(
@@ -127,7 +127,7 @@ class Application(Gtk.Application):
         icons = []
         for filename in self.ICONS:
             loader = GdkPixbuf.PixbufLoader.new()
-            loader.write(pkgutil.get_data('podcasts', filename))
+            loader.write(pkgutil.get_data('erika', filename))
             loader.close()
             icons.append(loader.get_pixbuf())
         Gtk.Window.set_default_icon_list(icons)

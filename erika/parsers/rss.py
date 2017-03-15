@@ -31,8 +31,8 @@ from time import mktime
 from datetime import datetime
 import feedparser
 
-from podcasts.library import Episode
-from podcasts.util import plaintext_to_html, html_to_plaintext
+from erika.library import Episode
+from erika.util import plaintext_to_html, html_to_plaintext
 
 MIN_SUBTITLE_LENGTH = 25
 
@@ -191,12 +191,12 @@ def parse(podcast):
 
     Parameters
     ----------
-    podcast : podcasts.library.Podcast
+    podcast : Podcast
         The podcast to parse
 
     Returns
     -------
-    List[podcasts.library.Episode]
+    List[Episode]
         The list of the podcast's episodes
     """
     logger = logging.getLogger(__name__)

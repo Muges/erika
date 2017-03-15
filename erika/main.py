@@ -23,38 +23,45 @@
 # SOFTWARE.
 
 """
-Module used to parse podcasts.
+Launcher
 """
 
-import importlib
+import logging
+import os
+import gi
+
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gst', '1.0')
+gi.require_version('WebKit', '3.0')
+gi.require_version('GdkPixbuf', '2.0')
+
+# pylint: disable=wrong-import-position
+from . import frontend
+from . import library
+from .config import CONFIG_DIR
+from .__version__ import __appname__, __version__
+# pylint: enable=wrong-import-position
 
 
-def parse(podcast):
-    """Parse a podcast
+def run():
+    """Start the application"""
+    logger = logging.getLogger("erika")
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
 
-    Parameters
-    ----------
-    podcast : podcasts.library.Podcast
-        The podcast to parse
+    # Display logs on stdout
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
 
-    Returns
-    -------
-    List[podcasts.library.Episode]
-        The list of the podcast's episodes
-    """
-    if "." in podcast.parser:
-        raise ValueError(
-            "{} is not a valid parser name.".format(podcast.parser))
+    formatter = logging.Formatter('%(levelname)-8s (%(name)s) : %(message)s')
+    handler.setFormatter(formatter)
 
-    try:
-        parser = importlib.import_module(".".join((__name__, podcast.parser)))
-    except ModuleNotFoundError:
-        raise ValueError(
-            "{} is not a valid parser name.".format(podcast.parser))
+    logger.addHandler(handler)
 
-    episodes = parser.parse(podcast)
+    # Create the configuration directory if it does not exists
+    if not os.path.isdir(CONFIG_DIR):
+        os.makedirs(CONFIG_DIR)
 
-    for episode in episodes:
-        episode.podcast = podcast
+    library.initialize()
 
-    return sorted(episodes, key=lambda e: e.pubdate)
+    frontend.run()

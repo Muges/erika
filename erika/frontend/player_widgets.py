@@ -31,8 +31,8 @@ from gi.repository import Gst
 from gi.repository import Gtk
 from gi.repository import GLib
 
-from podcasts.__version__ import __appname__
-from podcasts.util import format_duration
+from erika.__version__ import __appname__
+from erika.util import format_duration
 from .player import Player
 from .util import cb, get_builder
 

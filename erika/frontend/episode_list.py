@@ -32,8 +32,8 @@ from gi.repository import Gtk
 from gi.repository import Gst
 from gi.repository import Gio
 
-from podcasts.library.models import database, Episode, EpisodeAction
-from podcasts.util import format_duration
+from erika.library.models import database, Episode, EpisodeAction
+from erika.util import format_duration
 from .widgets import Label, IndexedListBox, FilterButton, SortButton
 from .player import Player
 from .util import cb
@@ -125,7 +125,7 @@ class EpisodeList(Gtk.VBox):
 
         Parameters
         ----------
-        podcast : podcasts.library.Podcast
+        podcast : Podcast
             The podcast whose episodes will be displayed
         """
         self.current_podcast = podcast
@@ -187,7 +187,7 @@ class EpisodeList(Gtk.VBox):
 
         Parameters
         ----------
-        episodes : Iterable[podcasts.library.Episode]
+        episodes : Iterable[Episode]
             The episodes which will be displayed
         remove_ids : Set
             Set of ids that were in the list but have not been updated yet

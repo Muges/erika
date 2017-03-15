@@ -23,25 +23,8 @@
 # SOFTWARE.
 
 """
-Frontend utility functions
+Version informations
 """
 
-import pkgutil
-from gi.repository import Gtk
-
-
-def cb(function, n=1):  # pylint: disable=invalid-name
-    """Create a callback whose first n argument are ignored
-
-    Returns a function whose first n arguments are ignored, and which returns
-    the result of the function passed in parameters :
-    cb(f)(ignored, *args) == f(*args)
-    cb(f, 2)(i1, i2, *args) == f(*args)
-    """
-    return lambda *args: function(*args[n:])
-
-
-def get_builder(filename):
-    """Create a Gtk.Builder from a package data file"""
-    data = pkgutil.get_data('podcasts.frontend', filename).decode('utf-8')
-    return Gtk.Builder.new_from_string(data, -1)
+__appname__ = "Erika"
+__version__ = "0.1.0"

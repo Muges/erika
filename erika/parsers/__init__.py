@@ -23,8 +23,38 @@
 # SOFTWARE.
 
 """
-Version informations
+Module used to parse podcasts.
 """
 
-__appname__ = "Podcasts"
-__version__ = "0.1.0"
+import importlib
+
+
+def parse(podcast):
+    """Parse a podcast
+
+    Parameters
+    ----------
+    podcast : Podcast
+        The podcast to parse
+
+    Returns
+    -------
+    List[Episode]
+        The list of the podcast's episodes
+    """
+    if "." in podcast.parser:
+        raise ValueError(
+            "{} is not a valid parser name.".format(podcast.parser))
+
+    try:
+        parser = importlib.import_module(".".join((__name__, podcast.parser)))
+    except ModuleNotFoundError:
+        raise ValueError(
+            "{} is not a valid parser name.".format(podcast.parser))
+
+    episodes = parser.parse(podcast)
+
+    for episode in episodes:
+        episode.podcast = podcast
+
+    return sorted(episodes, key=lambda e: e.pubdate)

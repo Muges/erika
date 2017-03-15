@@ -31,7 +31,7 @@ import logging
 import json
 from peewee import TextField
 
-from podcasts.config import CONFIG_DEFAULTS
+from erika.config import CONFIG_DEFAULTS
 from .database import BaseModel
 
 

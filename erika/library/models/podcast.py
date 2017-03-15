@@ -31,9 +31,9 @@ import os.path
 import requests
 from peewee import BlobField, TextField, DoesNotExist, IntegrityError, fn
 
-from podcasts.image import Image
-from podcasts import parsers
-from podcasts.util import sanitize_filename
+from erika import parsers
+from erika.image import Image
+from erika.util import sanitize_filename
 from .database import BaseModel, database, slugify
 from .config import Config
 from .episode import Episode
@@ -140,7 +140,7 @@ class Podcast(BaseModel):
         Attributes
         ----------
         parser_name : str
-            The name of a parser (a module of the podcasts.parser package)
+            The name of a parser (a module of the erika.parser package)
         url : str
             The url of the podcast
         """

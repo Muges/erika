@@ -33,9 +33,9 @@ from peewee import (BooleanField, DateTimeField, IntegerField, ForeignKeyField,
                     TextField, Proxy, DoesNotExist)
 from playhouse.hybrid import hybrid_property
 
-from podcasts.image import Image
-from podcasts.util import format_duration, sanitize_filename
-from podcasts import tags
+from erika import tags
+from erika.image import Image
+from erika.util import format_duration, sanitize_filename
 from .database import BaseModel
 from .config import Config
 

@@ -32,8 +32,8 @@ from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import GLib
 
-from podcasts.downloads import DownloadsPool, download_with_average_speed
-from podcasts.util import format_fulltext_duration, format_size
+from erika.downloads import DownloadsPool, download_with_average_speed
+from erika.util import format_fulltext_duration, format_size
 from .widgets import Label, ScrolledWindow, IndexedListBox
 
 # Size of the episode icon in the download list

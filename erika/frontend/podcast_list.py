@@ -33,7 +33,7 @@ from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gio
 
-from podcasts.library.models import Podcast
+from erika.library.models import Podcast
 from .util import cb
 from .widgets import Label, IndexedListBox
 
@@ -73,7 +73,7 @@ class PodcastList(Gtk.VBox):
 
     Signals
     -------
-    podcast-selected(podcasts.library.Podcast)
+    podcast-selected(Podcast)
         Emitted when a podcast is selected
     """
 

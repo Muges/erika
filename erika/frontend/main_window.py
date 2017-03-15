@@ -28,8 +28,8 @@ Main window of the application
 
 from gi.repository import Gtk
 
-from podcasts.__version__ import __appname__
-from podcasts.library.models import Episode
+from erika.__version__ import __appname__
+from erika.library.models import Episode
 from .details import Details
 from .downloads import DownloadsButton
 from .episode_list import EpisodeList

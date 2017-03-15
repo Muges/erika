@@ -28,7 +28,7 @@ A ListBox whose rows are indexed
 
 import logging
 
-from podcasts.frontend.widgets.listbox import ListBox
+from .listbox import ListBox
 
 
 class IndexedListBox(ListBox):

@@ -33,7 +33,7 @@ from gi.repository import GObject
 from gi.repository import Gst
 from gi.repository import GLib
 
-from podcasts.library.models import Config, EpisodeAction
+from erika.library.models import Config, EpisodeAction
 
 # For some reason this is not defined in the python gstreamer bindings.
 GST_PLAY_FLAG_DOWNLOAD = 1 << 7

@@ -29,7 +29,7 @@ A button used to represent network connectivity options
 from gi.repository import Gtk
 from gi.repository import Gio
 
-from podcasts.frontend.util import cb
+from erika.frontend.util import cb
 
 
 class NetworkButton(Gtk.Button):

@@ -27,7 +27,7 @@
 
 from setuptools import setup, find_packages
 
-from podcasts.__version__ import __appname__, __version__
+from erika.__version__ import __appname__, __version__
 
 # Read description from README
 with open('README.md') as f:
@@ -51,7 +51,7 @@ setup_requires = [
 ]
 
 setup(
-    name=__appname__,
+    name=__appname__.lower(),
     version=__version__,
     description='Podcast manager',
     long_description=long_description,
@@ -61,11 +61,11 @@ setup(
 
     packages=find_packages(),
     package_data={
-        'podcasts': [
+        'erika': [
             'data/icons/*.png',
             'data/icons/*.svg'
         ],
-        'podcasts.frontend': [
+        'erika.frontend': [
             'data/*.glade',
             'data/*.html'
         ],
@@ -81,7 +81,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'podcasts = podcasts.main:run',
+            'erika = erika.main:run',
         ],
     },
 

@@ -36,7 +36,7 @@ from gi.repository import WebKit
 from gi.repository import GObject
 from gi.repository import Gio
 
-from podcasts.library.models import Podcast
+from erika.library.models import Podcast
 
 
 DetailsStyle = namedtuple('Style', ['background', 'foreground'])
@@ -45,10 +45,10 @@ DetailsStyle = namedtuple('Style', ['background', 'foreground'])
 class Details(Gtk.ScrolledWindow):
     """Widget displaying the details of a podcast or episode"""
     EPISODE_TEMPLATE = pkgutil.get_data(
-        'podcasts.frontend', 'data/episode_details_template.html'
+        'erika.frontend', 'data/episode_details_template.html'
     ).decode('utf-8')
     PODCAST_TEMPLATE = pkgutil.get_data(
-        'podcasts.frontend', 'data/podcast_details_template.html'
+        'erika.frontend', 'data/podcast_details_template.html'
     ).decode('utf-8')
 
     def __init__(self):

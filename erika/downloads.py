@@ -33,9 +33,9 @@ from threading import Thread
 import time
 import requests
 
-from podcasts import tags
-from podcasts.library.models import Config, EpisodeAction
-from podcasts.util import guess_extension
+from . import tags
+from .library.models import Config, EpisodeAction
+from .util import guess_extension
 
 # Smoothing factor used to compute the average download speed
 SMOOTHING_FACTOR = 0.01

@@ -28,7 +28,7 @@ Dialog used to edit the configuration
 
 from gi.repository import Gtk
 
-from podcasts.library.models import database, Config
+from erika.library.models import database, Config
 from .util import get_builder
 
 
