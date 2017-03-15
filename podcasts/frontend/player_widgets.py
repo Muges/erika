@@ -32,8 +32,9 @@ from gi.repository import Gtk
 from gi.repository import GLib
 
 from podcasts.__version__ import __appname__
-from podcasts.util import cb, format_duration, get_builder
-from podcasts.frontend.player import Player
+from podcasts.util import format_duration
+from .player import Player
+from .util import cb, get_builder
 
 
 class PlayerTitle(Gtk.Stack):

@@ -31,13 +31,13 @@ from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
 
-from podcasts.frontend.main_window import MainWindow
-from podcasts.frontend import preferences
 from podcasts import library
 from podcasts.library import Config, Episode, Podcast
 from podcasts.library.opml import import_opml, export_opml
 from podcasts.library.gpodder import GPodderClient
-from podcasts.util import cb, get_builder
+from . import preferences
+from .main_window import MainWindow
+from .util import cb, get_builder
 
 
 class Application(Gtk.Application):

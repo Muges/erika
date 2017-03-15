@@ -29,7 +29,7 @@ Dialog used to edit the configuration
 from gi.repository import Gtk
 
 from podcasts.library.models import database, Config
-from podcasts.util import get_builder
+from .util import get_builder
 
 
 class PreferencesDialog(Gtk.Dialog):

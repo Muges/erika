@@ -34,7 +34,7 @@ from gi.repository import GLib
 
 from podcasts.downloads import DownloadsPool, download_with_average_speed
 from podcasts.util import format_fulltext_duration, format_size
-from podcasts.frontend.widgets import Label, ScrolledWindow, IndexedListBox
+from .widgets import Label, ScrolledWindow, IndexedListBox
 
 # Size of the episode icon in the download list
 IMAGE_SIZE = 64

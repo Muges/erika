@@ -34,11 +34,9 @@ from gi.repository import Gio
 
 from podcasts.library.models import database, Episode, EpisodeAction
 from podcasts.util import format_duration
-from podcasts.frontend.widgets import (
-    Label, IndexedListBox, FilterButton, SortButton
-)
-from podcasts.frontend.player import Player
-from podcasts.util import cb
+from .widgets import Label, IndexedListBox, FilterButton, SortButton
+from .player import Player
+from .util import cb
 
 SUBTITLE_LINES = 4
 CHUNK_SIZE = 10

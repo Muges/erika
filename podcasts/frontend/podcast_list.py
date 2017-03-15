@@ -34,8 +34,8 @@ from gi.repository import GLib
 from gi.repository import Gio
 
 from podcasts.library.models import Podcast
-from podcasts.frontend.widgets import Label, IndexedListBox
-from podcasts.util import cb
+from .util import cb
+from .widgets import Label, IndexedListBox
 
 IMAGE_SIZE = 64
 SUBTITLE_LINES = 2

@@ -31,7 +31,7 @@ import sys
 from gi.repository import Gst
 from gi.repository import GObject
 
-from podcasts.frontend.application import Application
+from .application import Application
 
 
 def run():

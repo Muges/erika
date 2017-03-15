@@ -28,6 +28,5 @@ Utility functions
 
 from .files import guess_extension, sanitize_filename
 from .format import format_duration, format_fulltext_duration, format_size
-from .frontend import cb, get_builder
 from .plaintext_to_html import plaintext_to_html
 from .html_to_plaintext import html_to_plaintext

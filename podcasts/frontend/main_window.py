@@ -29,15 +29,15 @@ Main window of the application
 from gi.repository import Gtk
 
 from podcasts.__version__ import __appname__
-from podcasts.frontend.downloads import DownloadsButton
-from podcasts.frontend.podcast_list import PodcastList
-from podcasts.frontend.episode_list import EpisodeList
-from podcasts.frontend.player import Player
-from podcasts.frontend.player_widgets import PlayerTitle, PlayerControls
-from podcasts.frontend.details import Details
-from podcasts.frontend.widgets import StatusBox, NetworkButton, Paned
 from podcasts.library.models import Episode
-from podcasts.util import cb, get_builder
+from .details import Details
+from .downloads import DownloadsButton
+from .episode_list import EpisodeList
+from .player import Player
+from .player_widgets import PlayerTitle, PlayerControls
+from .podcast_list import PodcastList
+from .util import cb, get_builder
+from .widgets import StatusBox, NetworkButton, Paned
 
 
 class MainWindow(Gtk.ApplicationWindow):
