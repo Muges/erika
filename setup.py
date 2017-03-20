@@ -56,6 +56,7 @@ setup(
     description='Podcast manager',
     long_description=long_description,
     license='MIT',
+    url='https://github.com/Muges/erika',
     author='Muges',
     author_email='git@muges.fr',
 
