@@ -2,22 +2,19 @@
 
 Erika is a GTK+ podcast manager for Linux.
 
-[![Main window of Erika](screenshots/main_window_small.png)](screenshots/main_window.png)
+[![Main window of Erika](screenshots/main_window_small.png)](https://raw.githubusercontent.com/Muges/erika/master/screenshots/main_window.png)
 
 ## Features
 
  - Suscribe, download and listen to audio podcasts
- - Synchronize your podcast library with [gpodder.net](https://gpodder.net/)
- - Keep your library organised
+ - Keep your podcast library organised, and synchronize it with [gpodder.net](https://gpodder.net/)
 
 ## Installation
 
-First, install Python 3 and [PyGObject](https://wiki.gnome.org/Projects/PyGObject).
-
-Then, download or clone this repository, and run the following command in the top directory:
+Install Python 3 and [PyGObject](https://wiki.gnome.org/Projects/PyGObject), and run the command :
 
 ```bash
-python setup.py install
+pip install git+https://github.com/gpodder/mygpoclient.git git+https://github.com/Muges/erika.git
 ```
 
 ## Credits
