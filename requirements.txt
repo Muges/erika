@@ -1,8 +1,8 @@
 feedparser
 lxml
 mutagen
+mygpoclient
 peewee
 pillow
 requests
 vext.gi
-git+https://github.com/gpodder/mygpoclient.git#egg=mygpoclient

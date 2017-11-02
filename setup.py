@@ -76,10 +76,6 @@ setup(
     setup_requires=setup_requires,
     tests_require=tests_requires,
 
-    dependency_links=[
-        "git+https://github.com/gpodder/mygpoclient.git#egg=mygpoclient"
-    ],
-
     entry_points={
         'console_scripts': [
             'erika = erika.main:run',

@@ -14,7 +14,7 @@ Erika is a GTK+ podcast manager for Linux.
 Install Python 3 and [PyGObject](https://wiki.gnome.org/Projects/PyGObject), and run the command :
 
 ```bash
-pip install git+https://github.com/gpodder/mygpoclient.git git+https://github.com/Muges/erika.git
+pip install git+https://github.com/Muges/erika.git
 ```
 
 ## Credits
