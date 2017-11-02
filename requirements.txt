@@ -1,0 +1,8 @@
+feedparser
+lxml
+mutagen
+peewee
+pillow
+requests
+vext.gi
+git+https://github.com/gpodder/mygpoclient.git#egg=mygpoclient
