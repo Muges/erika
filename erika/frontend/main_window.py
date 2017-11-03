@@ -48,7 +48,7 @@ class MainWindow(Gtk.ApplicationWindow):
         Gtk.ApplicationWindow.__init__(self, application=application,
                                        title=__appname__)
         self.set_default_size(800, 600)
-        self.connect("delete-event", self._on_close)
+        self.connect("destroy", self._on_close)
 
         # Header bar
         menu_button = Gtk.MenuButton()
@@ -158,7 +158,7 @@ class MainWindow(Gtk.ApplicationWindow):
             unplayed
         ))
 
-    def _on_close(self, window, event):
+    def _on_close(self, window):
         """
         Called when the window is closed.
         """

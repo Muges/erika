@@ -69,6 +69,7 @@ class Application(Gtk.Application):
         self.connect("startup", cb(self._on_startup))
         self.connect("activate", cb(self._on_activate))
         self.connect("command-line", cb(self._on_command_line))
+        self.connect("shutdown", cb(self.close_main_window))
         self.connect("shutdown", cb(self._on_shutdown))
 
     def _on_startup(self):
@@ -157,7 +158,7 @@ class Application(Gtk.Application):
         if self.window is None:
             return
 
-        self.window.close()
+        self.close_main_window()
 
         Episode.update(new=False).execute()
         self.synchronize_library(update=False)
@@ -376,3 +377,7 @@ class Application(Gtk.Application):
     def get_online(self):
         """Return True if the application is connected to the internet"""
         return self.online
+
+    def close_main_window(self):
+        if self.window is not None:
+            self.window.destroy()
