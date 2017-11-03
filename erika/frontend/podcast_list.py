@@ -286,5 +286,6 @@ class PodcastRow(Gtk.ListBoxRow):
         else:
             self.counts.set_markup(unplayed + " " + new)
 
-        # Podcast subtitle
-        self.subtitle.set_text(self.podcast.display_subtitle)
+        # Podcast subtitle (only the first line)
+        self.subtitle.set_text(
+            self.podcast.display_subtitle.split('\n')[0])
