@@ -87,7 +87,8 @@ class EpisodeList(Gtk.VBox):
         # Filter and sort buttons
         action_bar = Gtk.ActionBar()
 
-        filter_new = FilterButton("feed-unread-symbolic", "new episodes",
+        filter_new = FilterButton("feed-article-unread-symbolic",
+                                  "new episodes",
                                   lambda episode: episode.new)
         filter_new.connect("toggled", cb(self.listbox.invalidate_filter))
 
@@ -571,11 +572,11 @@ class EpisodeRow(Gtk.ListBoxRow):
         """Update the widget"""
         # Episode status
         if self.episode.new:
-            self.icon.set_from_icon_name("feed-unread-symbolic",
+            self.icon.set_from_icon_name("feed-article-unread",
                                          Gtk.IconSize.BUTTON)
             self.icon.set_tooltip_text("New episode")
         else:
-            self.icon.set_from_icon_name("feed-read-symbolic",
+            self.icon.set_from_icon_name("feed-article-read",
                                          Gtk.IconSize.BUTTON)
             self.icon.set_tooltip_text("Old episode")
 

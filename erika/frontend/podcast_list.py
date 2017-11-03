@@ -98,13 +98,13 @@ class PodcastList(Gtk.VBox):
         self.action_bar = Gtk.ActionBar()
 
         self.add_podcast = Gtk.Button.new_from_icon_name(
-            "feed-add-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+            "list-add-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
         self.add_podcast.set_tooltip_text("Add a podcast")
         self.add_podcast.set_action_name("app.add-podcast")
         self.action_bar.pack_start(self.add_podcast)
 
         remove_podcast = Gtk.Button.new_from_icon_name(
-            "feed-remove-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+            "list-remove-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
         remove_podcast.set_tooltip_text("Remove the selected podcast")
         remove_podcast.connect("clicked", self._on_remove_podcast)
         self.action_bar.pack_start(remove_podcast)

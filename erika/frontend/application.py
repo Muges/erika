@@ -23,7 +23,7 @@
 # SOFTWARE.
 
 import logging
-import pkgutil
+import pkg_resources
 import threading
 from gi.repository import GdkPixbuf
 from gi.repository import Gio
@@ -52,17 +52,6 @@ class Application(Gtk.Application):
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_BOOLEAN, GObject.TYPE_BOOLEAN)),
     }
 
-    ICONS = [
-        'data/icons/podcast16.png',
-        'data/icons/podcast22.png',
-        'data/icons/podcast24.png',
-        'data/icons/podcast32.png',
-        'data/icons/podcast48.png',
-        'data/icons/podcast64.png',
-        'data/icons/podcast96.png',
-        'data/icons/podcast.svg'
-    ]
-
     def __init__(self):
         Gtk.Application.__init__(self, application_id="fr.muges.erika",
                                  flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
@@ -90,7 +79,7 @@ class Application(Gtk.Application):
 
         # Creates the actions
         self.add_podcast_action = Gio.SimpleAction.new("add-podcast", None)
-        self.add_podcast_action.connect("activate", lambda a, p: self.add_podcast())
+        self.add_podcast_action.connect("activate", cb(self.add_podcast, 2))
         self.add_action(self.add_podcast_action)
 
         action = Gio.SimpleAction.new("import-opml", None)
@@ -123,14 +112,13 @@ class Application(Gtk.Application):
             builder = get_builder('data/menu.glade')
             self.set_app_menu(builder.get_object("app-menu"))
 
-        # Get icons
-        icons = []
-        for filename in self.ICONS:
-            loader = GdkPixbuf.PixbufLoader.new()
-            loader.write(pkgutil.get_data('erika', filename))
-            loader.close()
-            icons.append(loader.get_pixbuf())
-        Gtk.Window.set_default_icon_list(icons)
+        # Load custom icons
+        icons_path = pkg_resources.resource_filename('erika', 'data/icons')
+        icon_theme = Gtk.IconTheme.get_default()
+        icon_theme.append_search_path(icons_path)
+
+        # Set windows icons
+        Gtk.Window.set_default_icon_name('erika')
 
         try:
             self.window = MainWindow(self)
