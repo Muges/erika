@@ -308,7 +308,7 @@ class Podcast(BaseModel):
 
         episodes = self.episodes.where(
             Episode.local_path.is_null(),
-            slugify(Episode.title) << [title, filename]).first(2)
+            fn.slugify(Episode.title) << [title, filename]).first(2)
         if episodes is not None:
             if len(episodes) > 1:
                 logger.warning("Too many episodes with title similar to '%s' "
