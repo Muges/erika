@@ -30,7 +30,7 @@ from datetime import datetime
 import imghdr
 from mutagen.id3 import (  # pylint: disable=no-name-in-module
     TPE1, TALB, TIT2, TSOT, TDRC, ID3TimeStamp, COMM, WOAF, WFED, WORS, TXXX,
-    APIC, TRCK, Encoding, PictureType
+    APIC, TRCK, TCON, Encoding, PictureType
 )
 
 ENCODING = Encoding.UTF8
@@ -92,6 +92,9 @@ def set_tags(audio, episode):  # pylint: disable=too-many-branches
 
             audio.tags["APIC"] = APIC(ENCODING, desc="", mime=mimetype,
                                       type=PictureType.COVER_FRONT, data=data)
+
+    # Genre
+    audio.tags["TCON"] = TCON(ENCODING, text="Podcast")
 
     audio.save()
 
