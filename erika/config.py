@@ -28,13 +28,14 @@ Module defining some constants
 
 from os.path import expanduser, join
 import platform
+from gi.repository import GLib
 
 from .__version__ import __appname__
 
 
 # Directories
 HOME = expanduser("~")
-CONFIG_DIR = join(HOME, ".{}".format(__appname__.lower()))
+CONFIG_DIR = join(GLib.get_user_config_dir(), __appname__.lower())
 
 DATABASE_PATH = join(CONFIG_DIR, "library")
 
