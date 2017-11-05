@@ -30,8 +30,10 @@ from datetime import datetime
 import imghdr
 from mutagen.id3 import (  # pylint: disable=no-name-in-module
     TPE1, TALB, TIT2, TSOT, TDRC, ID3TimeStamp, COMM, WOAF, WFED, WORS, TXXX,
-    APIC, TRCK
+    APIC, TRCK, Encoding, PictureType
 )
+
+ENCODING = Encoding.UTF8
 
 
 def set_tags(audio, episode):  # pylint: disable=too-many-branches
@@ -49,21 +51,21 @@ def set_tags(audio, episode):  # pylint: disable=too-many-branches
 
     # Author and titles
     if episode.podcast.author:
-        audio.tags["TPE1"] = TPE1(3, episode.podcast.author)
+        audio.tags["TPE1"] = TPE1(ENCODING, episode.podcast.author)
     if episode.podcast.title:
-        audio.tags["TALB"] = TALB(3, episode.podcast.title)
+        audio.tags["TALB"] = TALB(ENCODING, episode.podcast.title)
     if episode.title:
-        audio.tags["TIT2"] = TIT2(3, episode.title)
-        audio.tags["TSOT"] = TSOT(3, episode.title)
+        audio.tags["TIT2"] = TIT2(ENCODING, episode.title)
+        audio.tags["TSOT"] = TSOT(ENCODING, episode.title)
 
     # Publication date
     if episode.pubdate:
         timestamp = ID3TimeStamp(episode.pubdate.isoformat(' '))
-        audio.tags["TDRC"] = TDRC(3, [timestamp])
+        audio.tags["TDRC"] = TDRC(ENCODING, [timestamp])
 
     # Description
     if "COMM" not in audio.tags and episode.summary:
-        audio.tags["COMM"] = COMM(3, desc="", text=episode.summary)
+        audio.tags["COMM"] = COMM(ENCODING, desc="", text=episode.summary)
 
     # Links
     if episode.link:
@@ -73,10 +75,10 @@ def set_tags(audio, episode):  # pylint: disable=too-many-branches
     if episode.podcast.link:
         audio.tags["WORS"] = WORS(episode.podcast.link)
     if episode.guid:
-        audio.tags["TXXX"] = TXXX(3, desc="", text=episode.guid)
+        audio.tags["TXXX"] = TXXX(ENCODING, desc="", text=episode.guid)
 
     # Track number
-    audio.tags["TRCK"] = TRCK(3, str(episode.track_number))
+    audio.tags["TRCK"] = TRCK(ENCODING, str(episode.track_number))
 
     # Image
     if "APIC:" not in audio.tags:
@@ -88,8 +90,8 @@ def set_tags(audio, episode):  # pylint: disable=too-many-branches
             else:
                 mimetype = 'image/jpeg'
 
-            audio.tags["APIC"] = APIC(3, desc="", mime=mimetype, type=3,
-                                      data=data)
+            audio.tags["APIC"] = APIC(ENCODING, desc="", mime=mimetype,
+                                      type=PictureType.COVER_FRONT, data=data)
 
     audio.save()
 
