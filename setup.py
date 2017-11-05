@@ -41,7 +41,8 @@ requires = [
     'mygpoclient',
     'peewee',
     'pillow',
-    'requests'
+    'requests',
+    'setuptools'
 ]
 tests_requires = [
     'pytest'
