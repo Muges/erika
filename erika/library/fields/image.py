@@ -23,14 +23,24 @@
 # SOFTWARE.
 
 """
-Object representing an image.
+A field containing an image
 """
 
 import base64
 from io import BytesIO
 from PIL import Image as PImage
+from peewee import BlobField
 
 from gi.repository import GdkPixbuf
+
+
+class ImageField(BlobField):
+    """A field used to store an image."""
+    def db_value(self, image):
+        return image.data
+
+    def python_value(self, data):
+        return Image(data)
 
 
 class Image(object):
@@ -38,10 +48,10 @@ class Image(object):
     Object representing an image.
     """
     def __init__(self, data):
-        if data:
-            self.image = PImage.open(BytesIO(data))
-        else:
-            self.image = PImage.new('RGBA', (1, 1), (0, 0, 0, 0))
+        self.data = data
+
+    def __bool__(self):
+        return self.data is not None
 
     def get_data(self, size=None):
         """
@@ -52,12 +62,15 @@ class Image(object):
         size : Optional[int]
             The size of the image, or None to keep the original size.
         """
-        if size:
-            image = self.image.resize(
-                (size, size * self.image.height // self.image.width),
-                PImage.LANCZOS)
+        if self.data:
+            image = PImage.open(BytesIO(self.data))
         else:
-            image = self.image
+            image = PImage.new('RGBA', (1, 1), (0, 0, 0, 0))
+
+        if size:
+            image = image.resize(
+                (size, size * image.height // image.width),
+                PImage.LANCZOS)
 
         data = BytesIO()
         image.save(data, format='PNG')

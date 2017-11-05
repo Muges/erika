@@ -28,21 +28,11 @@ Table containing the configuration.
 
 from collections import namedtuple
 import logging
-import json
 from peewee import TextField
 
 from erika.config import CONFIG_DEFAULTS
+from erika.library.fields import JSONField
 from .database import BaseModel
-
-
-class JSONField(TextField):
-    """A field used to store values of (almost) any type in JSON"""
-    def db_value(self, value):
-        return json.dumps(value)
-
-    def python_value(self, value):
-        if value is not None:
-            return json.loads(value)
 
 
 class Config(BaseModel):

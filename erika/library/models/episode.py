@@ -34,7 +34,7 @@ from peewee import (BooleanField, DateTimeField, IntegerField, ForeignKeyField,
 from playhouse.hybrid import hybrid_property
 
 from erika import tags
-from erika.image import Image
+from erika.library.fields import Image
 from erika.util import format_duration, sanitize_filename
 from .database import BaseModel
 from .config import Config
@@ -118,7 +118,7 @@ class Episode(BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._image_data = None
+        self._image = None
         self._tried_image_tags = False
 
     @property
@@ -130,10 +130,10 @@ class Episode(BaseModel):
         return format_duration(self.duration)
 
     @property
-    def image_data(self):
+    def image(self):
         """The episode's image as bytes"""
-        if self._image_data:
-            return self._image_data
+        if self._image:
+            return self._image
 
         # Try to get the image from the audio file
         if self.local_path and not self._tried_image_tags:
@@ -141,21 +141,21 @@ class Episode(BaseModel):
 
             audio_tags = tags.get_tags(self.local_path)
             if audio_tags["image"]:
-                self._image_data = audio_tags["image"]
-                return self._image_data
+                self._image = Image(audio_tags["image"])
+                return self._image
 
     @property
     def image(self):
         """The episode's image as an Image object"""
-        if self.image_data is None:
+        if not self._image:
             return self.podcast.image
 
-        return Image(self.image_data)
+        return self._image
 
     @property
     def image_downloaded(self):
         """True if the episode's image has been downloaded"""
-        return self.image_data is not None
+        return self._image
 
     @hybrid_property
     def downloaded(self):
@@ -286,8 +286,8 @@ class Episode(BaseModel):
             The image's data.
         """
         # Return the episode's image if it has already been downloaded
-        if self.image_data:
-            return self.image_data
+        if self._image:
+            return self._image
 
         if self.image_url:
             # Download image
@@ -297,8 +297,8 @@ class Episode(BaseModel):
             except requests.exceptions.RequestException:
                 self.logger.exception("Unable to download image.")
             else:
-                self._image_data = response.content
-                return self._image_data
+                self._image = Image(response.content)
+                return self._image
 
         # Fallback to the podcast's image
-        return self.podcast.image_data
+        return self.podcast.image

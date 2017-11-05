@@ -32,7 +32,7 @@ import requests
 from peewee import BlobField, TextField, DoesNotExist, IntegrityError, fn
 
 from erika import parsers
-from erika.image import Image
+from erika.library.fields import Image, ImageField
 from erika.util import sanitize_filename
 from .database import BaseModel, database, slugify
 from .config import Config
@@ -56,7 +56,7 @@ class Podcast(BaseModel):
         The author of the podcast
     image_url : Optional[str]
         A link to the image of the podcast
-    image_data : Optional[bytes]
+    image : Optional[bytes]
         The content of the image file
     language : Optional[str]
         The language of the podcast
@@ -80,7 +80,7 @@ class Podcast(BaseModel):
     title = TextField(null=True)
     author = TextField(null=True)
     image_url = TextField(null=True)
-    image_data = BlobField(null=True)
+    image = ImageField(null=True)
     language = TextField(null=True)
     subtitle = TextField(null=True)
     summary = TextField(null=True)
@@ -90,11 +90,6 @@ class Podcast(BaseModel):
         indexes = (
             (('parser', 'url'), True),
         )
-
-    @property
-    def image(self):
-        """Return the podcast's image as an Image object"""
-        return Image(self.image_data)
 
     @property
     def display_subtitle(self):
@@ -205,7 +200,7 @@ class Podcast(BaseModel):
             logger.exception("Unable to download the image.")
             return
 
-        self.image_data = response.content
+        self.image = Image(response.content)
 
     def get_next_track_number(self):
         """Get the track number of the next episode"""
