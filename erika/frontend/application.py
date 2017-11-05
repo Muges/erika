@@ -35,6 +35,7 @@ from erika import library
 from erika.library.models import Config, Episode, Podcast
 from erika.library.opml import import_opml, export_opml
 from erika.library.gpodder import GPodderClient
+from erika.util import check_connection
 from . import preferences
 from .main_window import MainWindow
 from .util import cb, get_builder
@@ -182,10 +183,12 @@ class Application(Gtk.Application):
         try:
             client = GPodderClient()
 
-            # Check internet connection
             if not self.online:
                 return
-            if not client.check_connection():
+
+            # Check internet connection
+            hostname = Config.get_value("network.connection_check_hostname")
+            if not check_connection(hostname):
                 self.set_network_state(False, error=True)
                 return
 
@@ -361,8 +364,8 @@ class Application(Gtk.Application):
 
     def set_network_state(self, online=True, error=False):
         if online and not error:
-            client = GPodderClient()
-            error = not client.check_connection()
+            hostname = Config.get_value("network.connection_check_hostname")
+            error = not check_connection(hostname)
         if error:
             online = False
 

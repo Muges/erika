@@ -59,4 +59,6 @@ CONFIG_DEFAULTS = {
     "gpodder.devicename_changed": False,
     "gpodder.last_subscription_sync": 0,
     "gpodder.last_episodes_sync": 0,
+
+    "network.connection_check_hostname": "github.com",
 }

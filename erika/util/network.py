@@ -23,11 +23,19 @@
 # SOFTWARE.
 
 """
-Utility functions
+Network related utility functions
 """
 
-from .files import guess_extension, sanitize_filename
-from .format import format_duration, format_fulltext_duration, format_size
-from .plaintext_to_html import plaintext_to_html
-from .network import check_connection
-from .html_to_plaintext import html_to_plaintext
+import socket
+
+
+def check_connection(hostname, timeout=2):
+    """Check that there is a network connection"""
+    try:
+        # Resolve the hostname
+        host = socket.gethostbyname(hostname)
+        # Connect to the server
+        socket.create_connection((host, 80), timeout)
+        return True
+    except Exception:  # pylint: disable=broad-except
+        return False
