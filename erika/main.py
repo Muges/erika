@@ -49,13 +49,19 @@ def run():
     logger.setLevel(logging.DEBUG)
     logger.propagate = False
 
+    formatter = logging.Formatter('%(levelname)-8s (%(name)s) : %(message)s')
+
     # Display logs on stdout
     handler = logging.StreamHandler()
     handler.setLevel(logging.DEBUG)
-
-    formatter = logging.Formatter('%(levelname)-8s (%(name)s) : %(message)s')
     handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
+    # Save logs
+    logfile = os.path.join(CONFIG_DIR, 'debug.log')
+    handler = logging.FileHandler(logfile, mode='w')
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(formatter)
     logger.addHandler(handler)
 
     # Create the configuration directory if it does not exists
