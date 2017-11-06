@@ -57,16 +57,6 @@ def initialize():
         Episode.update(new=False)
 
 
-def update():
-    """Update the library"""
-    # TODO : multi-threaded update
-    logger = logging.getLogger(__name__)
-    logger.info("Updating the library")
-
-    for podcast in Podcast.select():
-        podcast.update_podcast()
-
-
 def scan():
     """Scan the library directory to add the local episode files"""
     logger = logging.getLogger(__name__)

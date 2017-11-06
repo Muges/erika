@@ -201,7 +201,11 @@ class Application(Gtk.Application):
             if update:
                 GObject.idle_add(self.window.statusbox.edit,
                                  message_id, "Updating library...")
-                library.update()
+
+                for podcast in Podcast.select():
+                    podcast.update_podcast()
+                    GObject.idle_add(
+                        self.window.podcast_list.update_podcast, podcast)
 
             if update and scan:
                 GObject.idle_add(self.window.statusbox.edit,

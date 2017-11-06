@@ -167,8 +167,11 @@ class PodcastList(Gtk.VBox):
         try:
             row = self.list.get_row(podcast.id)
         except ValueError:
-            pass
+            # The row does not exist, create it
+            row = PodcastRow(podcast)
+            self.list.add_with_id(row, podcast.id)
         else:
+            row.podcast = podcast
             row.update()
 
     def update_current(self):
