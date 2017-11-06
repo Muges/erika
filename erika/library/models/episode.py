@@ -131,7 +131,7 @@ class Episode(BaseModel):
 
     @property
     def image(self):
-        """The episode's image as bytes"""
+        """The episode's image as  an Image object"""
         if self._image:
             return self._image
 
@@ -144,13 +144,7 @@ class Episode(BaseModel):
                 self._image = Image(audio_tags["image"])
                 return self._image
 
-    @property
-    def image(self):
-        """The episode's image as an Image object"""
-        if not self._image:
-            return self.podcast.image
-
-        return self._image
+        return self.podcast.image
 
     @property
     def image_downloaded(self):
