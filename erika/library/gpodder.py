@@ -94,14 +94,8 @@ class GPodderClient(object):
                     self.configuration.hostname,
                     self.client or connecting))
 
-    def connect(self, raise_exception=False):
+    def connect(self):
         """Connect to gpodder.net
-
-        Parameters
-        ----------
-        raise_exception : Optional[Bool]
-            True to raise an exception when the connection was unsuccessful
-            (default is False)
 
         Returns
         -------
@@ -121,13 +115,11 @@ class GPodderClient(object):
             self.logger.warning('Invalid credentials. Unable to connect to '
                                 'gpodder.net.')
             self.client = None
-            if raise_exception:
-                raise GPodderUnauthorized()
+            raise GPodderUnauthorized()
         except Exception:  # pylint: disable=broad-except
             self.logger.exception("Unable to connect to gpodder.net.")
             self.client = None
-            if raise_exception:
-                raise
+            raise
 
         return self.client is not None
 

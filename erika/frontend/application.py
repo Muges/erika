@@ -33,7 +33,7 @@ from gi.repository import Gtk
 from erika import library
 from erika.library.models import Config, Episode, Podcast
 from erika.library.opml import import_opml, export_opml
-from erika.library.gpodder import GPodderClient
+from erika.library.gpodder import GPodderClient, GPodderUnauthorized
 from erika.util import check_connection
 from . import preferences
 from .main_window import MainWindow
@@ -195,7 +195,20 @@ class Application(Gtk.Application):
 
             GObject.idle_add(self.window.statusbox.add,
                              "Synchronizing subscriptions...", message_id)
-            client.connect()
+
+            try:
+                client.connect()
+            except GPodderUnauthorized:
+                self.window.error_label.set_text(
+                    'Unable to connect to gpodder: invalid credentials.')
+                self.window.error_bar.show()
+            except Exception:
+                self.window.error_label.set_text(
+                    'Unable to connect to gpodder.')
+                self.window.error_bar.show()
+            else:
+                self.window.error_bar.hide()
+
             client.synchronize_subscriptions()
 
             if update:

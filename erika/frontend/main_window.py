@@ -74,6 +74,17 @@ class MainWindow(Gtk.ApplicationWindow):
         self.player.connect('state-changed',
                             cb(player_title.set_player_state))
 
+        # Error bar
+        self.error_bar = Gtk.InfoBar()
+        self.error_bar.set_no_show_all(True)
+        self.error_bar.set_message_type(Gtk.MessageType.ERROR)
+        self.error_bar.set_show_close_button(True)
+        self.error_bar.connect('response', cb(self.error_bar.hide, 2))
+
+        self.error_label = Gtk.Label()
+        self.error_label.show()
+        self.error_bar.get_content_area().add(self.error_label)
+
         # Views
         self.details = Details()
 
@@ -121,6 +132,8 @@ class MainWindow(Gtk.ApplicationWindow):
     def _build_layout(self):
         vbox = Gtk.VBox()
         self.add(vbox)
+
+        vbox.pack_start(self.error_bar, False, False, 0)
 
         right_paned = Paned()
         right_paned.set_limit_width(700)
