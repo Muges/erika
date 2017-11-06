@@ -243,13 +243,16 @@ class PodcastRow(Gtk.ListBoxRow):
         # Unplayed and new counts
         self.counts = Label()
         self.counts.set_alignment(xalign=1, yalign=0.5)
-        self.grid.attach(self.counts, 2, 0, 1, 1)
+        self.grid.attach(self.counts, 2, 0, 2, 1)
 
         # Podcast subtitle
         self.subtitle = Label(lines=SUBTITLE_LINES)
-        self.grid.attach(self.subtitle, 1, 1, 2, 1)
+        self.grid.attach(self.subtitle, 1, 1, 3, 1)
 
-        self.show_all()
+        self.error_icon = Gtk.Image.new_from_icon_name(
+            'gtk-dialog-error', Gtk.IconSize.BUTTON)
+        self.error_icon.set_tooltip_text(
+            'The last update of this podcast failed.')
 
         self.update()
 
@@ -286,6 +289,17 @@ class PodcastRow(Gtk.ListBoxRow):
         else:
             self.counts.set_markup(unplayed + " " + new)
 
+        # Update layout if there was an error
+        self.grid.remove(self.counts)
+        self.grid.remove(self.error_icon)
+        if self.podcast.update_failed:
+            self.grid.attach(self.counts, 2, 0, 1, 1)
+            self.grid.attach(self.error_icon, 3, 0, 1, 1)
+        else:
+            self.grid.attach(self.counts, 2, 0, 2, 1)
+
         # Podcast subtitle (only the first line)
         self.subtitle.set_text(
             self.podcast.display_subtitle.split('\n')[0])
+
+        self.show_all()
