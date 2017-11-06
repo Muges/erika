@@ -35,6 +35,7 @@ from gi.repository import Gtk
 from gi.repository import WebKit
 from gi.repository import GObject
 from gi.repository import Gio
+from gi.repository import Pango
 
 from erika.library.models import Podcast
 
@@ -76,12 +77,13 @@ class Details(Gtk.ScrolledWindow):
     def _set_style(self):
         """Get colors and font from the GTK theme"""
         context = self.view.get_style_context()
+
+        # Get default font
         font = context.get_font(Gtk.StateFlags.NORMAL)
 
-        # Get font
         settings = self.view.get_settings()
-        #settings.set_property('default-font-size',
-        #                      font.get_size() // Pango.SCALE)
+        settings.set_property('default-font-size',
+                              font.get_size() // Pango.SCALE)
         settings.set_property('default-font-family', font.get_family())
 
         # Get colors
