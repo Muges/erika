@@ -30,6 +30,7 @@ import logging
 from time import mktime
 from datetime import datetime
 import feedparser
+import requests
 
 from erika.library import Episode
 from erika.util import plaintext_to_html, html_to_plaintext
@@ -202,7 +203,8 @@ def parse(podcast):
     logger = logging.getLogger(__name__)
     logger.debug("Parsing %s.", podcast.url)
 
-    document = feedparser.parse(podcast.url)
+    response = requests.get(podcast.url, timeout=10)
+    document = feedparser.parse(response.content)
 
     parse_feed(document.feed, podcast)
     episodes = [parse_entry(entry) for entry in document.entries]
