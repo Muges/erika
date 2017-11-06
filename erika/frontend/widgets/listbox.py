@@ -185,7 +185,7 @@ class ListBox(Gtk.ListBox):
         if first > last:
             first, last = last, first
 
-        for index in range(first, last+1):
+        for index in range(first, last + 1):
             row = self.get_row_at_index(index)
             # Select only the visible rows
             if self.filter_func(row):

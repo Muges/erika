@@ -184,11 +184,11 @@ class DownloadRow(Gtk.ListBoxRow):
     def _on_progress(self, job, currentsize, totalsize, speed):
         """Update the widget to show the current download progress"""
         try:
-            remaining_time = int(round((totalsize-currentsize)/speed))
+            remaining_time = int(round((totalsize - currentsize) / speed))
         except ZeroDivisionError:
             remaining_time = None
 
-        self.progress.set_fraction(currentsize/totalsize)
+        self.progress.set_fraction(currentsize / totalsize)
         if remaining_time is None:
             self.progress_label.set_text("{} of {} ({}/s)".format(
                 format_size(currentsize), format_size(totalsize),

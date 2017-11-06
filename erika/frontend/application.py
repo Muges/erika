@@ -23,9 +23,8 @@
 # SOFTWARE.
 
 import logging
-import pkg_resources
 import threading
-from gi.repository import GdkPixbuf
+import pkg_resources
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
@@ -50,12 +49,14 @@ class Application(Gtk.Application):
     """
     __gsignals__ = {
         'network-state-changed':
-            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_BOOLEAN, GObject.TYPE_BOOLEAN)),
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_BOOLEAN,
+                                              GObject.TYPE_BOOLEAN)),
     }
 
     def __init__(self):
-        Gtk.Application.__init__(self, application_id="fr.muges.erika",
-                                 flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+        Gtk.Application.__init__(
+            self, application_id="fr.muges.erika",
+            flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
 
         self.logger = logging.getLogger(
             "{}.{}".format(__name__, self.__class__.__name__))
@@ -138,7 +139,7 @@ class Application(Gtk.Application):
         interval = Config.get_value("library.synchronize_interval")
 
         self.synchronize_library(scan=True)
-        GObject.timeout_add_seconds(interval*60, self.synchronize_library)
+        GObject.timeout_add_seconds(interval * 60, self.synchronize_library)
 
         self.window.show_all()
         self.window.present()

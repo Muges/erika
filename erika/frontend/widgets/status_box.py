@@ -125,7 +125,7 @@ class StatusBox(Gtk.HBox):
 
         # Remove the separator
         try:
-            separator = self.separators.pop(max(0, index-1))
+            separator = self.separators.pop(max(0, index - 1))
         except IndexError:
             pass
         else:

@@ -29,7 +29,7 @@ Table containing the podcasts
 import logging
 import os.path
 import requests
-from peewee import BlobField, TextField, DoesNotExist, IntegrityError, fn
+from peewee import TextField, DoesNotExist, IntegrityError, fn
 
 from erika import parsers
 from erika.library.fields import Image, ImageField
@@ -176,8 +176,8 @@ class Podcast(BaseModel):
             self.download_image()
 
         next_track_number = self.get_next_track_number()
-        with database.transaction():
 
+        with database.transaction():
             self.save()
 
             for episode in episodes:

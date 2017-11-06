@@ -50,7 +50,8 @@ class NetworkButton(Gtk.Button):
         self.set_network_state(self.online, self.error)
 
         application = Gio.Application.get_default()
-        application.connect('network-state-changed', cb(self.set_network_state))
+        application.connect('network-state-changed',
+                            cb(self.set_network_state))
 
         self.connect('clicked',
                      lambda _: application.set_network_state(not self.online))
