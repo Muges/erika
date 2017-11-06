@@ -29,7 +29,7 @@ Table containing the podcasts
 import logging
 import os.path
 import requests
-from peewee import TextField, DoesNotExist, IntegrityError, fn
+from peewee import BooleanField, TextField, DoesNotExist, IntegrityError, fn
 
 from erika import parsers
 from erika.library.fields import Image, ImageField
@@ -66,13 +66,8 @@ class Podcast(BaseModel):
         A description of the podcast
     link : Optional[str]
         Website link
-
-    new_count : int
-        Number of new episodes
-    played_count : int
-        Number of played episodes
-    episodes_count : int
-        Number of episodes
+    update_failed : bool
+        True if the last update of the podcast failed.
     """
     parser = TextField()
     url = TextField()
@@ -85,6 +80,8 @@ class Podcast(BaseModel):
     subtitle = TextField(null=True)
     summary = TextField(null=True)
     link = TextField(null=True)
+
+    update_failed = BooleanField(default=False)
 
     class Meta:  # pylint: disable=too-few-public-methods, missing-docstring
         indexes = (
@@ -166,27 +163,37 @@ class Podcast(BaseModel):
             ".".join((__name__, self.__class__.__name__)))
         logger.info("Updating the podcast %s.", self.display_title)
 
-        # Parse the podcast
-        # TODO : handle errors
-        episodes = parsers.parse(self)
+        try:
+            # Parse the podcast
+            episodes = parsers.parse(self)
 
-        # Download the podcast's image if its url changed
-        dirty_fields = [field.name for field in self.dirty_fields]
-        if 'image_url' in dirty_fields:
-            self.download_image()
+            # Download the podcast's image if its url changed
+            dirty_fields = [field.name for field in self.dirty_fields]
+            if 'image_url' in dirty_fields:
+                self.download_image()
 
-        next_track_number = self.get_next_track_number()
+            # Get the track number that should be used for the next new episode
+            next_track_number = self.get_next_track_number()
 
-        with database.transaction():
+            # Save the podcast and the episodes in the database
+            with database.transaction():
+                self.update_failed = False
+                self.save()
+
+                for episode in episodes:
+                    episode.track_number = next_track_number
+                    try:
+                        episode.save()
+                    except IntegrityError:
+                        # The episode is already in the database, don't
+                        # increment the track number.
+                        continue
+                    next_track_number += 1
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Unable to update the podcast.")
+
+            self.update_failed = True
             self.save()
-
-            for episode in episodes:
-                episode.track_number = next_track_number
-                try:
-                    episode.save()
-                except IntegrityError:
-                    continue
-                next_track_number += 1
 
     def download_image(self):
         """Download the podcast's image"""
