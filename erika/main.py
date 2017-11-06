@@ -57,16 +57,16 @@ def run():
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
+    # Create the configuration directory if it does not exists
+    if not os.path.isdir(CONFIG_DIR):
+        os.makedirs(CONFIG_DIR)
+
     # Save logs
     logfile = os.path.join(CONFIG_DIR, 'debug.log')
     handler = logging.FileHandler(logfile, mode='w')
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-
-    # Create the configuration directory if it does not exists
-    if not os.path.isdir(CONFIG_DIR):
-        os.makedirs(CONFIG_DIR)
 
     library.initialize()
 
