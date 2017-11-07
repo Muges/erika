@@ -1,5 +1,4 @@
 __pycache__
 .eggs
-Podcasts.egg-info
+erika.egg-info
 .cache
-flycheck_*
