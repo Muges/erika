@@ -116,7 +116,8 @@ class Application(Gtk.Application):
             self.set_app_menu(builder.get_object("app-menu"))
 
         # Load custom icons
-        icons_path = pkg_resources.resource_filename('erika', 'data/icons')
+        icons_path = pkg_resources.resource_filename(
+            'erika.frontend', 'data/icons')
         icon_theme = Gtk.IconTheme.get_default()
         icon_theme.append_search_path(icons_path)
 
