@@ -23,7 +23,7 @@
 # SOFTWARE.
 
 """
-A parser creating a podcast from an Atom/RSS feed
+The :mod:`erika.parsers.rss` module implements a parser for RSS and Atom feeds.
 """
 
 import logging
@@ -39,7 +39,7 @@ MIN_SUBTITLE_LENGTH = 25
 
 
 def parse_feed(feed, podcast):
-    """Parse the feed element"""
+    """Parse the feed element."""
     try:
         image = feed.image.href
     except AttributeError:
@@ -59,7 +59,7 @@ def parse_feed(feed, podcast):
 
 
 def parse_links(links):
-    """Parse an entry's links to find the audio file
+    """Parse an entry's links to find the audio file.
 
     Returns
     -------
@@ -89,7 +89,7 @@ def parse_links(links):
 
 
 def parse_duration(string):
-    """Parse a duration of the form [hours:]minutes:seconds"""
+    """Parse a duration of the form ``[hours:]minutes:seconds``."""
     if string == "":
         return None
 
@@ -108,7 +108,7 @@ def parse_duration(string):
 
 
 def summary_to_subtitle(summary):
-    """Convert a summary (in html) to a subtitle (in plaintext)"""
+    """Convert a summary (in html) to a subtitle (in plaintext)."""
     summary_lines = [
         line.strip()
         for line in html_to_plaintext(summary).split("\n")
@@ -129,12 +129,7 @@ def summary_to_subtitle(summary):
 
 
 def parse_entry(entry):
-    """Parse an entry
-
-    Returns
-    -------
-    Episode
-    """
+    """Parse an rss entry."""
     if "published_parsed" in entry:
         timestamp = mktime(entry.published_parsed)
         pubdate = datetime.fromtimestamp(timestamp)
@@ -188,17 +183,17 @@ def parse_entry(entry):
 
 
 def parse(podcast):
-    """Parse a podcast from an Atom/RSS feed
+    """Parse an RSS or Atom feed.
 
     Parameters
     ----------
-    podcast : Podcast
-        The podcast to parse
+    podcast : :class:`Podcast`
+        The podcast to parse.
 
     Returns
     -------
-    List[Episode]
-        The list of the podcast's episodes
+    list of :class:`Episode`
+        A list of the podcast's episodes.
     """
     logger = logging.getLogger(__name__)
     logger.debug("Parsing %s.", podcast.url)

@@ -9,6 +9,7 @@ Table of contents
 
 .. toctree::
    :maxdepth: 4
-   :caption: API Reference
+   :caption: API Documentation
 
    erika.library
+   erika.parsers

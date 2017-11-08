@@ -23,24 +23,37 @@
 # SOFTWARE.
 
 """
-Module used to parse podcasts.
+The :mod:`erika.parsers` module implements parsers for the sources of podcasts.
+
+A parser is a submodule of the :mod:`erika.parsers` module. It should implement
+a ``parse`` function, which, given a podcast, parses its source, set its
+attributes, and returns a list of its episodes (see the
+:mod:`erika.parsers.rss` module for an example).
+
+Each :class:`Podcast` has an attribute ``parser``, which is the name of the
+submodule that should be used.
+
+For now the only available is the :mod:`erika.parsers.rss` module, for RSS and
+Atom feeds, and support for different parsers has not yet been added to the
+GUI.
 """
 
 import importlib
 
 
 def parse(podcast):
-    """Parse a podcast
+    """Parse a podcast source, edit the podcast's attribute, and return a list
+    of the podcast's episode.
 
     Parameters
     ----------
-    podcast : Podcast
-        The podcast to parse
+    podcast : :class:`Podcast`
+        The podcast to parse.
 
     Returns
     -------
-    List[Episode]
-        The list of the podcast's episodes
+    list of :class:`Episode`
+        A list of the podcast's episodes.
     """
     if "." in podcast.parser:
         raise ValueError(
