@@ -14,3 +14,4 @@ Table of contents
    erika.library
    erika.parsers
    erika.tags
+   erika.util

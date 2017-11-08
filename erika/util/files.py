@@ -61,18 +61,18 @@ HYPHEN_REPLACE = r"\1 - \3"
 
 
 def guess_extension(mimetype):
-    """
-    Guess a file's extension from its mimetype.
+    """Guess a file's extension from its mimetype.
 
-    The mimetypes.guess_extension sometimes return uncommon extensions, such as
-    ".mp2" instead of ".mp3" for mimetype "audio/mpeg". This function tries
-    to return consistent extensions for common podcast formats, and falls back
-    to mimetypes.guess_extension for other formats.
+    The :func:`mimetypes.guess_extension` function sometimes return uncommon
+    extensions, such as ``.mp2`` instead of ``.mp3`` for mimetype
+    ``audio/mpeg``. This function tries to return consistent extensions for
+    common podcast formats, and falls back to :func:`mimetypes.guess_extension`
+    for other formats.
 
     Parameters
     ----------
     mimetype : str
-        The mimetype of a file
+        The mimetype of a file.
 
     Returns
     -------
@@ -86,8 +86,7 @@ def guess_extension(mimetype):
 
 
 def sanitize_filename(filename):
-    """
-    Sanitize a string to make it a valid filename.
+    """Sanitize a string to make it a valid filename.
 
     This should hopefully work for windows and linux.
     """

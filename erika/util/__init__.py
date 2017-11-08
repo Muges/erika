@@ -23,8 +23,14 @@
 # SOFTWARE.
 
 """
-Utility functions
+The :mod:`erika.util` provides various utility functions.
 """
+
+__all__ = [
+    'guess_extension', 'sanitize_filename', 'format_duration',
+    'format_fulltext_duration', 'format_size', 'plaintext_to_html',
+    'check_connection', 'html_to_plaintext'
+]
 
 from .files import guess_extension, sanitize_filename
 from .format import format_duration, format_fulltext_duration, format_size

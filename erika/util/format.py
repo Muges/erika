@@ -28,13 +28,12 @@ Formatting functions
 
 
 def format_duration(seconds):
-    """
-    Format a duration as "[hours:]minutes:seconds".
+    """Format a duration as ``[hours:]minutes:seconds``.
 
     Parameters
     ----------
     seconds : int
-        Duration in seconds
+        Duration in seconds.
 
     Returns
     -------
@@ -50,13 +49,12 @@ def format_duration(seconds):
 
 
 def format_fulltext_duration(seconds):
-    """
-    Format a duration as "h hours, m minutes".
+    """Format a duration as ``h hours, m minutes``.
 
     Parameters
     ----------
     seconds : int
-        Duration in seconds
+        Duration in seconds.
 
     Returns
     -------
@@ -82,17 +80,19 @@ def format_fulltext_duration(seconds):
 
 
 def format_size(size):
-    """Convert a size in bytes into a human readable string
+    """Convert a size in bytes into a human readable string.
 
     Example
     -------
-    >>>format_size(2.25*1024)
-    '2.25 kB'
+    ::
+
+        >>>format_size(2.25*1024)
+        '2.25 kB'
 
     Parameters
     ----------
     size : int
-        Size in bytes
+        Size in bytes.
 
     Returns
     -------
