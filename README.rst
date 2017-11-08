@@ -10,8 +10,8 @@ Erika is a GTK+ podcast manager for Linux.
 Features
 --------
 
- - Suscribe, download and listen to audio podcasts
- - Keep your podcast library organised, and synchronize it with `gpodder.net`_
+- Suscribe, download and listen to audio podcasts
+- Keep your podcast library organised, and synchronize it with `gpodder.net`_
 
 .. _gpodder.net: https://gpodder.net
 
