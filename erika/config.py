@@ -23,7 +23,8 @@
 # SOFTWARE.
 
 """
-Module defining some constants
+The :mod:`erika.config` module defines constants used for the configuration or
+erika.
 """
 
 from os.path import expanduser, join

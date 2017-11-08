@@ -23,7 +23,7 @@
 # SOFTWARE.
 
 """
-Launcher
+The :mod:`erika.main` module provides an entry point for erika.
 """
 
 import logging
@@ -44,7 +44,7 @@ from .__version__ import __appname__, __version__
 
 
 def run():
-    """Start the application"""
+    """Start the application."""
     logger = logging.getLogger("erika")
     logger.setLevel(logging.DEBUG)
     logger.propagate = False

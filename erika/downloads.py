@@ -23,7 +23,9 @@
 # SOFTWARE.
 
 """
-Module handling the downloading of podcast episodes
+The :mod:`erika.downloads` module provides a dowloading function with average
+speed computation, as well as a class:`DownloadPool` to implement parallel
+downloading.
 """
 
 import logging
@@ -45,7 +47,7 @@ TIME_DELTA = 0.05
 
 
 def download_chunks(episode):
-    """Download an episode by chunks
+    """Download an episode by chunks.
 
     Yields
     ------
@@ -110,7 +112,7 @@ def download_chunks(episode):
 
 def download_with_average_speed(episode):
     """Download an episode by chunks, and compute the average speed (see
-    https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average)
+    https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average).
 
     Yields
     ------
@@ -150,7 +152,7 @@ def download_with_average_speed(episode):
 
 class DownloadsPool(object):
     """Download pool, handling the downloads queue and the workers to make
-    concurrent downloads possible"""
+    concurrent downloads possible."""
     def __init__(self):
         self.queue = Queue()
 
@@ -161,7 +163,7 @@ class DownloadsPool(object):
         ]
 
     def add(self, job):
-        """Add a new job to the queue
+        """Add a new job to the queue.
 
         A job should have :
          - a cancel method, which stops the job cleanly and as soon as possible
@@ -170,13 +172,13 @@ class DownloadsPool(object):
         self.queue.put(job)
 
     def stop(self):
-        """Stop all the workers (and the jobs being currently executed)"""
+        """Stop all the workers (and the jobs being currently executed)."""
         for worker in self.workers:
             worker.stop()
 
 
 class DownloadWorker(Thread):
-    """Thread waiting for jobs to be added to the queue and executing them"""
+    """Thread waiting for jobs to be added to the queue and executing them."""
     def __init__(self, queue):
         Thread.__init__(self)
 
