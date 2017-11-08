@@ -24,7 +24,7 @@
 
 
 """
-A field used to store values of (almost) any type in JSON
+A field used to store values of (almost) any type in JSON.
 """
 
 import json
@@ -33,7 +33,7 @@ from peewee import TextField
 
 
 class JSONField(TextField):
-    """A field used to store values of (almost) any type in JSON"""
+    """A field used to store values of (almost) any type in JSON."""
     def db_value(self, value):
         return json.dumps(value)
 

@@ -23,7 +23,7 @@
 # SOFTWARE.
 
 """
-Table containing the podcasts
+A model used to store podcasts in the library.
 """
 
 import logging
@@ -42,30 +42,30 @@ from .podcast_action import PodcastAction
 
 
 class Podcast(BaseModel):
-    """Object representing a podcast in the library
+    """A model used to store podcasts in the library.
 
     Attributes
     ----------
     parser : str
-        The name of the parser
+        The name of the parser (see :mod:`erika.parsers`).
     url : str
-        The url of the podcast
-    title : Optional[str]
-        The title of the podcast
-    author : Optional[str]
-        The author of the podcast
-    image_url : Optional[str]
+        The url of the podcast.
+    title : str, optional
+        The title of the podcast.
+    author : str, optional
+        The author of the podcast.
+    image_url : str, optional
         A link to the image of the podcast
-    image : Optional[bytes]
-        The content of the image file
-    language : Optional[str]
-        The language of the podcast
-    subtitle : Optional[str]
-        The subtitle of the podcast
-    summary : Optional[str]
-        A description of the podcast
-    link : Optional[str]
-        Website link
+    image : :class:`~erika.library.fields.Image`, optional
+        The image of the podcast.
+    language : str, optional
+        The language of the podcast.
+    subtitle : str, optional
+        The subtitle of the podcast.
+    summary : str, optional
+        A description of the podcast.
+    link : str, optional
+        Website link.
     update_failed : bool
         True if the last update of the podcast failed.
     """
@@ -90,51 +90,54 @@ class Podcast(BaseModel):
 
     @property
     def display_subtitle(self):
-        """Return the podcast's subtitle or its summary"""
+        """str: The subtitle of the podcast, or its summary if it has no
+        subtitle."""
         return self.subtitle or self.summary or ""
 
     @property
     def display_summary(self):
-        """Return the podcast's summary or its subtitle"""
+        """str: The summary of the podcast, or its subtitle if it has no
+        summary."""
         return self.summary or self.subtitle or ""
 
     @property
     def display_title(self):
-        """Return the podcast's title or its url"""
+        """str: The title of the podcast, or its url if it has no title."""
         return self.title or self.url or ""
 
     @property
     def episodes_count(self):
-        """Return the number of episodes of the podcast"""
+        """int: the number of episodes of the podcast."""
         return self.episodes.count()
 
     @property
     def played_count(self):
-        """Return the number of episodes that have already been played"""
+        """int: the number of episodes that have already been played."""
         # pylint: disable=singleton-comparison
         return self.episodes.where(Episode.played == True).count()
 
     @property
     def new_count(self):
-        """Return the number of new episodes"""
+        """int: the number of episodes that have been added since the previous
+        launch."""
         # pylint: disable=singleton-comparison
         return self.episodes.where(Episode.new == True).count()
 
     @property
     def unplayed_count(self):
-        """Return the number of episodes that have not been played"""
+        """int: the number of episodes that have not been played."""
         return self.episodes_count - self.played_count
 
     @classmethod
     def new(cls, parser, url):
         """Create a new podcast, and add it to the database
 
-        Attributes
+        Parameters
         ----------
         parser_name : str
-            The name of a parser (a module of the erika.parser package)
+            The name of a parser (see :mod:`erika.parsers`).
         url : str
-            The url of the podcast
+            The url of the podcast.
         """
         logger = logging.getLogger(".".join((__name__, cls.__name__)))
         logger.info("Adding the %s podcast %s.", parser, url)
@@ -158,7 +161,7 @@ class Podcast(BaseModel):
         super().delete_instance(*args, **kwargs)
 
     def update_podcast(self):
-        """Update the podcast"""
+        """Update the podcast."""
         logger = logging.getLogger(
             ".".join((__name__, self.__class__.__name__)))
         logger.info("Updating the podcast %s.", self.display_title)
@@ -210,13 +213,13 @@ class Podcast(BaseModel):
         self.image = Image(response.content)
 
     def get_next_track_number(self):
-        """Get the track number of the next episode"""
+        """Get the track number of the next episode."""
         previous = self.episodes.select(fn.Max(Episode.track_number)).get()
         previous_number = previous.track_number or 0
         return previous_number + 1
 
     def get_directory(self):
-        """Return the path of the directory containing a podcast's audio files
+        """Return the directory containing a podcast's audio files.
 
         Returns
         -------
@@ -230,22 +233,21 @@ class Podcast(BaseModel):
         )
 
     def get_episode_from_tags_strict(self, audiotags):
-        """Get the podcast's episode matching a file strictly
+        """Get the podcast's episode matching a file strictly.
 
         Returns the episode having the same guid, or the same title
         and publication date if there is one (meaning it was probably
-        tagged by this application).
+        tagged by erika).
 
         Parameters
         ----------
         audiotags : dict
-            Dictionnary containing the audio file's metadata
+            Dictionnary containing the audio file's metadata.
 
         Returns
         -------
-        Optional[Episode]
-            The episode, or None if there was no match
-
+        :class:`Episode`, optional
+            The episode, or None if there was no match.
         """
         logger = logging.getLogger(
             ".".join((__name__, self.__class__.__name__)))
@@ -267,7 +269,7 @@ class Podcast(BaseModel):
         return episode
 
     def get_episode_from_tags_loose(self, audiotags, filename):
-        """Get the podcast's episode matching a file loosely
+        """Get the podcast's episode matching a file loosely.
 
         Returns the episode having a title similar to the title or
         filename of the audio file. If there is more than one such
@@ -277,15 +279,14 @@ class Podcast(BaseModel):
         Parameters
         ----------
         audiotags : dict
-            Dictionnary containing the audio file's metadata
+            Dictionnary containing the audio file's metadata.
         filename : str
-            The name of the audio file (without extensions or directory)
+            The name of the audio file (without extensions or directory).
 
         Returns
         -------
-        Optional[Episode]
-            The episode, or None if there was no match
-
+        :class:`Episode`, optional
+            The episode, or None if there was no match.
         """
         logger = logging.getLogger(
             ".".join((__name__, self.__class__.__name__)))

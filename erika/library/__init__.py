@@ -23,7 +23,7 @@
 # SOFTWARE.
 
 """
-Podcast library
+The :mod:`erika.library` module implements the podcast library.
 """
 
 import logging
@@ -58,7 +58,7 @@ def initialize():
 
 
 def scan():
-    """Scan the library directory to add the local episode files"""
+    """Scan the library directory to add the local episode files."""
     logger = logging.getLogger(__name__)
     logger.info("Scanning the library")
 

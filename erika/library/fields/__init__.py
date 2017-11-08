@@ -23,7 +23,17 @@
 # SOFTWARE.
 
 """
-Module containing custom database fields
+The :mod:`erika.library.fields` module provides custom database fields for the
+podcast library.
+
+.. autoclass:: erika.library.fields.JSONField
+    :members:
+
+.. autoclass:: erika.library.fields.ImageField
+    :members:
+
+.. autoclass:: erika.library.fields.Image
+    :members:
 """
 
 from .json import JSONField

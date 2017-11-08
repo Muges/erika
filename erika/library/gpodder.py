@@ -23,7 +23,8 @@
 # SOFTWARE.
 
 """
-Synchronization with gpodder.net
+The :mod:`erika.library.gpodder` module handles the synchronization of the
+library with gpodder.net.
 """
 
 import logging
@@ -37,7 +38,7 @@ from .models import (database, Config, Episode, EpisodeAction, Podcast,
 
 
 class GPodderUnauthorized(Exception):
-    """Raised when the clients tries to connect to gpodder.net with
+    """Exception raised when the clients tries to connect to gpodder.net with
     invalid credentials."""
 
     def __init__(self):
@@ -46,9 +47,10 @@ class GPodderUnauthorized(Exception):
 
 
 class RemoteEpisodeAction(object):  # pylint: disable=too-few-public-methods
-    """Object representing a remote episode action
+    """Object representing a remote episode action.
 
-    It has the same attributes as the EpisodeAction model.
+    It has the same attributes as an
+    :class:`~erika.library.models.EpisodeAction`.
     """
     def __init__(self, action):
         self.podcast_url = action.podcast
@@ -68,7 +70,7 @@ class RemoteEpisodeAction(object):  # pylint: disable=too-few-public-methods
 
 
 class GPodderClient(object):
-    """Client handling the synchronization of the database with gpodder.net"""
+    """Client handling the synchronization of the library with gpodder.net."""
     def __init__(self):
         self.logger = logging.getLogger(
             ".".join((__name__, self.__class__.__name__)))
@@ -79,14 +81,14 @@ class GPodderClient(object):
         self.client = None
 
     def enabled(self, connecting=False):
-        """Returns True if the synchronization is enabled and the client is
-        connected
+        """Return True if the synchronization is enabled and the client is
+        connected.
 
         Parameters
         ----------
-        connecting : Optional[Bool]
+        connecting : bool, optional
             True to return True even if the client is not connected yet
-            (default is False)
+            (default is False).
         """
         return all((self.configuration.synchronize,
                     self.configuration.username,
@@ -95,12 +97,12 @@ class GPodderClient(object):
                     self.client or connecting))
 
     def connect(self):
-        """Connect to gpodder.net
+        """Connect to gpodder.net.
 
         Returns
         -------
         bool
-            True if the connection was successful
+            True if the connection attempt was successful.
         """
         if not self.enabled(connecting=True):
             return False
@@ -124,7 +126,7 @@ class GPodderClient(object):
         return self.client is not None
 
     def update_device(self):
-        """Update the device name"""
+        """Update the device name."""
         if not self.enabled():
             return
 
@@ -144,7 +146,7 @@ class GPodderClient(object):
         self.configuration = Config.get_group("gpodder")
 
     def pull_subscriptions(self):
-        """Pull the subscriptions changes from gpodder.net and process them"""
+        """Pull the subscriptions changes from gpodder.net and process them."""
         if not self.enabled():
             return
 
@@ -175,12 +177,12 @@ class GPodderClient(object):
             Config.set_value("gpodder.last_subscription_sync", changes.since)
 
     def push_subscriptions(self):
-        """Push the local subscriptions changes to gpodder.net
+        """Push the local subscriptions changes to gpodder.net.
 
         Returns
         -------
-        Optional[datetime]
-            The time at which the subscriptions were synchronized
+        datetime, optional
+            The time at which the subscriptions were synchronized.
         """
         if not self.enabled():
             return
@@ -232,7 +234,7 @@ class GPodderClient(object):
         return None
 
     def synchronize_subscriptions(self):
-        """Synchronize the subscriptions changes with gpodder.net"""
+        """Synchronize the subscriptions changes with gpodder.net."""
         if not self.enabled():
             return
 
@@ -243,14 +245,14 @@ class GPodderClient(object):
             Config.set_value("gpodder.last_subscription_sync", since)
 
     def process_episode_actions(self, actions):
-        """Process the episodes actions
+        """Process the episodes actions.
 
         Parameters
         ----------
-        actions : List[Union[EpisodeAction, RemoteEpisodeAction]]
-            A list of all local and remote episode actions
+        actions : list of :class:`EpisodeAction` and :class:`RemoteEpisodeAction`
+            A list containing all the local and remote episode actions.
         since : int
-            The time at which the remote actions were pulled
+            The time at which the remote actions were pulled.
         """
         actions.sort(key=lambda a: a.time)
 
@@ -263,7 +265,7 @@ class GPodderClient(object):
                                           action)
 
     def process_episode_action(self, action):
-        """Process an episode action"""
+        """Process an episode action."""
         if action.action == "play":
             if action.position + self.smart_mark_seconds >= action.total:
                 (Episode
@@ -282,7 +284,7 @@ class GPodderClient(object):
              .execute())
 
     def pull_episode_actions(self):
-        """Pull episode actions from gpodder.net"""
+        """Pull episode actions from gpodder.net."""
         if not self.enabled():
             return
 
@@ -304,7 +306,7 @@ class GPodderClient(object):
         Config.set_value("gpodder.last_episodes_sync", changes.since)
 
     def push_episode_actions(self):
-        """Push episode actions to gpodder.net"""
+        """Push episode actions to gpodder.net."""
         if not self.enabled():
             return
 
@@ -328,7 +330,7 @@ class GPodderClient(object):
         return since
 
     def synchronize_episode_actions(self):
-        """Synchronize episode actions with gpodder.net"""
+        """Synchronize episode actions with gpodder.net."""
         if not self.enabled():
             return
 

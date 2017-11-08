@@ -23,7 +23,7 @@
 # SOFTWARE.
 
 """
-Table containing the episodes
+A model used to store episodes in the library.
 """
 
 import logging
@@ -44,46 +44,46 @@ Podcast = Proxy()  # pylint: disable=invalid-name
 
 class Episode(BaseModel):
     """
-    Object representing an episode in the library
+    A model used to store episodes in the library.
 
     Attributes
     ----------
     podcast : Podcast
-        The podcast
-    guid : Optional[str]
-        A unique identifier for the episode
-    pubdate : Optional[datetime]
-        The date of publication of the episode
-    title : Optional[str]
-        The title of the episode
-    duration : Optional[int]
-        The duration of the episode in seconds
-    image_url : Optional[str]
-        A link to the image of the episode
-    subtitle : Optional[str]
-        The subtitle of the episode in plaintext
-    summary : Optional[str]
-        A description of the episode in html
-    link : Optional[str]
-        Website link
+        The podcast the episode belongs to.
+    guid : str, optional
+        A unique identifier for the episode.
+    pubdate : datetime, optional
+        The date of publication of the episode.
+    title : str, optional
+        The title of the episode.
+    duration : int, optional
+        The duration of the episode in seconds.
+    image_url : str, optional
+        A link to the image of the episode.
+    subtitle : str, optional
+        The subtitle of the episode in plaintext.
+    summary : str, optional
+        A description of the episode in html.
+    link : str, optional
+        Website link.
     track_number : int
-        The track_number of the episode. As long as the publication dates are
+        The track number of the episode. As long as the publication dates are
         consistent with the publication order this should be accurate.
-    file_url : Optional[str]
-        Url of the episode file
-    file_size : Optional[int]
-        Size of the episode file in bytes
-    mimetype : Optional[str]
-        Mimetype of the episode file
-    local_path : Optional[str]
-        Path of the downloaded file
+    file_url : str, optional
+        Url of the episode file.
+    file_size : int, optional
+        Size of the episode file in bytes.
+    mimetype : str, optional
+        Mimetype of the episode file.
+    local_path : str, optional
+        Path of the downloaded file.
     new : bool
-        True if the episode is new
+        True if the episode is new.
     played : bool
-        True if the episode has been played
+        True if the episode has been played.
     progress : int
         Number of seconds of the episode that have been played (used to be able
-        to resume the playback after quitting the application)
+        to resume the playback after quitting the application).
     """
 
     podcast = ForeignKeyField(Podcast, related_name='episodes',
@@ -123,7 +123,7 @@ class Episode(BaseModel):
 
     @property
     def display_duration(self):
-        """The episode's duration as a formatted string"""
+        """str: the episode's duration as a formatted string."""
         if not self.duration:
             return ""
 
@@ -131,7 +131,7 @@ class Episode(BaseModel):
 
     @property
     def image(self):
-        """The episode's image as  an Image object"""
+        """:class:`~erika.library.fields.Image`: the episode's image."""
         if self._image:
             return self._image
 
@@ -148,23 +148,23 @@ class Episode(BaseModel):
 
     @property
     def image_downloaded(self):
-        """True if the episode's image has been downloaded"""
+        """bool: true if the episode's image has been downloaded."""
         return self._image
 
     @hybrid_property
     def downloaded(self):
-        """True if the episode has been downloaded"""
+        """bool: true if the episode has been downloaded."""
         return self.local_path is not None
 
     @downloaded.expression
     def downloaded(self):
-        """True if the episode has been downloaded"""
+        """bool: true if the episode has been downloaded."""
         return self.local_path.is_null(False)
 
     @classmethod
     def get_matching(cls, path):
         """Get the episode matching a file and move the file to the right
-        location
+        location.
 
         Parameters
         ----------
@@ -173,8 +173,8 @@ class Episode(BaseModel):
 
         Returns
         -------
-        Optional[Episode]
-            The episode, or None if there was no match
+        :class:`Episode`, optional
+            The episode, or None if there was no match.
         """
         logger = logging.getLogger(".".join((__name__, cls.__name__)))
         logger.debug("Searching for an episode matching the file '%s'", path)
@@ -209,16 +209,16 @@ class Episode(BaseModel):
 
     @staticmethod
     def get_counts():
-        """Get the episodes counts
+        """Return a tuple containing some statistics about all the episodes.
 
         Returns
         -------
         int
-            The number of new episodes
+            The number of new episodes.
         int
-            The number of played episodes
+            The number of played episodes.
         int
-            The total number of episodes
+            The total number of episodes.
         """
         # pylint: disable=singleton-comparison
         new = Episode.select().where(Episode.new == True).count()
@@ -227,7 +227,7 @@ class Episode(BaseModel):
         return new, played, total
 
     def import_file(self, path):
-        """Import the episode's audio file in the library
+        """Import the episode's audio file in the library.
 
         Moves the file and sets its tag."""
         extension = os.path.splitext(path)[1]
@@ -240,7 +240,7 @@ class Episode(BaseModel):
 
     def get_default_filename(self, extension):
         """Return the default filename for the audio file of an episode given
-        its extension
+        its extension.
 
         Parameters
         ----------
@@ -249,7 +249,7 @@ class Episode(BaseModel):
         Returns
         -------
         str
-            The default filename for the episode
+            The default filename for the episode.
         """
         dirname = self.podcast.get_directory()
         template = Config.get_value("library.episode_file_template")
@@ -260,24 +260,25 @@ class Episode(BaseModel):
         return filename + extension
 
     def mark_as_played(self):
-        """Mark the episode as played"""
+        """Mark the episode as played."""
         self.played = True
         self.new = False
 
     def mark_as_unplayed(self):
-        """Mark the episode as unplayed"""
+        """Mark the episode as unplayed."""
         self.played = False
 
     def get_image(self):
-        """Get the episode's image
+        """Get the episode's image.
 
-        This method downloads the episode's image if image_url is not None, and
-        falls back to the podcast's image if it is None or in case of error.
+        This method downloads the episode's image if ``image_url`` is not None
+        (and it has not been dowloaded yet), and falls back to the podcast's
+        image if it is None or if an error occured.
 
         Returns
         -------
-        bytes
-            The image's data.
+        :class:`~erika.library.fields.Image`
+            The image.
         """
         # Return the episode's image if it has already been downloaded
         if self._image:

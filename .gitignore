@@ -2,3 +2,4 @@ __pycache__
 .eggs
 erika.egg-info
 .cache
+docs/_build

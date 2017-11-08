@@ -23,7 +23,7 @@
 # SOFTWARE.
 
 """
-Table containing the configuration.
+A Model storing the configuration of the application as ``(key, value)`` pairs.
 """
 
 from collections import namedtuple
@@ -36,18 +36,26 @@ from .database import BaseModel
 
 
 class Config(BaseModel):
-    """Model for the configuration of the application"""
+    """A model storing the configuration of the application as ``(key, value)``
+    pairs.
+
+    The keys can be of the form ``group.key``, making it possible to
+    get all the values of a certain group at once with the :func:`~get_group`
+    method.
+
+    The values can be of any type that is serializable by the ``json`` python
+    module."""
     key = TextField(primary_key=True)
     value = JSONField(null=True)
 
     @classmethod
     def get_value(cls, key):
-        """Return the value associated to a key"""
+        """Return the value associated to a key."""
         return cls.get(Config.key == key).value
 
     @classmethod
     def set_value(cls, key, value):
-        """Set the value associated to a key"""
+        """Set the value associated to a key."""
         (cls
          .insert(key=key, value=value)
          .upsert()
@@ -55,7 +63,11 @@ class Config(BaseModel):
 
     @classmethod
     def set_defaults(cls):
-        """Set the default values"""
+        """Set the default configuration values (ignoring the values that are
+        already defined).
+
+        The default values are stored in the
+        :py:obj:`erika.config.CONFIG_DEFAULTS` dictionnary."""
         logger = logging.getLogger(".".join((__name__, cls.__name__)))
         logger.debug("Setting default configuration.")
 
@@ -67,35 +79,41 @@ class Config(BaseModel):
 
     @staticmethod
     def get_group(group):
-        """Return the configurations values whose keys start with the prefix
-        'group.'.
+        """Return the configurations pairs belonging to a group (i.e. whose
+        keys are of the form ``group.*``).
 
-        Examples
-        --------
+        Example
+        -------
         Assuming the config table contains the following data:
 
-         key                 | value
-        ---------------------+------------------
-         downloads.workers   | 2
-         gpodder.synchronize | False
-         gpodder.hostname    | 'gpodder.net'
+        +---------------------+------------------+
+        | key                 | value            |
+        +=====================+==================+
+        | downloads.workers   | 2                |
+        +---------------------+------------------+
+        | gpodder.synchronize | False            |
+        +---------------------+------------------+
+        | gpodder.hostname    | 'gpodder.net'    |
+        +---------------------+------------------+
 
-        >>>Config.get_group("downloads")
-        configuration(workers=2)
-        >>>Config.get_group("gpodder")
-        configuration(synchronize=False, hostname='gpodder.net')
-        >>>Config.get_group("nothing")
-        configuration()
+        .. code-block:: python
+
+            >>>Config.get_group("downloads")
+            configuration(workers=2)
+            >>>Config.get_group("gpodder")
+            configuration(synchronize=False, hostname='gpodder.net')
+            >>>Config.get_group("nothing")
+            configuration()
 
         Parameters
         ----------
         group : str
-           The name of the group
+           The name of the group.
 
         Returns
         -------
         namedtuple
-            A namedtuple containing the values
+            A namedtuple containing the ``(key, value)`` pairs.
         """
         prefix = group + "."
         lprefix = len(prefix)

@@ -23,7 +23,7 @@
 # SOFTWARE.
 
 """
-A field containing an image
+A field used to store an image.
 """
 
 import base64
@@ -46,6 +46,11 @@ class ImageField(BlobField):
 class Image(object):
     """
     Object representing an image.
+
+    If an Image is used in a format string, it will be returned as a data uri,
+    making it possible to embed it in html as follow::
+
+        '<img src="{image}" />'.format(image=image)
     """
     def __init__(self, data):
         self.data = data
@@ -53,40 +58,40 @@ class Image(object):
     def __bool__(self):
         return self.data is not None
 
-    def get_data(self, size=None):
+    def get_data(self, width=None):
         """
-        Return an array of bytes containing the image in png format.
+        Return a byte sequence containing the image in png format.
 
         Parameters
         ----------
-        size : Optional[int]
-            The size of the image, or None to keep the original size.
+        width : int, optional
+            The width of the image, or None to keep the original width.
         """
         if self.data:
             image = PImage.open(BytesIO(self.data))
         else:
             image = PImage.new('RGBA', (1, 1), (0, 0, 0, 0))
 
-        if size:
+        if width:
             image = image.resize(
-                (size, size * image.height // image.width),
+                (width, width * image.height // image.width),
                 PImage.LANCZOS)
 
         data = BytesIO()
         image.save(data, format='PNG')
         return data.getvalue()
 
-    def as_pixbuf(self, size=None):
+    def as_pixbuf(self, width=None):
         """
-        Return the GdkPixbuf.Pixbuf corresponding to the image.
+        Return the image as :class:`GdkPixbuf.Pixbuf`.
 
         Parameters
         ----------
-        size : Optional[int]
-            The size of the pixbuf, or None to keep the original size.
+        width : int, optional
+            The width of the pixbuf, or None to keep the original width.
         """
         loader = GdkPixbuf.PixbufLoader.new_with_mime_type("image/png")
-        loader.write(self.get_data(size))
+        loader.write(self.get_data(width))
         loader.close()
         pixbuf = loader.get_pixbuf()
 
@@ -98,13 +103,13 @@ class Image(object):
 
         Parameters
         ----------
-        spec : Optional[str]
-            The size of the image, or None to keep the original size.
+        spec : str, optional
+            The width of the image, or None to keep the original width.
         """
         if spec:
-            size = int(spec)
+            width = int(spec)
         else:
-            size = None
+            width = None
 
         return "data:image/png;base64,{}".format(
-            base64.b64encode(self.get_data(size)).decode())
+            base64.b64encode(self.get_data(width)).decode())

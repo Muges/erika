@@ -23,7 +23,23 @@
 # SOFTWARE.
 
 """
-Module containing the database models
+The :mod:`erika.library.models` module provides the database models for the
+podcast library.
+
+.. autoclass:: erika.library.models.Config
+    :members:
+
+.. autoclass:: erika.library.models.Podcast
+    :members:
+
+.. autoclass:: erika.library.models.Episode
+    :members:
+
+.. autoclass:: erika.library.models.EpisodeAction
+    :members:
+
+.. autoclass:: erika.library.models.PodcastAction
+    :members:
 """
 
 from .database import database

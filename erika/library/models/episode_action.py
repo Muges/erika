@@ -38,24 +38,26 @@ from .config import Config
 
 
 class EpisodeAction(BaseModel):
-    """Object representing an episode action in the library
+    """A model used to store episode actions in the library.
+
+    The episode actions are used for the gpodder synchronization.
 
     Attributes
     ----------
-    episode : Episode
-        The episode
+    episode : :class:`Episode`
     action : str
-        The type of the action (download, delete, play or new)
-    time : Optional[datetime]
-        The UTC time when the action took place as a datetime
-    started : Optional[int]
+        The type of the action (download, delete, play or new).
+    time : datetime, optional
+        The UTC time when the action took place as a datetime.
+    started : int, optional
         The position at which the playback started (only valid if action is
-        'play')
-    position : Optional[int]
+        'play').
+    position : int, optional
         The position at which the playback was stopped (only valid if action is
-        'play')
-    total : Optional[int]
-        The duration of the episode in seconds (only valid if action is 'play')
+        'play').
+    total : int, optional
+        The duration of the episode in seconds (only valid if action is
+        'play').
     """
     episode = ForeignKeyField(Episode, on_delete='CASCADE')
     action = TextField()
@@ -67,21 +69,23 @@ class EpisodeAction(BaseModel):
 
     @property
     def podcast_url(self):
-        """The url of the episode's podcast"""
+        """str: the url of the episode's podcast."""
         return self.episode.podcast.url
 
     @property
     def episode_url(self):
-        """The url of the episode"""
+        """str: the url of the episode."""
         return self.episode.file_url
 
     @property
     def timestamp(self):
-        """The UTC time when the action took place as an ISO8601 timestamp"""
+        """str: the UTC time when the action took place as an ISO8601
+        timestamp."""
         return datetime_to_iso8601(self.time)
 
     def for_gpodder(self):
-        """Converts an EpisodeAction into a mygpoclient.api.EpisodeAction"""
+        """Convert the EpisodeAction into a
+        :class:`mygpoclient.api.EpisodeAction`"""
         device = Config.get_value("gpodder.deviceid")
 
         if self.action == "play":

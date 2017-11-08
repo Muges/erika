@@ -32,21 +32,23 @@ from .database import BaseModel
 
 
 class PodcastAction(BaseModel):
-    """Object representing a podcast action in the library
+    """A model used to store podcast actions in the library.
+
+    The podcast actions are used for the gpodder synchronization.
 
     Attributes
     ----------
     podcast_url : str
-        The url of the podcast
+        The url of the podcast.
     action : str
-        The type of the action (add or remove)
+        The type of the action (add or remove).
     """
     podcast_url = TextField(primary_key=True)
     action = TextField()
 
     @staticmethod
     def new(**kwargs):
-        """Create a new podcast action (or overwrite an existing one)"""
+        """Create a new podcast action (or overwrite an existing one)."""
         (PodcastAction
          .insert(**kwargs)
          .upsert()

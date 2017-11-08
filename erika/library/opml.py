@@ -23,7 +23,8 @@
 # SOFTWARE.
 
 """
-Module handling opml import and export.
+The :mod:`erika.library.opml` module provides functions to import and export
+opml files.
 """
 
 from email.utils import formatdate
@@ -34,7 +35,7 @@ from .models import Podcast
 
 def import_opml(filename):
     """
-    Import the podcasts subscriptions from an opml file.
+    Import podcasts subscriptions from an opml file.
 
     Parameters
     ----------
@@ -49,7 +50,7 @@ def import_opml(filename):
 
 def export_opml(filename):
     """
-    Export the podcasts subscriptions in an opml file.
+    Export the podcasts subscriptions to an opml file.
 
     Parameters
     ----------
