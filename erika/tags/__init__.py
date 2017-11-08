@@ -23,7 +23,10 @@
 # SOFTWARE.
 
 """
-Module handling the audio tags
+The :mod:`erika.tags` module provides functions to set and get tags for various
+audio format.
+
+For now, the only supported format is MP3.
 """
 
 import logging
@@ -33,15 +36,14 @@ from . import mp3
 
 
 def set_tags(filename, episode):
-    """
-    Set the tags of the audio file of an episode.
+    """Set the tags of the audio file of an episode.
 
     Parameters
     ----------
     filename : str
-        The audio file
-    episode : Episode
-        The corresponding episode
+        The audio file.
+    episode : :class:`Episode`
+        The corresponding episode.
     """
     logger = logging.getLogger(__name__)
 
@@ -59,13 +61,12 @@ def set_tags(filename, episode):
 
 
 def get_tags(filename):
-    """
-    Get the tags of an audio file.
+    """Get the tags of an audio file.
 
     Parameters
     ----------
     filename : str
-        The audio file
+        The audio file.
     """
     logger = logging.getLogger(__name__)
 

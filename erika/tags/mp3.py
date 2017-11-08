@@ -23,7 +23,8 @@
 # SOFTWARE.
 
 """
-Module handling audio tags reading and writing for mp3 files
+The :mod:`erika.tags.mp3` module provides functions to set and get tags of mp3
+files.
 """
 
 from datetime import datetime
@@ -37,14 +38,14 @@ ENCODING = Encoding.UTF8
 
 
 def set_tags(audio, episode):  # pylint: disable=too-many-branches
-    """Set the tags of the mp3 audio file of an episode
+    """Set the tags of the mp3 audio file of an episode.
 
     Parameters
     ----------
     filename : str
-        The audio file
-    episode : Episode
-        The corresponding episode
+        The audio file.
+    episode : :class:`Episode`
+        The corresponding episode.
     """
     if not audio.tags:
         audio.add_tags()
@@ -100,9 +101,7 @@ def set_tags(audio, episode):  # pylint: disable=too-many-branches
 
 
 def get_tag(audio, tag):
-    """
-    Get an audio tag.
-    """
+    """Get an audio tag, or return None if it is not available."""
     try:
         return audio.tags[tag].text[0]
     except (KeyError, IndexError, TypeError):
@@ -110,9 +109,7 @@ def get_tag(audio, tag):
 
 
 def get_tags(audio):
-    """
-    Return the tags of an audio file.
-    """
+    """Return the tags of an audio file."""
     date = get_tag(audio, "TDRC")
     try:
         date = datetime.strptime(date.text, "%Y-%m-%d %H:%M:%S")
