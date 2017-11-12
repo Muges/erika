@@ -25,36 +25,26 @@
 
 # pylint: disable=invalid-name
 
+import os
+import sys
 from setuptools import setup, find_packages
 
 from erika.__version__ import __appname__, __version__
 
-# Read description from README
-with open('README.md') as f:
+# 'setup.py publish' shortcut.
+if sys.argv[-1] == 'publish':
+    os.system('python setup.py sdist bdist_wheel')
+    os.system('twine upload dist/*')
+    sys.exit()
+
+with open('README.rst') as f:
     long_description = f.read()
 
-# Dependencies
-requires = [
-    'feedparser',
-    'lxml',
-    'mutagen',
-    'mygpoclient',
-    'peewee',
-    'pillow',
-    'requests',
-    'setuptools'
-]
-tests_requires = [
-    'pytest'
-]
-setup_requires = [
-    'pytest-runner'
-]
 
 setup(
     name=__appname__.lower(),
     version=__version__,
-    description='Podcast manager',
+    description='A GTK podcast manager',
     long_description=long_description,
     license='MIT',
     url='https://github.com/Muges/erika',
@@ -63,19 +53,27 @@ setup(
 
     packages=find_packages(),
     package_data={
-        'erika': [
-            'data/icons/*.png',
-            'data/icons/*.svg'
-        ],
         'erika.frontend': [
+            'data/icons/hicolor/*/*/*.png',
+            'data/icons/hicolor/*/*/*.svg',
             'data/*.glade',
             'data/*.html'
         ],
     },
 
-    install_requires=requires,
-    setup_requires=setup_requires,
-    tests_require=tests_requires,
+    install_requires=[
+        'feedparser',
+        'lxml',
+        'mutagen',
+        'mygpoclient',
+        'peewee',
+        'pillow',
+        'requests',
+        'setuptools'
+    ],
+    tests_require=[
+        'pytest'
+    ],
 
     entry_points={
         'console_scripts': [

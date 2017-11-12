@@ -3,3 +3,5 @@ __pycache__
 erika.egg-info
 .cache
 docs/_build
+build
+dist
