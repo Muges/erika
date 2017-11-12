@@ -24,7 +24,7 @@
 
 """
 The :mod:`erika.downloads` module provides a dowloading function with average
-speed computation, as well as a class:`DownloadPool` to implement parallel
+speed computation, as well as a :class:`DownloadPool` to implement parallel
 downloading.
 """
 
@@ -52,7 +52,7 @@ def download_chunks(episode):
     Yields
     ------
     int, int
-        The size of the previous chunk, and the total size of the file
+        The size of the previous chunk, and the total size of the file.
     """
     logger = logging.getLogger(__name__)
 
@@ -117,9 +117,9 @@ def download_with_average_speed(episode):
     Yields
     ------
     int, int, float
-        - The current downloaded size in bytes,
-        - the total file size in bytes,
-        - the average downloading speed in bytes per second
+        - The current downloaded size in bytes;
+        - the total file size in bytes;
+        - the average downloading speed in bytes per second.
     """
     previous_time = time.time()  # Time of the previous step
     current_size = 0  # Total downloaded size
@@ -166,8 +166,12 @@ class DownloadsPool(object):
         """Add a new job to the queue.
 
         A job should have :
-         - a cancel method, which stops the job cleanly and as soon as possible
-         - a start method, which starts the job
+
+        - a ``cancel`` method, which stops the job cleanly and as soon as
+          possible;
+        - a ``start`` method, which starts the job.
+
+        See :class:`erika.frontend.downloads.DownloadJob` for an example.
         """
         self.queue.put(job)
 
@@ -207,7 +211,7 @@ class DownloadWorker(Thread):
                 self.queue.task_done()
 
     def stop(self):
-        """Stop the worker (and the job being currently executed)"""
+        """Stop the worker (and the job being currently executed)."""
         self.stopped = True
         if self.current_job:
             self.current_job.cancel()

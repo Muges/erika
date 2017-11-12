@@ -23,8 +23,11 @@
 # SOFTWARE.
 
 """
-Version informations
+The :mod:`erika.__version__` module defines the current version of erika.
 """
 
 __appname__ = "Erika"
+"""The name of the application."""
+
 __version__ = "0.1.0"
+"""The current version of the application."""

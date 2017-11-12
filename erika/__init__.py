@@ -23,5 +23,5 @@
 # SOFTWARE.
 
 """
-Podcast manager
+Erika is a GTK+ podcast manager for Linux.
 """
