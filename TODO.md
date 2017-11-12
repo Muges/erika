@@ -1,4 +1,0 @@
-- [ ] Better syntax for templates (see quodlibet patterns?)
-- [ ] Better error handling in frontend/application.py
-- [ ] Tests
-- [ ] Translation
