@@ -20,7 +20,7 @@ Installation
 
 Install Python 3 and PyGObject_, and run the command ::
 
-    pip install git+https://github.com/Muges/erika.git
+    pip install erika
 
 .. _PyGObject:
     https://pygobject.readthedocs.io/en/latest/getting_started.html
