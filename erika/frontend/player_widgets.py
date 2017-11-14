@@ -65,9 +65,8 @@ class PlayerTitle(Gtk.Stack):
         self.position = builder.get_object("position")
         self.duration = builder.get_object("duration")
 
+        self.show_all()
         self.set_player_state(None, Player.STOPPED)
-        # The line above does not seem to be enough for the title to be visible
-        GObject.idle_add(self.set_player_state, None, Player.STOPPED)
 
     def set_player_state(self, episode, state):
         """Called when the state of the player changes
