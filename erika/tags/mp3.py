@@ -28,7 +28,6 @@ files.
 """
 
 from datetime import datetime
-import imghdr
 from mutagen.id3 import (  # pylint: disable=no-name-in-module
     TPE1, TALB, TIT2, TSOT, TDRC, ID3TimeStamp, COMM, WOAF, WFED, WORS, TXXX,
     APIC, TRCK, TCON, Encoding, PictureType
@@ -83,15 +82,11 @@ def set_tags(audio, episode):  # pylint: disable=too-many-branches
 
     # Image
     if "APIC:" not in audio.tags:
-        data = episode.get_image()
+        image = episode.get_image()
 
-        if data:
-            if imghdr.what(None, h=data) == 'png':
-                mimetype = 'image/png'
-            else:
-                mimetype = 'image/jpeg'
-
-            audio.tags["APIC"] = APIC(ENCODING, desc="", mime=mimetype,
+        if image:
+            data = image.get_data()
+            audio.tags["APIC"] = APIC(ENCODING, desc="", mime='image/png',
                                       type=PictureType.COVER_FRONT, data=data)
 
     # Genre
