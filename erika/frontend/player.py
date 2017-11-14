@@ -62,8 +62,8 @@ class Player(GObject.Object):
         'episode-updated':
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
         'progress-changed':
-            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_LONG,
-                                              GObject.TYPE_LONG)),
+            (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_INT64,
+                                              GObject.TYPE_INT64)),
         'state-changed':
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,
                                               GObject.TYPE_INT,)),
