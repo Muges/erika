@@ -35,3 +35,4 @@ from .paned import Paned
 from .scrolled_window import ScrolledWindow
 from .sort_button import SortButton
 from .status_box import StatusBox
+from .webview import WebView
