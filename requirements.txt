@@ -6,4 +6,3 @@ peewee
 pillow
 requests
 setuptools
-vext.gi
