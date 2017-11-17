@@ -28,8 +28,20 @@ Erika is a GTK+ podcast manager for Linux.
 """
 
 # pylint: disable=invalid-name
+import os
+
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
 
 from erika.main import run
 
 if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+
+    # Load custom icons
+    icons_path = os.path.join(script_dir, 'data', 'icons')
+    icon_theme = Gtk.IconTheme.get_default()
+    icon_theme.append_search_path(icons_path)
+
     run()

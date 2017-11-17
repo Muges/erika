@@ -41,6 +41,25 @@ with open('README.rst') as f:
     long_description = f.read()
 
 
+def data_directory(dst, src):
+    """Generate a list of ``(directory, files)`` pairs to be used in the
+    ``data_files`` parameter of the ``setup`` function in order to move the
+    content of the ``src`` directory in the ``dst`` directory."""
+    data_files = []
+
+    for root, _, filenames in os.walk(src):
+        if not filenames:
+            continue
+
+        filenames = [
+            os.path.join(root, filename) for filename in filenames
+        ]
+        dirname = os.path.relpath(root, src)
+        data_files.append((os.path.join(dst, dirname), filenames))
+
+    return data_files
+
+
 setup(
     name=__appname__.lower(),
     version=__version__,
@@ -54,8 +73,6 @@ setup(
     packages=find_packages(),
     package_data={
         'erika.frontend': [
-            'data/icons/hicolor/*/*/*.png',
-            'data/icons/hicolor/*/*/*.svg',
             'data/*.glade',
             'data/*.html'
         ],
@@ -63,7 +80,7 @@ setup(
     data_files=[
         ('share/erika', ['README.rst', 'CHANGELOG.rst']),
         ('share/applications', ['data/erika.desktop']),
-    ],
+    ] + data_directory('share/icons', 'data/icons'),
 
     install_requires=[
         'feedparser',
@@ -73,7 +90,6 @@ setup(
         'peewee',
         'pillow',
         'requests',
-        'setuptools'
     ],
     tests_require=[
         'pytest'

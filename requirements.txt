@@ -5,4 +5,3 @@ mygpoclient
 peewee
 pillow
 requests
-setuptools

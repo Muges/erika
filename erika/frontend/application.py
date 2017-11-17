@@ -24,7 +24,6 @@
 
 import logging
 import threading
-import pkg_resources
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
@@ -114,12 +113,6 @@ class Application(Gtk.Application):
             # Create the menu
             builder = get_builder('data/menu.glade')
             self.set_app_menu(builder.get_object("app-menu"))
-
-        # Load custom icons
-        icons_path = pkg_resources.resource_filename(
-            'erika.frontend', 'data/icons')
-        icon_theme = Gtk.IconTheme.get_default()
-        icon_theme.append_search_path(icons_path)
 
         # Set windows icons
         Gtk.Window.set_default_icon_name('erika')
