@@ -86,7 +86,6 @@ setup(
     },
 
     classifiers=[
-        'Development Status :: 3 - Alpha',
         'Environment :: X11 Applications :: GTK',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
