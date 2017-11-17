@@ -60,6 +60,10 @@ setup(
             'data/*.html'
         ],
     },
+    data_files=[
+        ('share/erika', ['README.rst', 'CHANGELOG.rst']),
+        ('share/applications', ['data/erika.desktop']),
+    ],
 
     install_requires=[
         'feedparser',

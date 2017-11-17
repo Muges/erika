@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Erika
+GenericName=Podcast Manager
+Comment=A GTK+ podcast manager.
+Exec=erika
+Terminal=false
+Type=Application
+Icon=erika
+Categories=GTK;AudioVideo;Audio;Player;
+StartupNotify=true
