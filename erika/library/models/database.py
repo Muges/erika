@@ -30,9 +30,7 @@ import string
 from playhouse.sqlite_ext import SqliteExtDatabase
 from peewee import Model
 
-from erika.config import DATABASE_PATH
-
-database = SqliteExtDatabase(DATABASE_PATH)  # pylint: disable=invalid-name
+database = SqliteExtDatabase(None)  # pylint: disable=invalid-name
 
 
 class BaseModel(Model):

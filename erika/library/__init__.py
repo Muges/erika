@@ -29,11 +29,13 @@ The :mod:`erika.library` module implements the podcast library.
 import logging
 import os
 
+from playhouse.sqlite_ext import SqliteExtDatabase
+
 from .models import (database, Config, Episode, EpisodeAction, Podcast,
                      PodcastAction)
 
 
-def initialize():
+def initialize(configuration_directory):
     """Create or update the database
 
     This function should be called once at the beginning of the
@@ -44,6 +46,9 @@ def initialize():
     """
     logger = logging.getLogger(__name__)
     logger.debug("Initializing the database")
+
+    database_path = os.path.join(configuration_directory, "library")
+    database.init(database_path)
 
     with database.transaction():
         database.create_tables(

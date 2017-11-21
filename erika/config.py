@@ -38,8 +38,6 @@ from .__version__ import __appname__
 HOME = expanduser("~")
 CONFIG_DIR = join(GLib.get_user_config_dir(), __appname__.lower())
 
-DATABASE_PATH = join(CONFIG_DIR, "library")
-
 CONFIG_DEFAULTS = {
     "library.root": join(HOME, "Podcasts"),
     "library.podcast_directory_template": "{podcast.title}",

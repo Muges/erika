@@ -125,15 +125,15 @@ class Application(Gtk.Application):
             self.logger.info('Erika is already running.')
             return
 
+        self.setup_logging()
+        library.initialize(CONFIG_DIR)
+
         try:
             self.window = MainWindow(self)
         except BaseException:
             self.logger.exception("Unable to create main window.")
 
         self.set_network_state(self.online)
-
-        self.setup_logging()
-        library.initialize()
 
         interval = Config.get_value("library.synchronize_interval")
 
