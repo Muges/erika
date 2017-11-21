@@ -34,7 +34,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-from erika.main import run
+from erika.frontend import run
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))

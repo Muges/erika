@@ -27,11 +27,19 @@ GTK frontend
 """
 
 import sys
+import gi
 
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gst', '1.0')
+gi.require_version('WebKit', '3.0')
+gi.require_version('GdkPixbuf', '2.0')
+
+# pylint: disable=wrong-import-position
 from gi.repository import Gst
 from gi.repository import GObject
 
 from .application import Application
+# pylint: enable=wrong-import-position
 
 
 def run():

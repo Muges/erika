@@ -97,7 +97,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'erika = erika.main:run',
+            'erika = erika.frontend:run',
         ],
     },
 
