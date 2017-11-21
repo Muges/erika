@@ -26,8 +26,6 @@
 The :mod:`erika.main` module provides an entry point for erika.
 """
 
-import logging
-import os
 import gi
 
 gi.require_version('Gtk', '3.0')
@@ -37,37 +35,9 @@ gi.require_version('GdkPixbuf', '2.0')
 
 # pylint: disable=wrong-import-position
 from . import frontend
-from . import library
-from .config import CONFIG_DIR
-from .__version__ import __appname__, __version__
 # pylint: enable=wrong-import-position
 
 
 def run():
     """Start the application."""
-    logger = logging.getLogger("erika")
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False
-
-    formatter = logging.Formatter('%(levelname)-8s (%(name)s) : %(message)s')
-
-    # Display logs on stdout
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.DEBUG)
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-
-    # Create the configuration directory if it does not exists
-    if not os.path.isdir(CONFIG_DIR):
-        os.makedirs(CONFIG_DIR)
-
-    # Save logs
-    logfile = os.path.join(CONFIG_DIR, 'debug.log')
-    handler = logging.FileHandler(logfile, mode='w')
-    handler.setLevel(logging.DEBUG)
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-
-    library.initialize()
-
     frontend.run()

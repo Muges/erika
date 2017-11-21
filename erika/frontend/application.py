@@ -22,6 +22,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import os
 import logging
 import threading
 from gi.repository import Gio
@@ -30,6 +31,7 @@ from gi.repository import GObject
 from gi.repository import Gtk
 
 from erika import library
+from erika.config import CONFIG_DIR
 from erika.library.models import Config, Episode, Podcast
 from erika.library.opml import import_opml, export_opml
 from erika.library.gpodder import GPodderClient, GPodderUnauthorized
@@ -117,18 +119,21 @@ class Application(Gtk.Application):
         # Set windows icons
         Gtk.Window.set_default_icon_name('erika')
 
+    def _on_activate(self):
+        """Called when the application is launched"""
+        if self.window is not None:
+            self.logger.info('Erika is already running.')
+            return
+
         try:
             self.window = MainWindow(self)
         except BaseException:
             self.logger.exception("Unable to create main window.")
 
-    def _on_activate(self):
-        """Called when the application is launched"""
-        if self.window is None:
-            self.quit()
-            return
-
         self.set_network_state(self.online)
+
+        self.setup_logging()
+        library.initialize()
 
         interval = Config.get_value("library.synchronize_interval")
 
@@ -140,6 +145,10 @@ class Application(Gtk.Application):
 
     def _on_command_line(self, command_line):
         """Called when the application is launched from the command line"""
+        if self.window is not None:
+            self.logger.info('Erika is already running.')
+            return 0
+
         options = command_line.get_options_dict()
 
         if options.contains("offline"):
@@ -228,6 +237,32 @@ class Application(Gtk.Application):
         finally:
             GObject.idle_add(self._synchronization_end, message_id)
             self.synchronization_lock.release()
+
+    def setup_logging(self):
+        """Create logging handlers."""
+        logger = logging.getLogger("erika")
+        logger.setLevel(logging.DEBUG)
+        logger.propagate = False
+
+        formatter = logging.Formatter(
+            '%(levelname)-8s (%(name)s) : %(message)s')
+
+        # Display logs on stdout
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+        # Create the configuration directory if it does not exists
+        if not os.path.isdir(CONFIG_DIR):
+            os.makedirs(CONFIG_DIR)
+
+        # Save logs
+        logfile = os.path.join(CONFIG_DIR, 'debug.log')
+        handler = logging.FileHandler(logfile, mode='w')
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
 
     def synchronize_library(self, update=True, scan=False):
         """Synchronize the podcasts library with gpodder.net"""
