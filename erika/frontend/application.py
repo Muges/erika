@@ -31,7 +31,7 @@ from gi.repository import GObject
 from gi.repository import Gtk
 
 from erika import library
-from erika.config import CONFIG_DIR
+from erika.config import DEFAULT_CONFIG_DIRECTORY
 from erika.library.models import Config, Episode, Podcast
 from erika.library.opml import import_opml, export_opml
 from erika.library.gpodder import GPodderClient, GPodderUnauthorized
@@ -64,10 +64,16 @@ class Application(Gtk.Application):
 
         self.window = None
         self.online = True
+        self.configuration_directory = DEFAULT_CONFIG_DIRECTORY
         self.synchronization_lock = threading.Lock()
 
         self.add_main_option("offline", ord("o"), GLib.OptionFlags.NONE,
                              GLib.OptionArg.NONE, "Enable offline mode", None)
+
+        self.add_main_option(
+            "configuration-directory", ord("c"), GLib.OptionFlags.NONE,
+             GLib.OptionArg.STRING, "Path of the configuration directory.",
+             None)
 
         self.connect("startup", cb(self._on_startup))
         self.connect("activate", cb(self._on_activate))
@@ -125,9 +131,35 @@ class Application(Gtk.Application):
             self.logger.info('Erika is already running.')
             return
 
-        self.setup_logging()
-        library.initialize(CONFIG_DIR)
+        # Setup logging
+        logger = logging.getLogger("erika")
+        logger.setLevel(logging.DEBUG)
+        logger.propagate = False
 
+        formatter = logging.Formatter(
+            '%(levelname)-8s (%(name)s) : %(message)s')
+
+        # Display logs on stdout
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+        # Create the configuration directory if it does not exists
+        if not os.path.isdir(self.configuration_directory):
+            os.makedirs(self.configuration_directory)
+
+        # Save logs
+        logfile = os.path.join(self.configuration_directory, 'debug.log')
+        handler = logging.FileHandler(logfile, mode='w')
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+        # Connect to the database
+        library.initialize(self.configuration_directory)
+
+        # Create the main window
         try:
             self.window = MainWindow(self)
         except BaseException:
@@ -135,6 +167,7 @@ class Application(Gtk.Application):
 
         self.set_network_state(self.online)
 
+        # Update the library
         interval = Config.get_value("library.synchronize_interval")
 
         self.synchronize_library(scan=True)
@@ -154,6 +187,11 @@ class Application(Gtk.Application):
         if options.contains("offline"):
             self.logger.info("Started in offline mode.")
             self.online = False
+
+        configuration_directory = options.lookup_value('configuration-directory', None)
+        if (configuration_directory and
+            configuration_directory.is_of_type(GLib.VariantType.new("s"))):
+            self.configuration_directory = configuration_directory.get_string()
 
         self.activate()
         return 0
@@ -237,32 +275,6 @@ class Application(Gtk.Application):
         finally:
             GObject.idle_add(self._synchronization_end, message_id)
             self.synchronization_lock.release()
-
-    def setup_logging(self):
-        """Create logging handlers."""
-        logger = logging.getLogger("erika")
-        logger.setLevel(logging.DEBUG)
-        logger.propagate = False
-
-        formatter = logging.Formatter(
-            '%(levelname)-8s (%(name)s) : %(message)s')
-
-        # Display logs on stdout
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.DEBUG)
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-
-        # Create the configuration directory if it does not exists
-        if not os.path.isdir(CONFIG_DIR):
-            os.makedirs(CONFIG_DIR)
-
-        # Save logs
-        logfile = os.path.join(CONFIG_DIR, 'debug.log')
-        handler = logging.FileHandler(logfile, mode='w')
-        handler.setLevel(logging.DEBUG)
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
 
     def synchronize_library(self, update=True, scan=False):
         """Synchronize the podcasts library with gpodder.net"""

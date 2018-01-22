@@ -36,7 +36,7 @@ from .__version__ import __appname__
 
 # Directories
 HOME = expanduser("~")
-CONFIG_DIR = join(GLib.get_user_config_dir(), __appname__.lower())
+DEFAULT_CONFIG_DIRECTORY = join(GLib.get_user_config_dir(), __appname__.lower())
 
 CONFIG_DEFAULTS = {
     "library.root": join(HOME, "Podcasts"),
