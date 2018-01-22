@@ -105,8 +105,8 @@ class Player(GObject.Object):
 
         self.set_state(Player.BUFFERING)
 
-        if episode.local_path and os.path.isfile(episode.local_path):
-            uri = Gst.filename_to_uri(episode.local_path)
+        if episode.local_path and os.path.isfile(episode.absolute_local_path):
+            uri = Gst.filename_to_uri(episode.absolute_local_path)
         else:
             uri = episode.file_url
 

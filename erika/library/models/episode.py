@@ -122,6 +122,23 @@ class Episode(BaseModel):
         self._tried_image_tags = False
 
     @property
+    def absolute_local_path(self):
+        """str: the absolute path of the local episode's file."""
+        if self.local_path:
+            library_root = Config.get_value("library.root")
+            return os.path.abspath(os.path.join(library_root, self.local_path))
+        else:
+            return None
+
+    @absolute_local_path.setter
+    def absolute_local_path(self, path):
+        if path:
+            library_root = Config.get_value("library.root")
+            self.local_path = os.path.relpath(path, library_root)
+        else:
+            self.local_path = None
+
+    @property
     def display_duration(self):
         """str: the episode's duration as a formatted string."""
         if not self.duration:
@@ -139,7 +156,7 @@ class Episode(BaseModel):
         if self.local_path and not self._tried_image_tags:
             self._tried_image_tags = True
 
-            audio_tags = tags.get_tags(self.local_path)
+            audio_tags = tags.get_tags(self.absolute_local_path)
             if audio_tags["image"]:
                 self._image = Image(audio_tags["image"])
                 return self._image

@@ -39,6 +39,8 @@ HOME = expanduser("~")
 DEFAULT_CONFIG_DIRECTORY = join(GLib.get_user_config_dir(), __appname__.lower())
 
 CONFIG_DEFAULTS = {
+    "application.version": (0,),
+
     "library.root": join(HOME, "Podcasts"),
     "library.podcast_directory_template": "{podcast.title}",
     "library.episode_file_template":

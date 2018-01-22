@@ -98,7 +98,7 @@ def download_chunks(episode):
         # Set the tags of the downloaded file
         tags.set_tags(filename, episode)
 
-        episode.local_path = filename
+        episode.absolute_local_path = filename
         episode.save()
 
         action = EpisodeAction(episode=episode, action="download")

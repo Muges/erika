@@ -437,7 +437,7 @@ class EpisodeList(Gtk.VBox):
                 dialog.destroy()
 
                 if path:
-                    row.episode.local_path = row.episode.import_file(path)
+                    row.episode.absolute_local_path = row.episode.import_file(path)
                     row.episode.save()
                     row.update()
 

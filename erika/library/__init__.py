@@ -33,6 +33,7 @@ from playhouse.sqlite_ext import SqliteExtDatabase
 
 from .models import (database, Config, Episode, EpisodeAction, Podcast,
                      PodcastAction)
+from erika.__version__ import __version_tuple__
 
 
 def initialize(configuration_directory):
@@ -51,15 +52,47 @@ def initialize(configuration_directory):
     database.init(database_path)
 
     with database.transaction():
-        database.create_tables(
-            [Config, Podcast, Episode, EpisodeAction, PodcastAction],
-            safe=True)
+        if not Config.table_exists():
+            # This is the first time the application is launched, set the
+            # version to prevent the database migration from happening
+            Config.create_table()
+            Config.set_value("application.version", __version_tuple__)
+
+        # Create the other tables
+        for model in [Config, Podcast, Episode, EpisodeAction, PodcastAction]:
+            if not model.table_exists():
+                model.create_table()
 
         # Set default configuration values
         Config.set_defaults()
 
+        # Migrate database
+        version = tuple(Config.get_value("application.version"))
+        if version < __version_tuple__:
+            migrate(version)
+
+        # Set current version
+        Config.set_value("application.version", __version_tuple__)
+
         # Set all the episodes as non-new
         Episode.update(new=False)
+
+
+def migrate(version):
+    """Migrate the database."""
+    logger = logging.getLogger(__name__)
+    logger.debug("Migrating the database")
+
+    if version < (0, 1, 1):
+        logger.debug("Migrating to version 0.1.1.")
+
+        # Paths were previously store as absolute paths, convert to paths
+        # relative to the root of the library
+        with database.transaction():
+            episodes = Episode.select().where(Episode.local_path.is_null(False))
+            for episode in episodes:
+                episode.absolute_local_path = episode.local_path
+                episode.save()
 
 
 def scan():
@@ -74,8 +107,8 @@ def scan():
         paths = []
         episodes = Episode.select().where(Episode.local_path.is_null(False))
         for episode in episodes:
-            if os.path.isfile(episode.local_path):
-                paths.append(episode.local_path)
+            if os.path.isfile(episode.absolute_local_path):
+                paths.append(episode.absolute_local_path)
             else:
                 episode.local_path = None
                 episode.save()
@@ -99,7 +132,7 @@ def scan():
                     continue
 
                 # Set the path of the episode in the database
-                episode.local_path = path
+                episode.absolute_local_path = path
                 episode.save()
 
                 # Add an action indicating that the episode has been
