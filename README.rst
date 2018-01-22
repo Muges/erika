@@ -18,7 +18,7 @@ Features
 Installation
 ------------
 
-Install Python 3 and PyGObject_, and run the command ::
+Install Python 3, PyGObject_, and webkitgtk (not webkit2gtk) and run the command ::
 
     pip install erika
 
