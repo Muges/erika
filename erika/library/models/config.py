@@ -56,10 +56,9 @@ class Config(BaseModel):
     @classmethod
     def set_value(cls, key, value):
         """Set the value associated to a key."""
-        (cls
-         .insert(key=key, value=value)
-         .upsert()
-         .execute())
+        config, _ = cls.get_or_create(key=key)
+        config.value = value
+        config.save()
 
     @classmethod
     def set_defaults(cls):

@@ -47,9 +47,12 @@ class PodcastAction(BaseModel):
     action = TextField()
 
     @staticmethod
-    def new(**kwargs):
+    def new(podcast_url, action):
         """Create a new podcast action (or overwrite an existing one)."""
-        (PodcastAction
-         .insert(**kwargs)
-         .upsert()
-         .execute())
+        try:
+            podcast_action = PodcastAction.get(podcast_url=podcast_url)
+        except PodcastAction.DoesNotExist:
+            podcast_action = PodcastAction.create(podcast_url=podcast_url, action=action)
+        else:
+            podcast_action.action = action
+            podcast_action.save()

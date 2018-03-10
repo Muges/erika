@@ -294,10 +294,10 @@ class Podcast(BaseModel):
         title = audiotags['title']
 
         # Try to find a single episode with the same title
-        episodes = self.episodes.where(
+        episodes = list(self.episodes.where(
             Episode.local_path.is_null(),
-            Episode.title == title).first(2)
-        if episodes is not None:
+            Episode.title == title).limit(2))
+        if episodes:
             if len(episodes) > 1:
                 logger.warning("Too many episodes with title %s.", title)
                 return None
@@ -309,10 +309,10 @@ class Podcast(BaseModel):
         filename = slugify(filename)
         title = slugify(title or "")
 
-        episodes = self.episodes.where(
+        episodes = list(self.episodes.where(
             Episode.local_path.is_null(),
-            fn.slugify(Episode.title) << [title, filename]).first(2)
-        if episodes is not None:
+            fn.slugify(Episode.title) << [title, filename]).limit(2))
+        if episodes:
             if len(episodes) > 1:
                 logger.warning("Too many episodes with title similar to '%s' "
                                "or '%s'.", title, filename)

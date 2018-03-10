@@ -29,7 +29,7 @@ A model used to store episodes in the library.
 import logging
 import os.path
 import requests
-from peewee import (BooleanField, DateTimeField, IntegerField, ForeignKeyField,
+from peewee import (BooleanField, DateTimeField, IntegerField, DeferredForeignKey,
                     TextField, Proxy, DoesNotExist)
 from playhouse.hybrid import hybrid_property
 
@@ -86,8 +86,8 @@ class Episode(BaseModel):
         to resume the playback after quitting the application).
     """
 
-    podcast = ForeignKeyField(Podcast, related_name='episodes',
-                              on_delete='CASCADE')
+    podcast = DeferredForeignKey('Podcast', related_name='episodes',
+                                 on_delete='CASCADE')
 
     guid = TextField(null=True)
     pubdate = DateTimeField(null=True)
