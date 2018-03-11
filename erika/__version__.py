@@ -29,8 +29,8 @@ The :mod:`erika.__version__` module defines the current version of erika.
 __appname__ = "Erika"
 """The name of the application."""
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 """The current version of the application."""
 
-__version_tuple__ = (0, 1, 0)
+__version_tuple__ = (0, 1, 1)
 """The current version of the application as a tuple."""
